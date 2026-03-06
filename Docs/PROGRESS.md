@@ -7,7 +7,7 @@
 ## Current Status
 
 **Phase:** M1 — Foundation (in progress)
-**Next action:** M1.2 — create the project folder skeleton.
+**Next action:** M1.3 — EF Core models and DbContext.
 
 ---
 
@@ -29,7 +29,7 @@
 | Step | Status | Notes |
 |---|---|---|
 | 1.1 Project Scaffold | Complete | dotnet new wpf, all NuGet packages installed, DB file wired, build passes |
-| 1.2 Folder Structure | Not started | |
+| 1.2 Folder Structure | Complete | Models, Services, ViewModels, Views, Controls, Converters, Assets, Helpers |
 | 1.3 EF Core Models & DbContext | Not started | |
 | 1.4 DI & App Host | Not started | |
 | 1.5 FluentWindow Shell & NavigationView | Not started | |
