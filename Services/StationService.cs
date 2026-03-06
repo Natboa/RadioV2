@@ -6,65 +6,78 @@ namespace RadioV2.Services;
 
 public class StationService : IStationService
 {
-    private readonly RadioDbContext _db;
+    private readonly IDbContextFactory<RadioDbContext> _factory;
 
-    public StationService(RadioDbContext db) => _db = db;
+    public StationService(IDbContextFactory<RadioDbContext> factory) => _factory = factory;
 
-    public Task<List<Station>> GetStationsAsync(int skip, int take, string? searchQuery = null, CancellationToken ct = default)
+    public async Task<List<Station>> GetStationsAsync(int skip, int take, string? searchQuery = null, CancellationToken ct = default)
     {
-        var query = _db.Stations.AsNoTracking();
+        using var db = _factory.CreateDbContext();
+        var query = db.Stations.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(searchQuery))
             query = query.Where(s => EF.Functions.Like(s.Name, $"%{searchQuery}%"));
-        return query.OrderBy(s => s.Name).Skip(skip).Take(take).ToListAsync(ct);
+        return await query.OrderBy(s => s.Name).Skip(skip).Take(take).ToListAsync(ct);
     }
 
-    public Task<List<GroupWithCount>> GetGroupsWithCountsAsync(CancellationToken ct = default) =>
-        _db.Groups.AsNoTracking()
+    public async Task<List<GroupWithCount>> GetGroupsWithCountsAsync(int skip, int take, CancellationToken ct = default)
+    {
+        using var db = _factory.CreateDbContext();
+        return await db.Groups.AsNoTracking()
             .Select(g => new GroupWithCount { Id = g.Id, Name = g.Name, StationCount = g.Stations.Count })
             .OrderBy(g => g.Name)
+            .Skip(skip).Take(take)
             .ToListAsync(ct);
-
-    public Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default)
-    {
-        var query = _db.Stations.AsNoTracking().Where(s => s.GroupId == groupId);
-        if (!string.IsNullOrWhiteSpace(searchQuery))
-            query = query.Where(s => EF.Functions.Like(s.Name, $"%{searchQuery}%"));
-        return query.OrderBy(s => s.Name).Skip(skip).Take(take).ToListAsync(ct);
     }
 
-    public Task<List<Station>> GetFavouritesAsync(CancellationToken ct = default) =>
-        _db.Stations.AsNoTracking()
+    public async Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default)
+    {
+        using var db = _factory.CreateDbContext();
+        var query = db.Stations.AsNoTracking().Where(s => s.GroupId == groupId);
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+            query = query.Where(s => EF.Functions.Like(s.Name, $"%{searchQuery}%"));
+        return await query.OrderByDescending(s => s.LogoUrl != null && s.LogoUrl != "").ThenBy(s => s.Name).Skip(skip).Take(take).ToListAsync(ct);
+    }
+
+    public async Task<List<Station>> GetFavouritesAsync(CancellationToken ct = default)
+    {
+        using var db = _factory.CreateDbContext();
+        return await db.Stations.AsNoTracking()
             .Where(s => s.IsFavorite)
             .OrderBy(s => s.Name)
             .ToListAsync(ct);
+    }
 
     public async Task ToggleFavouriteAsync(int stationId, CancellationToken ct = default)
     {
-        var station = await _db.Stations.FindAsync([stationId], ct);
+        using var db = _factory.CreateDbContext();
+        var station = await db.Stations.FindAsync([stationId], ct);
         if (station is null) return;
         station.IsFavorite = !station.IsFavorite;
-        await _db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);
     }
 
     public async Task<string?> GetSettingAsync(string key, CancellationToken ct = default)
     {
-        var setting = await _db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key, ct);
+        using var db = _factory.CreateDbContext();
+        var setting = await db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key, ct);
         return setting?.Value;
     }
 
     public async Task SetSettingAsync(string key, string value, CancellationToken ct = default)
     {
-        var setting = await _db.Settings.FindAsync([key], ct);
+        using var db = _factory.CreateDbContext();
+        var setting = await db.Settings.FindAsync([key], ct);
         if (setting is null)
-            _db.Settings.Add(new Setting { Key = key, Value = value });
+            db.Settings.Add(new Setting { Key = key, Value = value });
         else
             setting.Value = value;
-        await _db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);
     }
 
     public async Task<int> BulkImportStationsAsync(List<ParsedStation> stations, CancellationToken ct = default)
     {
-        var existingUrlsList = await _db.Stations.AsNoTracking()
+        using var db = _factory.CreateDbContext();
+        var existingUrlsList = await db.Stations.AsNoTracking()
             .Select(s => s.StreamUrl)
             .ToListAsync(ct);
         var existingUrls = existingUrlsList.ToHashSet();
@@ -74,16 +87,15 @@ public class StationService : IStationService
         {
             if (existingUrls.Contains(parsed.StreamUrl)) continue;
 
-            // Find or create the group
-            var group = await _db.Groups.FirstOrDefaultAsync(g => g.Name == parsed.GroupName, ct);
+            var group = await db.Groups.FirstOrDefaultAsync(g => g.Name == parsed.GroupName, ct);
             if (group is null)
             {
                 group = new Group { Name = parsed.GroupName };
-                _db.Groups.Add(group);
-                await _db.SaveChangesAsync(ct); // flush to get Id
+                db.Groups.Add(group);
+                await db.SaveChangesAsync(ct);
             }
 
-            _db.Stations.Add(new Station
+            db.Stations.Add(new Station
             {
                 Name = parsed.Name,
                 StreamUrl = parsed.StreamUrl,
@@ -95,7 +107,7 @@ public class StationService : IStationService
         }
 
         if (added > 0)
-            await _db.SaveChangesAsync(ct);
+            await db.SaveChangesAsync(ct);
 
         return added;
     }

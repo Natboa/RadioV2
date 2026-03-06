@@ -16,7 +16,6 @@ public partial class MainWindow : FluentWindow
     private readonly TrayIconManager _trayIcon;
     private readonly NetworkMonitor _networkMonitor;
     private readonly ISnackbarService _snackbarService;
-    private bool _isQuitting;
 
     public MainWindow(MainWindowViewModel viewModel, IServiceProvider serviceProvider, ISnackbarService snackbarService)
     {
@@ -29,7 +28,6 @@ public partial class MainWindow : FluentWindow
         snackbarService.SetSnackbarPresenter(RootSnackbar);
 
         RootNavigation.SetServiceProvider(serviceProvider);
-        RootNavigation.Navigate(typeof(Views.BrowsePage));
 
         var miniPlayer = serviceProvider.GetRequiredService<MiniPlayerViewModel>();
         MiniPlayerControl.DataContext = miniPlayer;
@@ -65,25 +63,32 @@ public partial class MainWindow : FluentWindow
         };
 
         Loaded += OnWindowLoaded;
+
+        // Minimize button → hide to tray instead of minimizing to taskbar
+        StateChanged += (_, _) =>
+        {
+            if (WindowState == WindowState.Minimized)
+            {
+                Hide();
+                ShowInTaskbar = false;
+                WindowState = WindowState.Normal;
+            }
+        };
     }
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
         var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
         source?.AddHook(_mediaKeyHook.WndProc);
+        RootNavigation.Navigate(typeof(Views.BrowsePage));
     }
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        if (!_isQuitting)
-        {
-            e.Cancel = true;
-            HideWindow();
-            return;
-        }
         _trayIcon.Dispose();
         _networkMonitor.Dispose();
         base.OnClosing(e);
+        Application.Current.Shutdown();
     }
 
     private void ShowWindow()
@@ -94,17 +99,9 @@ public partial class MainWindow : FluentWindow
         Activate();
     }
 
-    private void HideWindow()
-    {
-        Hide();
-        ShowInTaskbar = false;
-    }
-
     private void Quit()
     {
-        _isQuitting = true;
         Close();
-        Application.Current.Shutdown();
     }
 
     private void OnConnectivityChanged(object? sender, bool isOnline)
