@@ -56,7 +56,8 @@
                           Background="Transparent"
                           BorderThickness="0"
                           ToolTip="Favourite">
-                <ui:SymbolIcon Symbol="{Binding IsFavorite, Converter={StaticResource BoolToHeartIconConverter}}" />
+                <ui:SymbolIcon Symbol="{Binding IsFavorite, Converter={StaticResource BoolToHeartIconConverter}}"
+                               Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}" />
             </ToggleButton>
         </StackPanel>
     </Grid>

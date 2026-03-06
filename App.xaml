@@ -13,6 +13,7 @@
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
             <converters:BoolToPlayIconConverter x:Key="BoolToPlayIconConverter" />
             <converters:BoolToHeartIconConverter x:Key="BoolToHeartIconConverter" />
+            <converters:BoolToHeartColorConverter x:Key="BoolToHeartColorConverter" />
             <converters:BoolToInverseVisibilityConverter x:Key="BoolToInverseVisibilityConverter" />
             <converters:StringEqualConverter x:Key="StringEqualConverter" />
         </ResourceDictionary>
