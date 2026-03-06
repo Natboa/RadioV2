@@ -28,7 +28,10 @@
                        Margin="0,0,0,16"
                        Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
 
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer x:Name="GroupsScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <i:Interaction.Behaviors>
+                    <helpers:ScrollViewerInfiniteScrollBehavior LoadMoreCommand="{Binding DataContext.LoadMoreGroupsCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+                </i:Interaction.Behaviors>
                 <ItemsControl ItemsSource="{Binding Groups}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -104,7 +107,8 @@
                         Margin="0,0,0,12" />
 
             <!-- Station list -->
-            <ListBox Grid.Row="2"
+            <ListBox x:Name="StationsListBox"
+                     Grid.Row="2"
                      ItemsSource="{Binding GroupStations}"
                      BorderThickness="0"
                      Background="Transparent"
@@ -128,9 +132,6 @@
                         <VirtualizingStackPanel />
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
-                <i:Interaction.Behaviors>
-                    <helpers:InfiniteScrollBehavior LoadMoreCommand="{Binding DataContext.LoadMoreGroupStationsCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
-                </i:Interaction.Behaviors>
             </ListBox>
 
             <ui:ProgressRing Grid.Row="3"

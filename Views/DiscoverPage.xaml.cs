@@ -21,22 +21,25 @@ public partial class DiscoverPage : Page
                 e.Handled = true;
             };
 
-            // Groups: scroll near bottom
+            // Groups: scroll near bottom — removed ScrollableHeight > 0 guard because
+            // NavigationView gives the page unconstrained height, so GroupsScrollViewer.ScrollableHeight
+            // is always 0 and the guard was preventing all scroll-triggered loads.
             GroupsScrollViewer.ScrollChanged += async (_, _) =>
             {
                 if (!viewModel.IsGroupView &&
-                    GroupsScrollViewer.ScrollableHeight > 0 &&
                     GroupsScrollViewer.VerticalOffset >= GroupsScrollViewer.ScrollableHeight - 300)
                     await viewModel.LoadMoreGroupsAsync();
             };
 
-            // Groups: auto-fill viewport after each batch
+            // Groups: auto-fill after each batch — use near-bottom threshold instead of == 0
+            // so that batches that add a small amount of scroll (but not enough to fill) also trigger.
             viewModel.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName != nameof(viewModel.IsLoading) || viewModel.IsLoading) return;
                 Dispatcher.InvokeAsync(async () =>
                 {
-                    if (!viewModel.IsGroupView && viewModel.HasMoreGroups && GroupsScrollViewer.ScrollableHeight == 0)
+                    if (!viewModel.IsGroupView && viewModel.HasMoreGroups &&
+                        GroupsScrollViewer.VerticalOffset >= GroupsScrollViewer.ScrollableHeight - 400)
                         await viewModel.LoadMoreGroupsAsync();
                 }, DispatcherPriority.Background);
             };

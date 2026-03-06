@@ -64,3 +64,41 @@ public class InfiniteScrollBehavior : Behavior<ListBox>
         return null;
     }
 }
+
+/// <summary>
+/// Infinite scroll behavior for a plain ScrollViewer (e.g. the groups WrapPanel on DiscoverPage).
+/// </summary>
+public class ScrollViewerInfiniteScrollBehavior : Behavior<ScrollViewer>
+{
+    public static readonly DependencyProperty LoadMoreCommandProperty =
+        DependencyProperty.Register(nameof(LoadMoreCommand), typeof(ICommand), typeof(ScrollViewerInfiniteScrollBehavior));
+
+    public ICommand? LoadMoreCommand
+    {
+        get => (ICommand?)GetValue(LoadMoreCommandProperty);
+        set => SetValue(LoadMoreCommandProperty, value);
+    }
+
+    protected override void OnAttached()
+    {
+        base.OnAttached();
+        AssociatedObject.ScrollChanged += OnScrollChanged;
+    }
+
+    protected override void OnDetaching()
+    {
+        AssociatedObject.ScrollChanged -= OnScrollChanged;
+        base.OnDetaching();
+    }
+
+    private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        var sv = AssociatedObject;
+        if (sv.ScrollableHeight > 0 &&
+            sv.VerticalOffset >= sv.ScrollableHeight - 200)
+        {
+            if (LoadMoreCommand?.CanExecute(null) == true)
+                LoadMoreCommand.Execute(null);
+        }
+    }
+}
