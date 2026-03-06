@@ -1,0 +1,37 @@
+# .NET
+bin/
+obj/
+publish/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+
+# IDE
+.vs/
+.vscode/
+*.sln.docstates
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# NuGet
+packages/
+*.nupkg
+
+# LibVLC native libs (downloaded via NuGet, don't commit)
+libvlc/
+
+# Database (too large for git, will be added once trimmed)
+*.db
+
+# Claude Code
+.claude/
