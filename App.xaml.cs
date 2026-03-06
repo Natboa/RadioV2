@@ -29,7 +29,7 @@ public partial class App : Application
 
                 // Services
                 services.AddScoped<IStationService, StationService>();
-                // services.AddSingleton<IRadioPlayerService, RadioPlayerService>(); // M3
+                services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
 
                 // ViewModels
                 services.AddSingleton<MainWindowViewModel>();
