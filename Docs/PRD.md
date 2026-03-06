@@ -132,14 +132,14 @@ View and manage saved stations.
 Application preferences.
 
 **Elements:**
-- Theme selector: System / Light / Dark.
+- **Theme selector** — two options: Light / Dark.
 - Audio output device selector (if supported by audio library).
 - About section: app version, credits.
 - Import stations from M3U/M3U8 file (bulk station import, separate from favourites import).
 
 **Behavior:**
-- All settings persist to the `Settings` table.
-- Theme changes apply immediately via `ApplicationThemeManager`.
+- Theme changes apply immediately via `ApplicationThemeManager` and persist to the `Settings` table under key `"Theme"`.
+- On startup, the `"Theme"` setting is read from the `Settings` table and applied before the main window is shown. Default: `"Dark"`.
 
 ---
 
@@ -149,11 +149,23 @@ Application preferences.
 - Stream HTTP/HTTPS audio URLs (MP3, AAC, HLS common formats).
 - Handle buffering gracefully — show a loading indicator in the mini-player when buffering.
 - Handle stream errors (network loss, invalid URL) — show a non-blocking error notification and stop playback.
-- Extract ICY metadata (current song title) when available and display in the mini-player.
+- Extract ICY metadata from the stream when available and display Artist and Song Title in the mini-player.
+
+### ICY Metadata — Now Playing
+Most internet radio streams embed real-time track information in ICY (SHOUTcast) metadata. When present, the `StreamTitle` field typically contains `"Artist - Song Title"` (dash-separated). The app must:
+
+1. **Subscribe** to LibVLC's `Media.MetaChanged` event and read `MetadataType.NowPlaying`.
+2. **Parse** the raw `StreamTitle` string:
+   - Split on the first `" - "` (or `" – "` em-dash variant).
+   - If a separator is found → `Artist` = left part, `Title` = right part.
+   - If no separator → `Artist` = empty, `Title` = full raw string.
+3. **Display** in the mini-player as `"Artist — Title"` when both are present, or just the title alone.
+4. **Clear** the Now Playing info when playback stops or a new station loads (before new metadata arrives).
+5. **Graceful absence** — many stations do not send ICY metadata. The mini-player must display cleanly with only the station name when no metadata is available.
 
 ### Library: LibVLCSharp
 - Mature, supports all common codecs and streaming protocols out of the box.
-- Built-in ICY metadata events, buffering progress, and error handling.
+- Built-in ICY metadata events (`Media.MetaChanged` + `MetadataType.NowPlaying`), buffering progress, and error handling.
 - Adds ~120 MB to the app bundle — acceptable trade-off for reliability.
 
 ---
@@ -167,7 +179,10 @@ A compact playback bar docked at the bottom of the window, visible on all pages 
 **Elements:**
 - Station logo (small thumbnail).
 - Station name (truncated if long).
-- Current track/song title from ICY metadata (if available).
+- **Now Playing line** from ICY metadata (if available):
+  - When Artist and Title are both parsed: `"Artist — Song Title"` (single truncated line, secondary opacity).
+  - When only a raw title string is present: display it as-is.
+  - When no metadata is available: the line is hidden (no empty placeholder).
 - Play/Pause button.
 - Stop button.
 - Next Station button (skip to next favourite).
@@ -230,7 +245,7 @@ Follow `NatboaFluentGuidelines_Relaxed.md` throughout:
 - **Buttons:** `Primary` for play/main actions, `Transparent` for icon-only toolbar buttons.
 - **Typography:** Page titles at 24-28px SemiBold, section headers at 16px SemiBold, captions at reduced opacity.
 - **Spacing:** Multiples of 4/8px, 16-24px page padding, rounded corners (4px controls, 8px containers).
-- **Theming:** Support Light/Dark/System via `ApplicationThemeManager`. Use semantic theme brushes, no hardcoded colors.
+- **Theming:** Light and Dark modes only, via `ApplicationThemeManager`. All colors come from WPF-UI's built-in Fluent UI semantic brushes — no custom or hardcoded colors anywhere. Theme switches apply instantly without restarting.
 - **Data lists:** Infinite-scroll with batch loading. Clean rows, alternating backgrounds, accent-colored selection.
 
 ---

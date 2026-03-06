@@ -7,7 +7,7 @@
 ## Current Status
 
 **Phase:** M1 — Foundation (in progress)
-**Next action:** M1.5 — FluentWindow Shell & NavigationView.
+**Next action:** M1.6 — Mini-Player Control (UI Shell).
 
 ---
 
@@ -32,7 +32,7 @@
 | 1.2 Folder Structure | Complete | Models, Services, ViewModels, Views, Controls, Converters, Assets, Helpers |
 | 1.3 EF Core Models & DbContext | Complete | Station, Group, Setting models + RadioDbContext with indexes, build passes |
 | 1.4 DI & App Host | Complete | IHost wired, all ViewModels registered, theme applied on startup, build passes |
-| 1.5 FluentWindow Shell & NavigationView | Not started | |
+| 1.5 FluentWindow Shell & NavigationView | Complete | FluentWindow, Mica, NavigationView, 4 page stubs, mini-player placeholder, build passes |
 | 1.6 Mini-Player Control (UI Shell) | Not started | |
 | 1.7 Theme Support (Light/Dark) | Not started | |
 | 1.8 Single-Instance Enforcement | Not started | |

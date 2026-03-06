@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RadioV2.Data;
 using RadioV2.ViewModels;
+using RadioV2.Views;
 using System.IO;
 using System.Windows;
 using Wpf.Ui.Appearance;
@@ -35,6 +36,12 @@ public partial class App : Application
                 services.AddTransient<FavouritesViewModel>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddSingleton<MiniPlayerViewModel>();
+
+                // Pages
+                services.AddTransient<BrowsePage>();
+                services.AddTransient<DiscoverPage>();
+                services.AddTransient<FavouritesPage>();
+                services.AddTransient<SettingsPage>();
 
                 // Main Window
                 services.AddSingleton<MainWindow>();
