@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using RadioV2.ViewModels;
 using Wpf.Ui.Controls;
 
@@ -11,5 +12,6 @@ public partial class MainWindow : FluentWindow
         InitializeComponent();
         RootNavigation.SetServiceProvider(serviceProvider);
         RootNavigation.Navigate(typeof(Views.BrowsePage));
+        MiniPlayerControl.DataContext = serviceProvider.GetRequiredService<MiniPlayerViewModel>();
     }
 }

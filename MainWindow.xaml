@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:views="clr-namespace:RadioV2.Views"
+        xmlns:controls="clr-namespace:RadioV2.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
@@ -42,15 +43,10 @@
             </ui:NavigationView.FooterMenuItems>
         </ui:NavigationView>
 
-        <!-- Mini-Player placeholder (Step 1.6) -->
         <Border Grid.Row="2" Height="72"
                 Background="{ui:ThemeResource ControlFillColorDefaultBrush}"
-                CornerRadius="8,8,0,0"
-                Padding="16,8">
-            <TextBlock Text="Mini Player — coming soon"
-                       VerticalAlignment="Center"
-                       Opacity="0.5"
-                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                CornerRadius="8,8,0,0">
+            <controls:MiniPlayer x:Name="MiniPlayerControl" />
         </Border>
     </Grid>
 
