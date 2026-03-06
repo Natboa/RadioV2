@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RadioV2.Data;
 using RadioV2.Helpers;
+using RadioV2.Services;
 using RadioV2.ViewModels;
 using RadioV2.Views;
 using System.IO;
@@ -26,9 +27,9 @@ public partial class App : Application
                 services.AddDbContext<RadioDbContext>(options =>
                     options.UseSqlite($"Data Source={dbPath}"));
 
-                // Services (registered in later steps)
-                // services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
-                // services.AddScoped<IStationService, StationService>();
+                // Services
+                services.AddScoped<IStationService, StationService>();
+                // services.AddSingleton<IRadioPlayerService, RadioPlayerService>(); // M3
 
                 // ViewModels
                 services.AddSingleton<MainWindowViewModel>();

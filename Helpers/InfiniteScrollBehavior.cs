@@ -1,0 +1,65 @@
+using Microsoft.Xaml.Behaviors;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+
+namespace RadioV2.Helpers;
+
+public class InfiniteScrollBehavior : Behavior<ListBox>
+{
+    public static readonly DependencyProperty LoadMoreCommandProperty =
+        DependencyProperty.Register(nameof(LoadMoreCommand), typeof(ICommand), typeof(InfiniteScrollBehavior));
+
+    public ICommand? LoadMoreCommand
+    {
+        get => (ICommand?)GetValue(LoadMoreCommandProperty);
+        set => SetValue(LoadMoreCommandProperty, value);
+    }
+
+    private ScrollViewer? _scrollViewer;
+
+    protected override void OnAttached()
+    {
+        base.OnAttached();
+        AssociatedObject.Loaded += OnLoaded;
+    }
+
+    protected override void OnDetaching()
+    {
+        AssociatedObject.Loaded -= OnLoaded;
+        if (_scrollViewer != null)
+            _scrollViewer.ScrollChanged -= OnScrollChanged;
+        base.OnDetaching();
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        _scrollViewer = FindScrollViewer(AssociatedObject);
+        if (_scrollViewer != null)
+            _scrollViewer.ScrollChanged += OnScrollChanged;
+    }
+
+    private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (_scrollViewer is null) return;
+        if (_scrollViewer.ScrollableHeight > 0 &&
+            _scrollViewer.VerticalOffset >= _scrollViewer.ScrollableHeight - 200)
+        {
+            if (LoadMoreCommand?.CanExecute(null) == true)
+                LoadMoreCommand.Execute(null);
+        }
+    }
+
+    private static ScrollViewer? FindScrollViewer(DependencyObject obj)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+        {
+            var child = VisualTreeHelper.GetChild(obj, i);
+            if (child is ScrollViewer sv) return sv;
+            var result = FindScrollViewer(child);
+            if (result != null) return result;
+        }
+        return null;
+    }
+}
