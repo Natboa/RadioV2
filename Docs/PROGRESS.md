@@ -6,8 +6,8 @@
 
 ## Current Status
 
-**Phase:** M4 — Favourites & Persistence (next)
-**Next action:** M4.1 — Favourites Page. M3 complete.
+**Phase:** M5 — System Tray & Polish (next)
+**Next action:** M5.1 — System Tray Integration. M4 complete.
 
 ---
 
@@ -67,10 +67,10 @@
 
 | Step | Status | Notes |
 |---|---|---|
-| 4.1 Favourites Page | Not started | |
-| 4.2 Import/Export Favourites | Not started | |
-| 4.3 M3U Parser Service | Not started | |
-| 4.4 Session Persistence | Not started | |
+| 4.1 Favourites Page | Complete | List, empty state, play/remove, import/export toolbar |
+| 4.2 Import/Export Favourites | Complete | FavouritesIOService: M3U + JSON export, import by StreamUrl match |
+| 4.3 M3U Parser Service | Complete | M3UParserService: name, tvg-logo, group-title, URL |
+| 4.4 Session Persistence | Complete | Volume + LastPlayedStationId saved/restored on exit/startup |
 
 ---
 
