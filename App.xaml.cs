@@ -43,11 +43,11 @@ public partial class App : Application
             {
                 // Database
                 var dbPath = Path.Combine(AppContext.BaseDirectory, "Data", "radioapp_large_groups.db");
-                services.AddDbContext<RadioDbContext>(options =>
+                services.AddDbContextFactory<RadioDbContext>(options =>
                     options.UseSqlite($"Data Source={dbPath}"));
 
                 // Services
-                services.AddScoped<IStationService, StationService>();
+                services.AddSingleton<IStationService, StationService>();
                 services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
                 services.AddScoped<IFavouritesIOService, FavouritesIOService>();
                 services.AddScoped<M3UParserService>();
@@ -56,7 +56,7 @@ public partial class App : Application
                 // ViewModels
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddTransient<BrowseViewModel>();
-                services.AddTransient<DiscoverViewModel>();
+                services.AddSingleton<DiscoverViewModel>();
                 services.AddTransient<FavouritesViewModel>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddSingleton<MiniPlayerViewModel>();
@@ -89,6 +89,10 @@ public partial class App : Application
         await _host.StartAsync();
         await RestoreSessionAsync();
 
+        // Preload first batch of groups so Discover page is instant on first visit
+        var discoverVm = _host.Services.GetRequiredService<DiscoverViewModel>();
+        _ = discoverVm.LoadGroupsAsync();
+
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
@@ -109,8 +113,7 @@ public partial class App : Application
 
     private async Task RestoreSessionAsync()
     {
-        using var scope = _host.Services.CreateScope();
-        var stationService = scope.ServiceProvider.GetRequiredService<IStationService>();
+        var stationService = _host.Services.GetRequiredService<IStationService>();
         var miniPlayer = _host.Services.GetRequiredService<MiniPlayerViewModel>();
 
         // Theme
@@ -125,7 +128,8 @@ public partial class App : Application
         var lastIdStr = await stationService.GetSettingAsync("LastPlayedStationId");
         if (int.TryParse(lastIdStr, out var lastId) && lastId > 0)
         {
-            var db = scope.ServiceProvider.GetRequiredService<RadioDbContext>();
+            var dbFactory = _host.Services.GetRequiredService<IDbContextFactory<RadioDbContext>>();
+            using var db = dbFactory.CreateDbContext();
             var station = await db.Stations
                 .Include(s => s.Group)
                 .AsNoTracking()
@@ -142,8 +146,7 @@ public partial class App : Application
 
     private async Task SaveSessionAsync()
     {
-        using var scope = _host.Services.CreateScope();
-        var stationService = scope.ServiceProvider.GetRequiredService<IStationService>();
+        var stationService = _host.Services.GetRequiredService<IStationService>();
         var miniPlayer = _host.Services.GetRequiredService<MiniPlayerViewModel>();
 
         await stationService.SetSettingAsync("Volume", miniPlayer.Volume.ToString());

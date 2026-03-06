@@ -124,6 +124,22 @@ Follow `NatboaFluentGuidelines_Relaxed.md` (same `Docs/` folder):
 - `mcp__github__create_issue` — track bugs or tasks
 - `mcp__github__list_commits` / `mcp__github__get_pull_request` — inspect history
 
+## Bug Debugging Protocol
+
+Whenever you are actively trying to fix a bug:
+
+1. **Create a debug file** in `Debugging/` named after the bug (e.g., `discover-stations-infinite-scroll.md`). Do this before making any code changes.
+2. **Before each fix attempt**, document in the file:
+   - What you tried and why you expected it to work
+3. **Every code change made while debugging** must be recorded in the file immediately — what file was changed, what changed, and why. Do not batch changes; log each one as it happens.
+4. **After each failed attempt**, document why it failed (root cause analysis).
+5. **Only the user can declare a bug fixed.** When they confirm it works, update the file: set status to `CONFIRMED FIXED`, fill in the `## Fix` section describing the working solution and the exact change that resolved it.
+6. If starting a new session mid-bug, read the existing debug file first to avoid repeating failed approaches.
+
+Debug files live in: `Debugging/`
+
+---
+
 ## Key Design Documents
 
 All docs live in the `Docs/` folder (same directory as this file):
