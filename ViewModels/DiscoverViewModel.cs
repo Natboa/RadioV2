@@ -9,12 +9,14 @@ namespace RadioV2.ViewModels;
 public partial class DiscoverViewModel : ObservableObject
 {
     private readonly IStationService _stationService;
+    private readonly MiniPlayerViewModel _miniPlayer;
     private int _groupSkip;
     private CancellationTokenSource _searchCts = new();
 
-    public DiscoverViewModel(IStationService stationService)
+    public DiscoverViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer)
     {
         _stationService = stationService;
+        _miniPlayer = miniPlayer;
     }
 
     [ObservableProperty] private ObservableCollection<GroupWithCount> _groups = [];
@@ -97,7 +99,7 @@ public partial class DiscoverViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PlayStation(Station station) { /* wired in M3 */ }
+    private void PlayStation(Station station) => _miniPlayer.SetStation(station);
 
     [RelayCommand]
     private async Task ToggleFavourite(Station station)
