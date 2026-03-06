@@ -1,6 +1,6 @@
 
 *keep minimize option so it runs at the background but as a seperate button not when clicking x
-FIXED: The native window minimize button (_) now hides the app to tray instead of minimizing to taskbar. X still quits. Double-click tray icon or tray → "Show Window" to restore. (MainWindow.xaml.cs — StateChanged hook)
+FIXED (v2): Native minimize (_) minimizes to taskbar (default). Custom button in TitleBar.TrailingContent hides to tray (Hide + ShowInTaskbar=false). No StateChanged interception — direct and unambiguous. Alignment fixed with Padding=0 + VerticalAlignment=Stretch. (MainWindow.xaml, MainWindow.xaml.cs — see minimize-tray-button-fix.md)
 
 *scrolling up and down is not working when mouse is on the groups in the discovery page, when it is on the sides the scrolling works
 FIXED: ui:Card children were consuming mouse wheel events. Added PreviewMouseWheel handler on GroupsScrollViewer that manually scrolls and marks the event handled, so scroll works regardless of where the mouse is. (DiscoverPage.xaml.cs)

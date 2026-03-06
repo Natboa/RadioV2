@@ -52,7 +52,7 @@ public partial class BrowseViewModel : ObservableObject
         try
         {
             var query = SearchQuery.Length >= 2 ? SearchQuery : null;
-            var batch = await _stationService.GetStationsAsync(_skip, 50, query, ct);
+            var batch = await Task.Run(() => _stationService.GetStationsAsync(_skip, 50, query, ct), ct);
             foreach (var s in batch) Stations.Add(s);
             _skip += batch.Count;
             HasMoreItems = batch.Count == 50;
