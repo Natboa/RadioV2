@@ -9,7 +9,11 @@ public class RadioDbContext : DbContext
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<Setting> Settings => Set<Setting>();
 
-    public RadioDbContext(DbContextOptions<RadioDbContext> options) : base(options) { }
+    public RadioDbContext(DbContextOptions<RadioDbContext> options) : base(options)
+    {
+        // WAL mode improves concurrent read performance on the large SQLite database
+        Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

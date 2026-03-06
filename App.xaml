@@ -8,5 +8,6 @@
         <converters:BoolToPlayIconConverter x:Key="BoolToPlayIconConverter" />
         <converters:BoolToHeartIconConverter x:Key="BoolToHeartIconConverter" />
         <converters:BoolToInverseVisibilityConverter x:Key="BoolToInverseVisibilityConverter" />
+        <converters:StringEqualConverter x:Key="StringEqualConverter" />
     </Application.Resources>
 </Application>

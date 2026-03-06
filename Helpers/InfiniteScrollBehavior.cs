@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using ListBox = System.Windows.Controls.ListBox;
 
 namespace RadioV2.Helpers;
 
