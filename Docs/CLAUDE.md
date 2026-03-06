@@ -83,7 +83,7 @@ Follow `NatboaFluentGuidelines_Relaxed.md` (same `Docs/` folder):
 ## Git & GitHub Workflow
 
 **Repository:** `Natboa/radioV2` on GitHub
-**GitHub MCP is installed** — use `mcp__github__*` tools for all GitHub operations (branch creation, pushing files, PRs, etc.) instead of raw git CLI commands.
+**GitHub MCP is installed** — use `mcp__github__*` tools for branch creation, PRs, and merges. Use native git CLI for all commits and pushes.
 
 ### Branching
 - **`main`** — stable, always-buildable branch. Never commit directly to main.
@@ -99,16 +99,26 @@ Follow `NatboaFluentGuidelines_Relaxed.md` (same `Docs/` folder):
 - PR title: short, under 70 chars. Body: summary bullets + test plan.
 - Merge to `main` after review/approval.
 
-### Workflow per implementation step (using GitHub MCP):
+### 🚀 Autonomous Git Workflow (Turbo Mode)
+- **Autonomy:** You are encouraged to commit and push when you reach a stable milestone (e.g., a feature is working or a bug is fixed).
+- **Speed Optimization:** NEVER use `mcp__github__push_files` for code changes — it is too slow for our .NET project.
+- **The Fast Way:** Use native git CLI for all commits and pushes:
+  1. `git checkout <feature-branch>` — ensure you're on the right branch before committing
+  2. `git add .`
+  3. `git commit -m "feat: your descriptive message"`
+  4. `git push`
+- **When to Push:** Push automatically when a milestone step is complete or a new module is scaffolded.
+
+### Workflow per implementation step:
 1. `mcp__github__create_branch` — create the feature branch off `main`.
-2. Implement the step locally.
-3. `dotnet build` — verify no errors.
-4. `mcp__github__push_files` — commit and push changed files to the feature branch.
-5. When a milestone is complete, `mcp__github__create_pull_request` → `mcp__github__merge_pull_request`.
+2. `git checkout <branch>` — switch to it locally.
+3. Implement the step locally.
+4. `dotnet build` — verify no errors.
+5. `git add .` / `git commit` / `git push` — commit and push via CLI.
+6. When a milestone is complete: `mcp__github__create_pull_request` → `mcp__github__merge_pull_request`.
 
 ### Key MCP tools to use:
 - `mcp__github__create_branch` — create feature branches
-- `mcp__github__push_files` — commit and push files (replaces `git add + commit + push`)
 - `mcp__github__create_pull_request` — open PRs
 - `mcp__github__merge_pull_request` — merge PRs to main
 - `mcp__github__create_issue` — track bugs or tasks
