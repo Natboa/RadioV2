@@ -63,17 +63,6 @@ public partial class MainWindow : FluentWindow
         };
 
         Loaded += OnWindowLoaded;
-
-        // Minimize button → hide to tray instead of minimizing to taskbar
-        StateChanged += (_, _) =>
-        {
-            if (WindowState == WindowState.Minimized)
-            {
-                Hide();
-                ShowInTaskbar = false;
-                WindowState = WindowState.Normal;
-            }
-        };
     }
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -89,6 +78,12 @@ public partial class MainWindow : FluentWindow
         _networkMonitor.Dispose();
         base.OnClosing(e);
         Application.Current.Shutdown();
+    }
+
+    private void OnHideToTrayClick(object sender, RoutedEventArgs e)
+    {
+        Hide();
+        ShowInTaskbar = false;
     }
 
     private void ShowWindow()

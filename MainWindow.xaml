@@ -19,7 +19,20 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="RadioV2" />
+        <ui:TitleBar Grid.Row="0" x:Name="MainTitleBar" Title="RadioV2">
+            <ui:TitleBar.TrailingContent>
+                <Button Click="OnHideToTrayClick"
+                        ToolTip="Minimize to tray"
+                        Width="46" Height="32"
+                        Padding="0"
+                        VerticalAlignment="Top"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Arrow">
+                    <ui:SymbolIcon Symbol="ArrowMinimize24" FontSize="11" />
+                </Button>
+            </ui:TitleBar.TrailingContent>
+        </ui:TitleBar>
 
         <ui:NavigationView Grid.Row="1"
             x:Name="RootNavigation"
@@ -31,7 +44,7 @@
                     Icon="{ui:SymbolIcon Search24}" />
                 <ui:NavigationViewItem Content="Discover"
                     TargetPageType="{x:Type views:DiscoverPage}"
-                    Icon="{ui:SymbolIcon Compass24}" />
+                    Icon="{ui:SymbolIcon Globe24}" />
                 <ui:NavigationViewItem Content="Favourites"
                     TargetPageType="{x:Type views:FavouritesPage}"
                     Icon="{ui:SymbolIcon Heart24}" />

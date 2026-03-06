@@ -10,7 +10,9 @@ public partial class DiscoverViewModel : ObservableObject
 {
     private readonly IStationService _stationService;
     private readonly MiniPlayerViewModel _miniPlayer;
+    private int _groupsSkip;
     private int _groupSkip;
+    private bool _isLoadingStations;
     private CancellationTokenSource _searchCts = new();
 
     public DiscoverViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer)
@@ -25,6 +27,7 @@ public partial class DiscoverViewModel : ObservableObject
     [ObservableProperty] private string _groupSearchQuery = string.Empty;
     [ObservableProperty] private bool _isGroupView;
     [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private bool _hasMoreGroups = true;
     [ObservableProperty] private bool _hasMoreItems = true;
 
     partial void OnGroupSearchQueryChanged(string value)
@@ -49,14 +52,23 @@ public partial class DiscoverViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task LoadGroupsAsync(CancellationToken ct = default)
+    public Task LoadGroupsAsync(CancellationToken ct = default)
     {
-        if (Groups.Count > 0) return;
+        if (Groups.Count > 0) return Task.CompletedTask;
+        return LoadMoreGroupsAsync(ct);
+    }
+
+    [RelayCommand]
+    public async Task LoadMoreGroupsAsync(CancellationToken ct = default)
+    {
+        if (IsLoading || !HasMoreGroups) return;
         IsLoading = true;
         try
         {
-            var groups = await _stationService.GetGroupsWithCountsAsync(ct);
-            foreach (var g in groups) Groups.Add(g);
+            var batch = await Task.Run(() => _stationService.GetGroupsWithCountsAsync(_groupsSkip, 30, ct), ct);
+            foreach (var g in batch) Groups.Add(g);
+            _groupsSkip += batch.Count;
+            HasMoreGroups = batch.Count == 30;
         }
         finally { IsLoading = false; }
     }
@@ -76,18 +88,23 @@ public partial class DiscoverViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadMoreGroupStationsAsync(CancellationToken ct = default)
     {
-        if (IsLoading || !HasMoreItems || SelectedGroup is null) return;
+        if (_isLoadingStations || !HasMoreItems || SelectedGroup is null) return;
+        _isLoadingStations = true;
         IsLoading = true;
         try
         {
             var query = GroupSearchQuery.Length >= 2 ? GroupSearchQuery : null;
-            var batch = await _stationService.GetStationsByGroupAsync(SelectedGroup.Id, _groupSkip, 50, query, ct);
+            var batch = await Task.Run(() => _stationService.GetStationsByGroupAsync(SelectedGroup.Id, _groupSkip, 100, query, ct), ct);
             foreach (var s in batch) GroupStations.Add(s);
             _groupSkip += batch.Count;
-            HasMoreItems = batch.Count == 50;
+            HasMoreItems = batch.Count == 100;
         }
         catch (OperationCanceledException) { }
-        finally { IsLoading = false; }
+        finally
+        {
+            _isLoadingStations = false;
+            IsLoading = false;
+        }
     }
 
     [RelayCommand]

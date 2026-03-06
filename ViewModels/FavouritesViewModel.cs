@@ -39,7 +39,7 @@ public partial class FavouritesViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadFavouritesAsync()
     {
-        var list = await _stationService.GetFavouritesAsync();
+        var list = await Task.Run(() => _stationService.GetFavouritesAsync());
         Favourites.Clear();
         foreach (var s in list) Favourites.Add(s);
         FavouriteCount = Favourites.Count;

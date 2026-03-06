@@ -14,16 +14,31 @@ public partial class DiscoverPage : Page
         InitializeComponent();
         Loaded += async (_, _) =>
         {
-            // Groups: mouse-wheel passthrough (ui:Card children consume wheel events)
+            // Groups: NavigationView gives unconstrained height so GroupsScrollViewer.ScrollableHeight
+            // is always 0. Find the outer NavigationView ScrollViewer — that is what actually scrolls.
+            var groupsOuterSv = FindParentScrollViewer(GroupsScrollViewer);
+
+            // Groups: intercept wheel before ui:Card children consume it, forward to outer SV.
             GroupsScrollViewer.PreviewMouseWheel += (_, e) =>
             {
-                GroupsScrollViewer.ScrollToVerticalOffset(GroupsScrollViewer.VerticalOffset - e.Delta);
+                if (groupsOuterSv != null)
+                    groupsOuterSv.ScrollToVerticalOffset(groupsOuterSv.VerticalOffset - e.Delta);
                 e.Handled = true;
             };
 
-            // Groups: scroll near bottom — removed ScrollableHeight > 0 guard because
-            // NavigationView gives the page unconstrained height, so GroupsScrollViewer.ScrollableHeight
-            // is always 0 and the guard was preventing all scroll-triggered loads.
+            // Groups: infinite scroll on the outer SV — fires on actual user scroll.
+            if (groupsOuterSv != null)
+            {
+                groupsOuterSv.ScrollChanged += async (_, _) =>
+                {
+                    if (viewModel.IsGroupView) return;
+                    if (groupsOuterSv.VerticalOffset >= groupsOuterSv.ScrollableHeight - 300)
+                        await viewModel.LoadMoreGroupsAsync();
+                };
+            }
+
+            // Groups: auto-fill — GroupsScrollViewer.ScrollChanged fires when extent grows
+            // as items are added (even with ScrollableHeight == 0), keeping viewport filled.
             GroupsScrollViewer.ScrollChanged += async (_, _) =>
             {
                 if (!viewModel.IsGroupView &&
