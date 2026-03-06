@@ -30,6 +30,8 @@ public partial class App : Application
                 // Services
                 services.AddScoped<IStationService, StationService>();
                 services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
+                services.AddScoped<IFavouritesIOService, FavouritesIOService>();
+                services.AddScoped<M3UParserService>();
 
                 // ViewModels
                 services.AddSingleton<MainWindowViewModel>();
@@ -64,10 +66,8 @@ public partial class App : Application
 
         await _host.StartAsync();
 
-        // Read theme from DB, default to Dark
-        var db = _host.Services.GetRequiredService<RadioDbContext>();
-        var themeSetting = await db.Settings.FindAsync("Theme");
-        ThemeHelper.ApplyTheme(themeSetting?.Value ?? "Dark");
+        // Restore session state (theme, volume, last station)
+        await RestoreSessionAsync();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
@@ -77,10 +77,56 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        await SaveSessionAsync();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
         await _host.StopAsync();
         _host.Dispose();
         base.OnExit(e);
+    }
+
+    private async Task RestoreSessionAsync()
+    {
+        using var scope = _host.Services.CreateScope();
+        var stationService = scope.ServiceProvider.GetRequiredService<IStationService>();
+        var miniPlayer = _host.Services.GetRequiredService<MiniPlayerViewModel>();
+
+        // Theme
+        var theme = await stationService.GetSettingAsync("Theme") ?? "Dark";
+        ThemeHelper.ApplyTheme(theme);
+
+        // Volume
+        if (int.TryParse(await stationService.GetSettingAsync("Volume"), out var volume))
+            miniPlayer.Volume = volume;
+
+        // Last played station (restore info but do NOT auto-play)
+        var lastIdStr = await stationService.GetSettingAsync("LastPlayedStationId");
+        if (int.TryParse(lastIdStr, out var lastId) && lastId > 0)
+        {
+            var db = scope.ServiceProvider.GetRequiredService<RadioDbContext>();
+            var station = await db.Stations
+                .Include(s => s.Group)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == lastId);
+
+            if (station != null)
+            {
+                miniPlayer.StationName = station.Name;
+                miniPlayer.StationLogoUrl = station.LogoUrl;
+                miniPlayer.IsFavourite = station.IsFavorite;
+            }
+        }
+    }
+
+    private async Task SaveSessionAsync()
+    {
+        using var scope = _host.Services.CreateScope();
+        var stationService = scope.ServiceProvider.GetRequiredService<IStationService>();
+        var miniPlayer = _host.Services.GetRequiredService<MiniPlayerViewModel>();
+
+        await stationService.SetSettingAsync("Volume", miniPlayer.Volume.ToString());
+
+        if (miniPlayer.CurrentStation != null)
+            await stationService.SetSettingAsync("LastPlayedStationId", miniPlayer.CurrentStation.Id.ToString());
     }
 }
