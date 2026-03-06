@@ -7,7 +7,7 @@
 ## Current Status
 
 **Phase:** M1 — Foundation (in progress)
-**Next action:** M1.3 — EF Core models and DbContext.
+**Next action:** M1.4 — DI & App Host.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|---|
 | 1.1 Project Scaffold | Complete | dotnet new wpf, all NuGet packages installed, DB file wired, build passes |
 | 1.2 Folder Structure | Complete | Models, Services, ViewModels, Views, Controls, Converters, Assets, Helpers |
-| 1.3 EF Core Models & DbContext | Not started | |
+| 1.3 EF Core Models & DbContext | Complete | Station, Group, Setting models + RadioDbContext with indexes, build passes |
 | 1.4 DI & App Host | Not started | |
 | 1.5 FluentWindow Shell & NavigationView | Not started | |
 | 1.6 Mini-Player Control (UI Shell) | Not started | |
