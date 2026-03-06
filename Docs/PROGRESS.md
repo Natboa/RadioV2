@@ -6,8 +6,8 @@
 
 ## Current Status
 
-**Phase:** M1 — Foundation (in progress)
-**Next action:** M3.1 — RadioPlayerService (LibVLCSharp). M2 complete.
+**Phase:** M4 — Favourites & Persistence (next)
+**Next action:** M4.1 — Favourites Page. M3 complete.
 
 ---
 
@@ -55,11 +55,11 @@
 
 | Step | Status | Notes |
 |---|---|---|
-| 3.1 RadioPlayerService (LibVLCSharp) | Not started | |
-| 3.2 Wire Mini-Player to Playback | Not started | |
-| 3.3 Next/Previous Station | Not started | |
-| 3.4 Global Media Key Support | Not started | |
-| 3.5 ICY Metadata Parsing (NowPlayingParser) | Not started | |
+| 3.1 RadioPlayerService (LibVLCSharp) | Complete | IRadioPlayerService + RadioPlayerService, LibVLC events wired |
+| 3.2 Wire Mini-Player to Playback | Complete | MiniPlayerViewModel fully wired, SetStation, all commands, UI-thread dispatch |
+| 3.3 Next/Previous Station | Complete | Favourites list cycling with wrap-around |
+| 3.4 Global Media Key Support | Complete | MediaKeyHook via WM_APPCOMMAND, registered in MainWindow on Loaded |
+| 3.5 ICY Metadata Parsing (NowPlayingParser) | Complete | Splits on " - ", " – ", " — "; Artist+Title or title-only fallback |
 
 ---
 
