@@ -9,12 +9,14 @@ namespace RadioV2.ViewModels;
 public partial class BrowseViewModel : ObservableObject
 {
     private readonly IStationService _stationService;
+    private readonly MiniPlayerViewModel _miniPlayer;
     private int _skip;
     private CancellationTokenSource _searchCts = new();
 
-    public BrowseViewModel(IStationService stationService)
+    public BrowseViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer)
     {
         _stationService = stationService;
+        _miniPlayer = miniPlayer;
     }
 
     [ObservableProperty] private ObservableCollection<Station> _stations = [];
@@ -60,7 +62,7 @@ public partial class BrowseViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PlayStation(Station station) { /* wired in M3 */ }
+    private void PlayStation(Station station) => _miniPlayer.SetStation(station);
 
     [RelayCommand]
     private async Task ToggleFavourite(Station station)
