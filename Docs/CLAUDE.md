@@ -138,23 +138,30 @@ All docs live in the `Docs/` folder (same directory as this file):
 
 ## Persistent Memory (Mem0)
 
+> **MANDATORY** — mem0 is the project's long-term brain. Skipping it means losing hard-won knowledge across sessions. Always use it.
+
 ### Scoping
-- Always pass `agent_id: "radioV2"` on every `add_memory` and `search_memories` call to keep memories scoped to this project and avoid cross-project noise.
+- **Always** pass `agent_id: "radioV2"` on every `add_memory` and `search_memories` call.
 
-### Session Start
-- Run `search_memories` (agent_id: "radioV2") with the query `"current project status and architecture"` before doing anything else.
-- Additional useful queries: `"current milestone step"`, `"ICY metadata parsing"`, `"theming decisions"`, `"database performance rules"`, `"bugs and gotchas"`.
+### Session Start — do this FIRST, before any code or planning
+1. Call `mcp__mem0__search_memories` with query `"radioV2 project status architecture"` and `filters: {"AND": [{"agent_id": "radioV2"}]}`.
+2. Also search `"bugs and gotchas"` to recall known pitfalls before touching any code.
+3. Only after reading the results, proceed with the task.
 
-### Task Completion
-- After finishing a feature or making a major architectural decision, use `add_memory` to update the project's long-term state.
-- Before adding, run `search_memories` for the topic first — update or replace an existing memory rather than creating a duplicate or contradictory one.
+### While Working — search before acting on anything uncertain
+- Before making any architectural decision, search mem0 first: `"radioV2 <topic>"`.
+- Before adding a new memory, search for it first to avoid duplicates. Update existing memories instead of adding new contradictory ones.
+- Useful mid-session queries: `"DI lifetimes"`, `"WPF-UI gotchas"`, `"ICY metadata"`, `"theming"`, `"database rules"`, `"git workflow"`.
+
+### After Completing a Milestone or Step — always update mem0
+- After every completed milestone step, call `mcp__mem0__add_memory` (or update an existing memory) with what changed.
+- Specifically store: milestone progress update, any new architectural patterns, any new bugs/gotchas discovered.
+- Also update `Docs/PROGRESS.md` — mem0 for knowledge, PROGRESS.md for step status. Both, every time.
+
+### Store bugs and surprises immediately
+- The moment you hit a surprising build error, runtime quirk, or library limitation: save it to mem0 before moving on.
+- Examples of what to store: WPF-UI API differences from docs, EF Core edge cases, threading surprises, NuGet version conflicts.
 
 ### What belongs where
-- **PROGRESS.md** — step-by-step completion status (what's done, what's next). Update after every completed step.
-- **Mem0** — architectural decisions, established patterns, coding gotchas, and bugs discovered during implementation.
-
-### Store bugs and surprises
-- Any tricky runtime behavior discovered during implementation should be saved immediately (e.g. threading surprises, library quirks, EF Core edge cases). These are the facts most likely to be re-learned the hard way in future sessions.
-
-### Context Management
-- If the conversation becomes long, use `search_memories` to recall earlier decisions instead of re-reading large files.
+- **PROGRESS.md** — step completion status only (done / not started / in progress).
+- **Mem0** — architecture, patterns, gotchas, decisions, DI wiring, known bugs.
