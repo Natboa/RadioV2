@@ -48,6 +48,12 @@
                 CornerRadius="8,8,0,0">
             <controls:MiniPlayer x:Name="MiniPlayerControl" />
         </Border>
+
+        <!-- Snackbar presenter for playback errors and notifications -->
+        <ui:SnackbarPresenter x:Name="RootSnackbar"
+                              Grid.Row="0" Grid.RowSpan="3"
+                              VerticalAlignment="Bottom"
+                              Margin="16,0,16,80" />
     </Grid>
 
 </ui:FluentWindow>

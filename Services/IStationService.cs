@@ -11,4 +11,5 @@ public interface IStationService
     Task ToggleFavouriteAsync(int stationId, CancellationToken ct = default);
     Task<string?> GetSettingAsync(string key, CancellationToken ct = default);
     Task SetSettingAsync(string key, string value, CancellationToken ct = default);
+    Task<int> BulkImportStationsAsync(List<ParsedStation> stations, CancellationToken ct = default);
 }
