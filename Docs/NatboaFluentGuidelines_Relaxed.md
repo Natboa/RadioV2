@@ -26,11 +26,15 @@ To get the authentic Windows 11 feel, your main window should use `ui:FluentWind
 
 ## 3. Theming & Colors
 
-Leverage WPF-UI's built-in theme manager to handle Light/Dark mode switching easily. 
+The app supports **Light** and **Dark** modes only. All colors come from WPF-UI's built-in Fluent UI semantic brush system — no custom palette, no accent overrides, no hardcoded colors anywhere.
 
-- **Initialization:** Call `ApplicationThemeManager.Apply(ApplicationTheme.Dark, WindowBackdropType.Mica, true);` at application startup (or use user preferences).
-- **Semantic Brushes:** Whenever possible, use WPF-UI's dynamic theme resources instead of hardcoding colors so elements update automatically during theme changes (e.g., `{ui:ThemeResource TextFillColorPrimaryBrush}`).
-- **Brand Colors:** If you need specific brand colors (like Natboa Blue), define them in a central `ResourceDictionary` and reference them cleanly.
+- **Initialization:** Call `ApplicationThemeManager.Apply(theme, WindowBackdropType.Mica, true)` at startup with either `ApplicationTheme.Light` or `ApplicationTheme.Dark`.
+- **Semantic Brushes:** Use WPF-UI dynamic theme resources throughout. Examples:
+  - Text: `{ui:ThemeResource TextFillColorPrimaryBrush}`, `{ui:ThemeResource TextFillColorSecondaryBrush}`
+  - Backgrounds: `{ui:ThemeResource ControlFillColorDefaultBrush}`, `{ui:ThemeResource LayerFillColorDefaultBrush}`
+  - Stroke: `{ui:ThemeResource ControlStrokeColorDefaultBrush}`
+- **Mica Backdrop:** Samples the desktop wallpaper and tints it for Light or Dark automatically. Never set window backgrounds manually.
+- **Rule:** No hex color values in XAML or code. If a WPF-UI brush does not exist for a use case, derive from the nearest semantic brush using `Opacity`.
 
 ---
 

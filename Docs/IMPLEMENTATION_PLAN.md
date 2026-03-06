@@ -299,11 +299,15 @@ Layout (horizontal `DockPanel` or `Grid`):
 **File to create: `Controls/MiniPlayer.xaml.cs`** — DataContext bound to `MiniPlayerViewModel` (injected or set from `MainWindow`).
 
 **`MiniPlayerViewModel` properties** (all `[ObservableProperty]`):
-- `string StationName`, `string? StationLogoUrl`, `string? TrackTitle`
+- `string StationName`, `string? StationLogoUrl`
+- `string? NowPlayingArtist` — parsed artist name from ICY metadata; null when unavailable.
+- `string? NowPlayingTitle` — parsed song title from ICY metadata; null when unavailable.
+- `string? NowPlayingDisplay` — computed, read-only: returns `"Artist — Title"` when both fields are set, `Title` alone when only title is available, or `null` when no metadata. Used for the mini-player's secondary text line.
 - `bool IsPlaying`, `bool IsFavourite`, `bool IsBuffering`
 - `int Volume` (0-100, default 50)
 - `bool IsMuted`
 - `bool HasStation` (computed — true if a station is loaded)
+- `bool HasNowPlaying` (computed — true when `NowPlayingDisplay` is not null; controls visibility of the Now Playing line)
 
 **`MiniPlayerViewModel` commands** (all `[RelayCommand]`, wired in M3):
 - `PlayPause()`, `Stop()`, `NextStation()`, `PreviousStation()`, `ToggleFavourite()`, `ToggleMute()`
@@ -312,9 +316,9 @@ Layout (horizontal `DockPanel` or `Grid`):
 
 ---
 
-### Step 1.7 — Theme Support
+### Step 1.7 — Theme Support (Light / Dark)
 
-**Action:** Implement Light/Dark/System theme switching.
+**Action:** Implement Light/Dark theme switching using WPF-UI's built-in Fluent UI colors.
 
 **`Helpers/ThemeHelper.cs`**
 ```csharp
@@ -325,17 +329,18 @@ public static class ThemeHelper
         var appTheme = theme switch
         {
             "Light" => ApplicationTheme.Light,
-            "Dark" => ApplicationTheme.Dark,
-            _ => ApplicationTheme.Unknown // System default
+            _       => ApplicationTheme.Dark   // Default to Dark
         };
         ApplicationThemeManager.Apply(appTheme, WindowBackdropType.Mica, true);
     }
 }
 ```
 
-On startup in `App.xaml.cs`, read the `Theme` key from the `Settings` table (if it exists) and apply it. Default to `Dark` if not set.
+**On startup** (`App.xaml.cs`, before showing the window): read `"Theme"` from the Settings table → call `ThemeHelper.ApplyTheme(value)`. Default: `"Dark"`.
 
-**Acceptance:** App starts in Dark mode by default. Changing the setting (manually in DB for now) switches themes on next launch.
+All colors in the app come exclusively from WPF-UI's semantic theme brushes (e.g., `{ui:ThemeResource TextFillColorPrimaryBrush}`). No custom colors, no accent overrides, no hardcoded hex values anywhere in XAML or code.
+
+**Acceptance:** App starts in Dark mode by default. The Light/Dark toggle in Settings switches the theme immediately. All controls, backgrounds, and text automatically use the correct Fluent UI colors for the active theme.
 
 ---
 
@@ -587,16 +592,21 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
         _mediaPlayer.Buffering += (s, e) => BufferingChanged?.Invoke(this, e.Cache);
         _mediaPlayer.EncounteredError += (s, e) => PlaybackError?.Invoke(this, "Stream error");
 
-        // ICY metadata
+        // ICY metadata — fires whenever the stream updates the NowPlaying tag.
+        // MediaChanged fires when a new Media object is set (i.e., a new station begins loading).
+        // MetaChanged fires repeatedly during playback as the station updates track info.
         _mediaPlayer.MediaChanged += (s, e) =>
         {
             if (_mediaPlayer.Media != null)
             {
                 _mediaPlayer.Media.MetaChanged += (ms, me) =>
                 {
-                    var title = _mediaPlayer.Media.Meta(MetadataType.NowPlaying);
-                    if (!string.IsNullOrEmpty(title))
-                        MetadataChanged?.Invoke(this, title);
+                    // MetadataType.NowPlaying maps to the ICY StreamTitle field.
+                    // Typical format: "Artist - Song Title" (dash-separated).
+                    // Some stations omit it entirely; Media.Meta() returns null in that case.
+                    var rawNowPlaying = _mediaPlayer.Media?.Meta(MetadataType.NowPlaying);
+                    if (!string.IsNullOrWhiteSpace(rawNowPlaying))
+                        MetadataChanged?.Invoke(this, rawNowPlaying);
                 };
             }
         };
@@ -659,11 +669,11 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
   - `PreviousStation()` → see Step 3.3
   - `ToggleMute()` → store previous volume, set to 0, or restore.
 - Subscribe to `IRadioPlayerService` events:
-  - `MetadataChanged` → update `TrackTitle`
+  - `MetadataChanged` → pass raw string to `NowPlayingParser.Parse()`, update `NowPlayingArtist` and `NowPlayingTitle` on the UI thread via `App.Current.Dispatcher.Invoke`. Both must be set atomically to avoid a flash of partial state.
   - `BufferingChanged` → update `IsBuffering` (true if < 100%)
   - `PlaybackStarted` → set `IsPlaying = true`
-  - `PlaybackStopped` → set `IsPlaying = false`
-  - `PlaybackError` → set `IsPlaying = false`, show error via a `Snackbar` or `InfoBar`.
+  - `PlaybackStopped` → set `IsPlaying = false`, clear `NowPlayingArtist` and `NowPlayingTitle`
+  - `PlaybackError` → set `IsPlaying = false`, clear Now Playing, show error via a `Snackbar` or `InfoBar`.
 - Volume slider two-way binds to `Volume` property which delegates to `_playerService.Volume`.
 
 **Wire page ViewModels:** `BrowseViewModel` and `DiscoverViewModel` receive `MiniPlayerViewModel` (singleton) via DI. Their `PlayStationCommand` calls `_miniPlayer.SetStation(station)`.
@@ -738,6 +748,91 @@ source.AddHook(_mediaKeyHook.WndProc);
 ```
 
 **Acceptance:** Pressing media keys on the keyboard controls playback even when the app is not focused. Works when minimized to tray (after M5).
+
+---
+
+### Step 3.5 — ICY Metadata Parsing (Now Playing Artist & Title)
+
+**Action:** Implement a dedicated parser that converts a raw ICY `StreamTitle` string into discrete Artist and Title fields.
+
+**File to create: `Helpers/NowPlayingParser.cs`**
+
+```csharp
+public static class NowPlayingParser
+{
+    // Common separators used by ICY streams: " - ", " – " (en/em dash variants)
+    private static readonly string[] Separators = [" - ", " – ", " — "];
+
+    public static (string? Artist, string? Title) Parse(string? rawStreamTitle)
+    {
+        if (string.IsNullOrWhiteSpace(rawStreamTitle))
+            return (null, null);
+
+        var trimmed = rawStreamTitle.Trim();
+
+        foreach (var sep in Separators)
+        {
+            var idx = trimmed.IndexOf(sep, StringComparison.Ordinal);
+            if (idx > 0)
+            {
+                var artist = trimmed[..idx].Trim();
+                var title  = trimmed[(idx + sep.Length)..].Trim();
+                if (!string.IsNullOrEmpty(artist) && !string.IsNullOrEmpty(title))
+                    return (artist, title);
+            }
+        }
+
+        // No separator found — treat the whole string as the title only
+        return (null, trimmed);
+    }
+}
+```
+
+**Wire-up in `MiniPlayerViewModel`:**
+
+```csharp
+// Called on MetadataChanged event (always dispatch to UI thread)
+private void OnMetadataChanged(object? sender, string rawNowPlaying)
+{
+    App.Current.Dispatcher.Invoke(() =>
+    {
+        var (artist, title) = NowPlayingParser.Parse(rawNowPlaying);
+        NowPlayingArtist = artist;
+        NowPlayingTitle  = title;
+        // NowPlayingDisplay and HasNowPlaying are computed from these two
+    });
+}
+
+// Called when loading a new station or stopping playback
+private void ClearNowPlaying()
+{
+    NowPlayingArtist = null;
+    NowPlayingTitle  = null;
+}
+```
+
+**`NowPlayingDisplay` computed property** (not `[ObservableProperty]`, manually raises `PropertyChanged` when either field changes):
+
+```csharp
+public string? NowPlayingDisplay =>
+    (NowPlayingArtist, NowPlayingTitle) switch
+    {
+        ({ } a, { } t) => $"{a} — {t}",
+        (null, { } t)  => t,
+        _              => null
+    };
+```
+
+**Mini-player XAML binding:**
+- `TextBlock` for Now Playing bound to `NowPlayingDisplay`, `Visibility` bound to `HasNowPlaying` (via `BooleanToVisibilityConverter`).
+- `FontSize 12`, `Opacity 0.7`, `TextTrimming="CharacterEllipsis"`.
+
+**Edge cases to handle:**
+- Stations that repeat the same metadata — no-op update (check value equality before setting).
+- Stations that send an empty string after stopping a track — clear the display.
+- Raw strings with multiple separators (e.g., `"DJ Mix - Daft Punk - Get Lucky"`) — split only on the **first** occurrence so Artist = `"DJ Mix"`, Title = `"Daft Punk - Get Lucky"`.
+
+**Acceptance:** Playing a station with ICY metadata shows the artist and song title separately formatted as `"Artist — Title"` in the mini-player's secondary line. Playing a station without ICY metadata shows nothing on the secondary line (not an empty row). Switching stations immediately clears the previous Now Playing info.
 
 ---
 
@@ -949,7 +1044,7 @@ public class TrayIconManager : IDisposable
 **`ViewModels/SettingsViewModel.cs`**
 
 Properties:
-- `string SelectedTheme` (System / Light / Dark) — on change, apply immediately and save to DB.
+- `string SelectedTheme` (`"Light"` / `"Dark"`) — on change, call `ThemeHelper.ApplyTheme()`, save to DB under `"Theme"`.
 - `string AppVersion` — read from assembly info.
 
 Commands:
@@ -961,7 +1056,7 @@ Layout:
 - Page title: "Settings" (FontSize 28, SemiBold).
 
 **Appearance card** (`ui:Card`):
-- "Theme" label + `ComboBox` with items: System, Light, Dark.
+- "Theme" row: label + two `RadioButton`-style toggle buttons: **Light** and **Dark**. Bound to `SelectedTheme`.
 
 **Import card** (`ui:Card`):
 - "Import Stations" header.
@@ -971,7 +1066,7 @@ Layout:
 **About card** (`ui:Card`):
 - App name, version, brief credits.
 
-**Acceptance:** Theme switching works immediately. M3U import adds new stations (or updates existing by StreamUrl). About section shows correct version.
+**Acceptance:** Clicking Light/Dark switches the theme immediately (Mica backdrop and all controls update). The selection persists — reopening the app restores it. M3U import adds new stations (or updates existing by StreamUrl). About section shows correct version.
 
 ---
 
@@ -1102,7 +1197,8 @@ M1.1 Project Scaffold
                                 ▼
                            M3.1 RadioPlayerService
                                 ├─► M3.2 Wire Mini-Player
-                                │    └─► M3.3 Next/Previous
+                                │    ├─► M3.3 Next/Previous
+                                │    └─► M3.5 ICY Metadata Parsing (NowPlayingParser)
                                 └─► M3.4 Media Keys
                                      │
                            ┌─────────┘
