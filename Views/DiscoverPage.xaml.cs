@@ -9,5 +9,6 @@ public partial class DiscoverPage : Page
     {
         DataContext = viewModel;
         InitializeComponent();
+        Loaded += async (_, _) => await viewModel.LoadGroupsAsync();
     }
 }

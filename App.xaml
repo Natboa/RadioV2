@@ -6,5 +6,7 @@
     <Application.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:BoolToPlayIconConverter x:Key="BoolToPlayIconConverter" />
+        <converters:BoolToHeartIconConverter x:Key="BoolToHeartIconConverter" />
+        <converters:BoolToInverseVisibilityConverter x:Key="BoolToInverseVisibilityConverter" />
     </Application.Resources>
 </Application>
