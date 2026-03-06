@@ -5,14 +5,101 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       mc:Ignorable="d"
-      d:DesignHeight="450" d:DesignWidth="800"
+      d:DesignHeight="700" d:DesignWidth="900"
       Title="Settings">
-    <Grid>
-        <TextBlock Text="Settings Page"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontSize="24"
-                   FontWeight="SemiBold"
-                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-    </Grid>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24,16" MaxWidth="640" HorizontalAlignment="Left">
+
+            <!-- Title -->
+            <TextBlock Text="Settings"
+                       FontSize="28"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,24"
+                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+
+            <!-- Appearance card -->
+            <ui:Card Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Appearance"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12"
+                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+
+                    <DockPanel LastChildFill="False">
+                        <TextBlock Text="Theme"
+                                   VerticalAlignment="Center"
+                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <RadioButton Content="Light"
+                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource StringEqualConverter}, ConverterParameter=Light}"
+                                         Margin="0,0,8,0"
+                                         GroupName="ThemeGroup" />
+                            <RadioButton Content="Dark"
+                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource StringEqualConverter}, ConverterParameter=Dark}"
+                                         GroupName="ThemeGroup" />
+                        </StackPanel>
+                    </DockPanel>
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Import Stations card -->
+            <ui:Card Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Import Stations"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,4"
+                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    <TextBlock Text="Add new stations to the database from an M3U or M3U8 playlist file."
+                               FontSize="13"
+                               Opacity="0.7"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12"
+                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+
+                    <ui:Button Content="Browse for M3U file..."
+                               Appearance="Primary"
+                               Command="{Binding ImportStationsCommand}" />
+
+                    <Border CornerRadius="6"
+                            Background="{ui:ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                            Padding="12,8"
+                            Margin="0,12,0,0"
+                            Visibility="{Binding HasImportStatus, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding ImportStatusMessage}"
+                                   FontSize="13"
+                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    </Border>
+                </StackPanel>
+            </ui:Card>
+
+            <!-- About card -->
+            <ui:Card>
+                <StackPanel>
+                    <TextBlock Text="About"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,8"
+                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    <TextBlock Text="RadioV2"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    <TextBlock Text="{Binding AppVersion, StringFormat='Version {0}'}"
+                               FontSize="13"
+                               Opacity="0.7"
+                               Margin="0,2,0,8"
+                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="A Windows desktop radio streaming app with Fluent Design."
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               Opacity="0.7"
+                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </ui:Card>
+
+        </StackPanel>
+    </ScrollViewer>
 </Page>

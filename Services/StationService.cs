@@ -61,4 +61,42 @@ public class StationService : IStationService
             setting.Value = value;
         await _db.SaveChangesAsync(ct);
     }
+
+    public async Task<int> BulkImportStationsAsync(List<ParsedStation> stations, CancellationToken ct = default)
+    {
+        var existingUrlsList = await _db.Stations.AsNoTracking()
+            .Select(s => s.StreamUrl)
+            .ToListAsync(ct);
+        var existingUrls = existingUrlsList.ToHashSet();
+
+        int added = 0;
+        foreach (var parsed in stations)
+        {
+            if (existingUrls.Contains(parsed.StreamUrl)) continue;
+
+            // Find or create the group
+            var group = await _db.Groups.FirstOrDefaultAsync(g => g.Name == parsed.GroupName, ct);
+            if (group is null)
+            {
+                group = new Group { Name = parsed.GroupName };
+                _db.Groups.Add(group);
+                await _db.SaveChangesAsync(ct); // flush to get Id
+            }
+
+            _db.Stations.Add(new Station
+            {
+                Name = parsed.Name,
+                StreamUrl = parsed.StreamUrl,
+                LogoUrl = parsed.LogoUrl,
+                GroupId = group.Id,
+                IsFavorite = false
+            });
+            added++;
+        }
+
+        if (added > 0)
+            await _db.SaveChangesAsync(ct);
+
+        return added;
+    }
 }

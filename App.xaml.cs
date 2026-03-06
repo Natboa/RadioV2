@@ -6,9 +6,12 @@ using RadioV2.Helpers;
 using RadioV2.Services;
 using RadioV2.ViewModels;
 using RadioV2.Views;
+using Serilog;
+using Wpf.Ui;
 using System.IO;
 using System.Threading;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace RadioV2;
 
@@ -19,6 +22,22 @@ public partial class App : Application
 
     public App()
     {
+        // Configure Serilog before anything else
+        var logPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RadioV2", "logs", "log-.txt");
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+            .CreateLogger();
+
+        // Catch unhandled exceptions on any thread
+        AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            Log.Fatal(e.ExceptionObject as Exception, "Unhandled exception");
+
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
+
         _host = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
@@ -32,6 +51,7 @@ public partial class App : Application
                 services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
                 services.AddScoped<IFavouritesIOService, FavouritesIOService>();
                 services.AddScoped<M3UParserService>();
+                services.AddSingleton<ISnackbarService, SnackbarService>();
 
                 // ViewModels
                 services.AddSingleton<MainWindowViewModel>();
@@ -64,9 +84,9 @@ public partial class App : Application
             return;
         }
 
-        await _host.StartAsync();
+        Log.Information("RadioV2 starting up");
 
-        // Restore session state (theme, volume, last station)
+        await _host.StartAsync();
         await RestoreSessionAsync();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
@@ -77,11 +97,13 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        Log.Information("RadioV2 shutting down");
         await SaveSessionAsync();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
         await _host.StopAsync();
         _host.Dispose();
+        Log.CloseAndFlush();
         base.OnExit(e);
     }
 
@@ -99,7 +121,7 @@ public partial class App : Application
         if (int.TryParse(await stationService.GetSettingAsync("Volume"), out var volume))
             miniPlayer.Volume = volume;
 
-        // Last played station (restore info but do NOT auto-play)
+        // Last played station (restore display info — do NOT auto-play)
         var lastIdStr = await stationService.GetSettingAsync("LastPlayedStationId");
         if (int.TryParse(lastIdStr, out var lastId) && lastId > 0)
         {
@@ -125,8 +147,13 @@ public partial class App : Application
         var miniPlayer = _host.Services.GetRequiredService<MiniPlayerViewModel>();
 
         await stationService.SetSettingAsync("Volume", miniPlayer.Volume.ToString());
-
         if (miniPlayer.CurrentStation != null)
             await stationService.SetSettingAsync("LastPlayedStationId", miniPlayer.CurrentStation.Id.ToString());
+    }
+
+    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        Log.Error(e.Exception, "Unhandled dispatcher exception");
+        e.Handled = true; // prevent crash; let the app keep running
     }
 }
