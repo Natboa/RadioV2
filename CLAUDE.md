@@ -80,7 +80,8 @@ Follow `Docs/NatboaFluentGuidelines_Relaxed.md`:
 
 ## Git & GitHub Workflow
 
-This project uses Git for version control with GitHub as the remote. Follow these conventions:
+**Repository:** `Natboa/radioV2` on GitHub
+**GitHub MCP is installed** — use `mcp__github__*` tools for all GitHub operations (branch creation, pushing files, PRs, etc.) instead of raw git CLI commands.
 
 ### Branching
 - **`main`** — stable, always-buildable branch. Never commit directly to main.
@@ -96,13 +97,20 @@ This project uses Git for version control with GitHub as the remote. Follow thes
 - PR title: short, under 70 chars. Body: summary bullets + test plan.
 - Merge to `main` after review/approval.
 
-### Workflow per implementation step:
-1. Create/switch to feature branch.
-2. Implement the step.
+### Workflow per implementation step (using GitHub MCP):
+1. `mcp__github__create_branch` — create the feature branch off `main`.
+2. Implement the step locally.
 3. `dotnet build` — verify no errors.
-4. Commit with a descriptive message.
-5. Push to remote.
-6. When a milestone is complete, open a PR to `main`.
+4. `mcp__github__push_files` — commit and push changed files to the feature branch.
+5. When a milestone is complete, `mcp__github__create_pull_request` → `mcp__github__merge_pull_request`.
+
+### Key MCP tools to use:
+- `mcp__github__create_branch` — create feature branches
+- `mcp__github__push_files` — commit and push files (replaces `git add + commit + push`)
+- `mcp__github__create_pull_request` — open PRs
+- `mcp__github__merge_pull_request` — merge PRs to main
+- `mcp__github__create_issue` — track bugs or tasks
+- `mcp__github__list_commits` / `mcp__github__get_pull_request` — inspect history
 
 ## Key Design Documents
 
