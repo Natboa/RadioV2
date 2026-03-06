@@ -7,7 +7,7 @@
 ## Current Status
 
 **Phase:** M1 — Foundation (in progress)
-**Next action:** M2.1 — Station Service (Data Layer). M1 complete.
+**Next action:** M3.1 — RadioPlayerService (LibVLCSharp). M2 complete.
 
 ---
 
@@ -43,11 +43,11 @@
 
 | Step | Status | Notes |
 |---|---|---|
-| 2.1 Station Service (Data Layer) | Not started | |
-| 2.2 Shared Station List Item Control | Not started | |
-| 2.3 Infinite Scroll Behaviour | Not started | |
-| 2.4 Browse Page | Not started | |
-| 2.5 Discover Page: Genre Grid | Not started | |
+| 2.1 Station Service (Data Layer) | Complete | IStationService + StationService, GroupWithCount DTO, all queries AsNoTracking + paginated |
+| 2.2 Shared Station List Item Control | Complete | StationListItem UserControl, BoolToHeartIconConverter |
+| 2.3 Infinite Scroll Behaviour | Complete | InfiniteScrollBehavior attaches to ListBox, finds internal ScrollViewer, 200px threshold |
+| 2.4 Browse Page | Complete | Search with 300ms debounce, infinite scroll, loading spinner |
+| 2.5 Discover Page: Genre Grid | Complete | Genre card grid + station drill-down, search within genre, infinite scroll, back button |
 
 ---
 

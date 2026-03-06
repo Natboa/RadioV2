@@ -2,17 +2,74 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:controls="clr-namespace:RadioV2.Controls"
+      xmlns:helpers="clr-namespace:RadioV2.Helpers"
+      xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       mc:Ignorable="d"
-      d:DesignHeight="450" d:DesignWidth="800"
+      d:DesignHeight="600" d:DesignWidth="800"
       Title="Browse">
-    <Grid>
-        <TextBlock Text="Browse Page"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontSize="24"
+
+    <Grid Margin="24,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="Browse"
+                   FontSize="28"
                    FontWeight="SemiBold"
+                   Margin="0,0,0,16"
                    Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+
+        <!-- Search box -->
+        <ui:TextBox Grid.Row="1"
+                    Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                    PlaceholderText="Search stations..."
+                    Icon="{ui:SymbolIcon Search24}"
+                    Margin="0,0,0,12" />
+
+        <!-- Station list -->
+        <ListBox Grid.Row="2"
+                 ItemsSource="{Binding Stations}"
+                 BorderThickness="0"
+                 Background="Transparent"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 VirtualizingStackPanel.IsVirtualizing="True"
+                 VirtualizingStackPanel.VirtualizationMode="Recycling">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <controls:StationListItem />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <i:Interaction.Behaviors>
+                <helpers:InfiniteScrollBehavior LoadMoreCommand="{Binding DataContext.LoadMoreCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+            </i:Interaction.Behaviors>
+        </ListBox>
+
+        <!-- Loading spinner -->
+        <ui:ProgressRing Grid.Row="3"
+                         IsIndeterminate="True"
+                         Width="32" Height="32"
+                         Margin="0,8"
+                         HorizontalAlignment="Center"
+                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
     </Grid>
 </Page>
