@@ -2,18 +2,19 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RadioV2.Data;
+using RadioV2.Helpers;
 using RadioV2.ViewModels;
 using RadioV2.Views;
 using System.IO;
+using System.Threading;
 using System.Windows;
-using Wpf.Ui.Appearance;
-using Wpf.Ui.Controls;
 
 namespace RadioV2;
 
 public partial class App : Application
 {
     private readonly IHost _host;
+    private Mutex? _mutex;
 
     public App()
     {
@@ -51,9 +52,21 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        // Single-instance enforcement
+        _mutex = new Mutex(true, "RadioV2_SingleInstance", out bool isNew);
+        if (!isNew)
+        {
+            MessageBox.Show("RadioV2 is already running.", "RadioV2", MessageBoxButton.OK, MessageBoxImage.Information);
+            Shutdown();
+            return;
+        }
+
         await _host.StartAsync();
 
-        ApplicationThemeManager.Apply(ApplicationTheme.Dark, WindowBackdropType.Mica, true);
+        // Read theme from DB, default to Dark
+        var db = _host.Services.GetRequiredService<RadioDbContext>();
+        var themeSetting = await db.Settings.FindAsync("Theme");
+        ThemeHelper.ApplyTheme(themeSetting?.Value ?? "Dark");
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
@@ -63,6 +76,8 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        _mutex?.ReleaseMutex();
+        _mutex?.Dispose();
         await _host.StopAsync();
         _host.Dispose();
         base.OnExit(e);

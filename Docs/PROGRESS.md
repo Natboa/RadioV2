@@ -7,7 +7,7 @@
 ## Current Status
 
 **Phase:** M1 — Foundation (in progress)
-**Next action:** M1.7 — Theme Support (Light/Dark).
+**Next action:** M2.1 — Station Service (Data Layer). M1 complete.
 
 ---
 
@@ -34,8 +34,8 @@
 | 1.4 DI & App Host | Complete | IHost wired, all ViewModels registered, theme applied on startup, build passes |
 | 1.5 FluentWindow Shell & NavigationView | Complete | FluentWindow, Mica, NavigationView, 4 page stubs, mini-player placeholder, build passes |
 | 1.6 Mini-Player Control (UI Shell) | Complete | MiniPlayer UserControl, full MiniPlayerViewModel with computed props and stub commands, BoolToPlayIconConverter |
-| 1.7 Theme Support (Light/Dark) | Not started | |
-| 1.8 Single-Instance Enforcement | Not started | |
+| 1.7 Theme Support (Light/Dark) | Complete | ThemeHelper, reads "Theme" from Settings table on startup, defaults to Dark |
+| 1.8 Single-Instance Enforcement | Complete | Named Mutex "RadioV2_SingleInstance", shows message and shuts down on duplicate launch |
 
 ---
 
