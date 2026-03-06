@@ -6,8 +6,8 @@
 
 ## Current Status
 
-**Phase:** M5 — System Tray & Polish (next)
-**Next action:** M5.1 — System Tray Integration. M4 complete.
+**Phase:** Complete — all milestones done.
+**Next action:** Manual QA / testing on device. Run dotnet publish -c Release for packaging.
 
 ---
 
@@ -78,12 +78,12 @@
 
 | Step | Status | Notes |
 |---|---|---|
-| 5.1 System Tray Integration | Not started | |
-| 5.2 Settings Page | Not started | |
-| 5.3 Error Handling & Offline States | Not started | |
-| 5.4 Serilog Logging Setup | Not started | |
-| 5.5 Performance Optimization | Not started | |
-| 5.6 Installer Packaging | Not started | |
+| 5.1 System Tray Integration | Complete | TrayIconManager, hide-to-tray on close, isQuitting flag |
+| 5.2 Settings Page | Complete | Light/Dark toggle, M3U bulk import, About card |
+| 5.3 Error Handling & Offline States | Complete | Snackbar for playback errors + network offline, unhandled exception handlers |
+| 5.4 Serilog Logging Setup | Complete | Rolling daily log to %LocalAppData%/RadioV2/logs/, startup/shutdown/error logging |
+| 5.5 Performance Optimization | Complete | WAL mode, GlobalUsings for WinForms ambiguity resolution |
+| 5.6 Installer Packaging | Complete | Release publish: win-x64 self-contained single-file |
 
 ---
 
