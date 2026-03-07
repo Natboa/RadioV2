@@ -53,9 +53,22 @@
             <ToggleButton IsChecked="{Binding IsFavorite, Mode=OneWay}"
                           Command="{Binding DataContext.ToggleFavouriteCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                           CommandParameter="{Binding}"
-                          Background="Transparent"
-                          BorderThickness="0"
                           ToolTip="Favourite">
+                <ToggleButton.Style>
+                    <Style TargetType="ToggleButton">
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ToggleButton.Style>
                 <ui:SymbolIcon Symbol="{Binding IsFavorite, Converter={StaticResource BoolToHeartIconConverter}}"
                                Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}" />
             </ToggleButton>
