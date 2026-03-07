@@ -25,9 +25,7 @@ FIXED: Three-stage fix —
 
 *add puctures to groups, ask the user how we should implement this so its easy to change pictures and upload them somewhere
 
-*when inside the favorite, add button to remove a song from favourite
-
-*in the audio bar at the button, add another symbol when its muted, to be a speaker with a line over it 
+*in the audio bar at the button, the symbol when its muted will be changed to be a speaker with a line over it 
 
 *to the right of the speaker bar, theres a hear button that does nothing. remove it.
 FIXED: Removed the non-functional heart/favourite button from MiniPlayer.xaml (ToggleFavouriteCommand was never implemented in MiniPlayerViewModel). (Controls/MiniPlayer.xaml)
