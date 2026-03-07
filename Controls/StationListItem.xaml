@@ -50,15 +50,10 @@
                        ToolTip="Play">
                 <ui:SymbolIcon Symbol="Play24" />
             </ui:Button>
-            <ToggleButton IsChecked="{Binding IsFavorite, Mode=OneWay}"
-                          Command="{Binding DataContext.ToggleFavouriteCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                          CommandParameter="{Binding}"
-                          ToolTip="Favourite">
-                <ToggleButton.Style>
-                    <Style TargetType="ToggleButton">
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="BorderThickness" Value="0" />
-                        <Setter Property="Visibility" Value="Collapsed" />
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Hidden" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsFavorite}" Value="True">
                                 <Setter Property="Visibility" Value="Visible" />
@@ -68,10 +63,15 @@
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </ToggleButton.Style>
-                <ui:SymbolIcon Symbol="{Binding IsFavorite, Converter={StaticResource BoolToHeartIconConverter}}"
-                               Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}" />
-            </ToggleButton>
+                </Grid.Style>
+                <ui:Button Appearance="Transparent"
+                           Command="{Binding DataContext.ToggleFavouriteCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                           CommandParameter="{Binding}"
+                           ToolTip="Favourite">
+                    <ui:SymbolIcon Symbol="Heart24"
+                                   Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}" />
+                </ui:Button>
+            </Grid>
         </StackPanel>
     </Grid>
 </UserControl>
