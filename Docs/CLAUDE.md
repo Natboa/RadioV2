@@ -101,6 +101,7 @@ Follow `NatboaFluentGuidelines_Relaxed.md` (same `Docs/` folder):
 
 ### 🚀 Autonomous Git Workflow (Turbo Mode)
 - **Autonomy:** You are encouraged to commit and push when you reach a stable milestone (e.g., a feature is working or a bug is fixed).
+- **Bug fixes require user confirmation before pushing.** Do not commit and push a bug fix until the user explicitly confirms the fix works. You may commit locally, but hold the push until they say it's resolved.
 - **Speed Optimization:** NEVER use `mcp__github__push_files` for code changes — it is too slow for our .NET project.
 - **The Fast Way:** Use native git CLI for all commits and pushes:
   1. `git checkout <feature-branch>` — ensure you're on the right branch before committing
@@ -133,7 +134,7 @@ Whenever you are actively trying to fix a bug:
    - What you tried and why you expected it to work
 3. **Every code change made while debugging** must be recorded in the file immediately — what file was changed, what changed, and why. Do not batch changes; log each one as it happens.
 4. **After each failed attempt**, document why it failed (root cause analysis).
-5. **Only the user can declare a bug fixed.** When they confirm it works, update the file: set status to `CONFIRMED FIXED`, fill in the `## Fix` section describing the working solution and the exact change that resolved it.
+5. **Only the user can declare a bug fixed.** Do not commit or push a fix until the user confirms it works. When they confirm, update the file: set status to `CONFIRMED FIXED`, fill in the `## Fix` section describing the working solution and the exact change that resolved it. Then commit and push.
 6. If starting a new session mid-bug, read the existing debug file first to avoid repeating failed approaches.
 
 Debug files live in: `Debugging/`
