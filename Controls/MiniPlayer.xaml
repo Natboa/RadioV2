@@ -116,6 +116,7 @@
                     IsMoveToPointEnabled="True">
                 <Slider.Style>
                     <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
+                        <Setter Property="Padding" Value="0" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsMuted}" Value="True">
                                 <Setter Property="IsEnabled" Value="False" />
