@@ -50,6 +50,8 @@ FIXED: Added search history dropdown using an in-layout Border+ItemsControl (Gri
 
 *in light mode, some text that is color of grey is too light grey and hard to read, make darker
 
+*when scrolling down in all the pages, the name of the page will stay on top, with the back arrow and the search bar if there is one
+
 *future features:
  installer that includes the db aswell.
 

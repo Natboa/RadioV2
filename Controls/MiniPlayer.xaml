@@ -39,7 +39,6 @@
                            ToolTip="{Binding StationName}" />
                 <TextBlock Text="{Binding NowPlayingDisplay}"
                            FontSize="11"
-                           Opacity="0.7"
                            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                            TextTrimming="CharacterEllipsis"
                            MaxWidth="320"

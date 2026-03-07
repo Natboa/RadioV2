@@ -103,9 +103,8 @@
             <TextBlock Text="Browse or Discover stations and click the heart to save them here."
                        FontSize="13"
                        HorizontalAlignment="Center"
-                       Opacity="0.7"
                        TextAlignment="Center"
-                       Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" />
+                       Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
         </StackPanel>
     </Grid>
 </Page>

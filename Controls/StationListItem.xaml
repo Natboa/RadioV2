@@ -36,7 +36,6 @@
                        Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
             <TextBlock Text="{Binding Group.Name}"
                        FontSize="12"
-                       Opacity="0.7"
                        TextTrimming="CharacterEllipsis"
                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
         </StackPanel>

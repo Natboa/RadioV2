@@ -56,7 +56,6 @@
                                                TextTrimming="CharacterEllipsis"
                                                Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
                                     <TextBlock FontSize="12"
-                                               Opacity="0.7"
                                                Margin="0,4,0,0"
                                                Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}">
                                         <Run Text="{Binding StationCount, Mode=OneWay}" /><Run Text=" stations" />
