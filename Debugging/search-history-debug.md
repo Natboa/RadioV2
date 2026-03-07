@@ -182,12 +182,38 @@ Possible causes under investigation:
    `Dispatcher.BeginInvoke(Background, HideHistory)` in LostFocus. App does not freeze.
    Remaining problem: clicking items does nothing.
 
+9. Attempt 8 root cause: adding `Focusable="True"` to inner Borders causes WPF to auto-focus
+   the first item the moment HistoryBorder becomes Visible. This fires GotFocus → SelectHistoryItem
+   on the first item immediately → IsHistoryVisible = false — all before any render frame,
+   so the dropdown never visually appears. Lesson: never set Focusable=True on items inside
+   a visibility-toggled container.
+
 ---
 
-## Files Modified (current state)
+## SOLUTION — Attempt 9: ListBox + SelectionChanged ✅
+
+**What was done:**
+- Replaced `ItemsControl` with a plain `ListBox` (x:Name="HistoryList")
+- No custom `ControlTemplate` on `ListBoxItem` — only minimal `ItemContainerStyle`
+  (HorizontalContentAlignment=Stretch, Padding=0)
+- Simplified `ItemTemplate` to just a `TextBlock` (no inner Border, no IsMouseOver trigger)
+- Handled `SelectionChanged` on the ListBox in code-behind:
+  clear `SelectedItem` first, then call `SelectHistoryItem(query)`
+- LostFocus unchanged: `Dispatcher.BeginInvoke(Background, HideHistory)`
+
+**Why it works:**
+`SelectionChanged` fires during `MouseDown` processing — AFTER LostFocus queues `HideHistory`
+at `Background` priority, but BEFORE that `Background` callback actually executes. This gives
+a clean window where we can handle the selection without race conditions.
+
+**Status: FIXED ✅ — dropdown appears, clicking items works, no freeze**
+
+---
+
+## Files Modified (final state)
 
 - `ViewModels/BrowseViewModel.cs` — HistoryItems, IsHistoryVisible, ShowHistory, HideHistory,
   SaveCurrentQueryToHistory, SelectHistoryItem, LoadHistory, SaveToHistory, JSON persistence
-- `Views/BrowsePage.xaml` — Grid.Row="2" history Border, x:Name="HistoryBorder",
-  PreviewMouseDown, Border+TextBlock item template
-- `Views/BrowsePage.xaml.cs` — GotFocus, LostFocus, KeyDown, HistoryBorder_PreviewMouseDown
+- `Views/BrowsePage.xaml` — Grid.Row="2" history Border, ListBox with SelectionChanged,
+  plain TextBlock ItemTemplate
+- `Views/BrowsePage.xaml.cs` — GotFocus, LostFocus, KeyDown, HistoryList_SelectionChanged
