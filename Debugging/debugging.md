@@ -19,6 +19,7 @@ FIXED: Three-stage fix —
   4. Station implements INotifyPropertyChanged on IsFavorite so heart colour updates instantly on click.
   5. Heart hidden by default (Visibility=Hidden on wrapper Grid, not Collapsed — preserves layout space), visible on hover OR when favourited.
   6. Replaced ToggleButton with ui:Button inside a Grid wrapper — ToggleButton had WPF-UI accent blue background when IsChecked=True; ui:Button Appearance=Transparent has no such issue.
+  7. Heart disappeared near row edges — root Grid had no Background so empty areas (column gaps, margins) were not hit-test visible. Added Background=Transparent to root Grid so entire row registers IsMouseOver.
   (Converters/BoolToHeartIconConverter.cs, Converters/BoolToHeartColorConverter.cs, Controls/StationListItem.xaml, App.xaml, Models/Station.cs)
 
 *add puctures to groups, ask the user how we should implement this so its easy to change pictures and upload them somewhere
