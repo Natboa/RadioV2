@@ -110,6 +110,11 @@ Follow `NatboaFluentGuidelines_Relaxed.md` (same `Docs/` folder):
   4. `git push`
 - **When to Push:** Push automatically when a milestone step is complete or a new module is scaffolded.
 
+### After every bug fix or feature addition:
+- **Always run `dotnet build` immediately after making changes.**
+- If the build fails, fix all errors before doing anything else (no commits, no further changes).
+- Only proceed (commit, test, etc.) once the build is clean.
+
 ### Workflow per implementation step:
 1. `mcp__github__create_branch` — create the feature branch off `main`.
 2. `git checkout <branch>` — switch to it locally.

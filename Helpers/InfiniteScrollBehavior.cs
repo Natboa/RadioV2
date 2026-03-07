@@ -44,7 +44,18 @@ public class InfiniteScrollBehavior : Behavior<ListBox>
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
     {
         if (_scrollViewer is null) return;
-        if (_scrollViewer.ScrollableHeight > 0 &&
+
+        // Auto-fill: content doesn't yet fill the viewport — load more without requiring scroll.
+        if (_scrollViewer.ScrollableHeight == 0)
+        {
+            if (LoadMoreCommand?.CanExecute(null) == true)
+                LoadMoreCommand.Execute(null);
+            return;
+        }
+
+        // User-triggered: scrolled past the near-bottom threshold.
+        // VerticalOffset > 0 guard prevents firing at the top when ScrollableHeight is small.
+        if (_scrollViewer.VerticalOffset > 0 &&
             _scrollViewer.VerticalOffset >= _scrollViewer.ScrollableHeight - 200)
         {
             if (LoadMoreCommand?.CanExecute(null) == true)
@@ -94,7 +105,9 @@ public class ScrollViewerInfiniteScrollBehavior : Behavior<ScrollViewer>
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
     {
         var sv = AssociatedObject;
+        // VerticalOffset > 0 guard prevents firing at the top when ScrollableHeight is small.
         if (sv.ScrollableHeight > 0 &&
+            sv.VerticalOffset > 0 &&
             sv.VerticalOffset >= sv.ScrollableHeight - 200)
         {
             if (LoadMoreCommand?.CanExecute(null) == true)
