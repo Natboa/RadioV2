@@ -46,7 +46,7 @@ public partial class FavouritesViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task RemoveFavourite(Station station)
+    private async Task ToggleFavourite(Station station)
     {
         await _stationService.ToggleFavouriteAsync(station.Id);
         Favourites.Remove(station);

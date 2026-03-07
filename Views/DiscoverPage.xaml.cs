@@ -46,19 +46,6 @@ public partial class DiscoverPage : Page
                     await viewModel.LoadMoreGroupsAsync();
             };
 
-            // Groups: auto-fill after each batch — use near-bottom threshold instead of == 0
-            // so that batches that add a small amount of scroll (but not enough to fill) also trigger.
-            viewModel.PropertyChanged += (_, e) =>
-            {
-                if (e.PropertyName != nameof(viewModel.IsLoading) || viewModel.IsLoading) return;
-                Dispatcher.InvokeAsync(async () =>
-                {
-                    if (!viewModel.IsGroupView && viewModel.HasMoreGroups &&
-                        GroupsScrollViewer.VerticalOffset >= GroupsScrollViewer.ScrollableHeight - 400)
-                        await viewModel.LoadMoreGroupsAsync();
-                }, DispatcherPriority.Background);
-            };
-
             // Stations: the NavigationView wraps pages in a ScrollViewer (unconstrained height),
             // so the ListBox's own ScrollableHeight is always 0. Find the outer scroll viewer instead.
             // NOTE: StationsListBox.Loaded has already fired by the time Page.Loaded runs,
@@ -73,6 +60,22 @@ public partial class DiscoverPage : Page
                         await viewModel.LoadMoreGroupStationsAsync();
                 };
             }
+
+            // Groups: auto-fill after each batch — use near-bottom threshold instead of == 0
+            // so that batches that add a small amount of scroll (but not enough to fill) also trigger.
+            viewModel.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(viewModel.IsGroupView) && viewModel.IsGroupView)
+                    stationsSv?.ScrollToTop();
+
+                if (e.PropertyName != nameof(viewModel.IsLoading) || viewModel.IsLoading) return;
+                Dispatcher.InvokeAsync(async () =>
+                {
+                    if (!viewModel.IsGroupView && viewModel.HasMoreGroups &&
+                        GroupsScrollViewer.VerticalOffset >= GroupsScrollViewer.ScrollableHeight - 400)
+                        await viewModel.LoadMoreGroupsAsync();
+                }, DispatcherPriority.Background);
+            };
 
             await viewModel.LoadGroupsAsync();
         };
