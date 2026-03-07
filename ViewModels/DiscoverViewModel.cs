@@ -123,7 +123,5 @@ public partial class DiscoverViewModel : ObservableObject
     {
         await _stationService.ToggleFavouriteAsync(station.Id);
         station.IsFavorite = !station.IsFavorite;
-        var idx = GroupStations.IndexOf(station);
-        if (idx >= 0) { GroupStations[idx] = station; }
     }
 }
