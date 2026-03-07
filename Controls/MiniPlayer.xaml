@@ -98,11 +98,6 @@
                     VerticalAlignment="Center"
                     Margin="4,0,12,0" />
 
-            <ui:Button Appearance="Transparent"
-                       Command="{Binding ToggleFavouriteCommand}"
-                       ToolTip="Favourite">
-                <ui:SymbolIcon Symbol="Heart24" />
-            </ui:Button>
         </StackPanel>
     </Grid>
 </UserControl>

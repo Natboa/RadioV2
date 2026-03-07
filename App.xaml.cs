@@ -76,7 +76,16 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         // Single-instance enforcement
-        _mutex = new Mutex(true, "RadioV2_SingleInstance", out bool isNew);
+        bool isNew;
+        try
+        {
+            _mutex = new Mutex(true, "RadioV2_SingleInstance", out isNew);
+        }
+        catch (AbandonedMutexException)
+        {
+            // Previous instance was killed (e.g. by dotnet watch) — we now own the mutex
+            isNew = true;
+        }
         if (!isNew)
         {
             MessageBox.Show("RadioV2 is already running.", "RadioV2", MessageBoxButton.OK, MessageBoxImage.Information);
