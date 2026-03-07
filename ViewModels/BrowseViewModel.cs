@@ -69,8 +69,5 @@ public partial class BrowseViewModel : ObservableObject
     {
         await _stationService.ToggleFavouriteAsync(station.Id);
         station.IsFavorite = !station.IsFavorite;
-        // Refresh the item in the list to update UI
-        var idx = Stations.IndexOf(station);
-        if (idx >= 0) { Stations[idx] = station; }
     }
 }
