@@ -12,8 +12,7 @@ public partial class MiniPlayerViewModel : ObservableObject
     private readonly IRadioPlayerService _playerService;
     private readonly IStationService _stationService;
     private int _previousVolume = 50;
-    private List<Station> _favouritesList = [];
-    private int _currentFavouriteIndex = -1;
+    private List<Station> _currentPlaylist = [];
 
     public MiniPlayerViewModel(IRadioPlayerService playerService, IStationService stationService)
     {
@@ -97,7 +96,20 @@ public partial class MiniPlayerViewModel : ObservableObject
 
     // ── Public API ────────────────────────────────────────────────────────
 
+    /// <summary>Play a station with a playlist context for keyboard Next/Prev navigation.</summary>
+    public void SetStation(Station station, IList<Station> playlist)
+    {
+        _currentPlaylist = [.. playlist];
+        SetStationCore(station);
+    }
+
     public void SetStation(Station station)
+    {
+        _currentPlaylist = [];
+        SetStationCore(station);
+    }
+
+    private void SetStationCore(Station station)
     {
         CurrentStation = station;
         StationName = station.Name;
@@ -146,28 +158,35 @@ public partial class MiniPlayerViewModel : ObservableObject
     [RelayCommand]
     private async Task NextStation()
     {
-        await RefreshFavouritesListAsync();
-        if (_favouritesList.Count == 0) return;
+        var playlist = await GetEffectivePlaylistAsync();
+        if (playlist.Count == 0) return;
 
-        _currentFavouriteIndex = _favouritesList.FindIndex(s => s.Id == CurrentStation?.Id);
-        _currentFavouriteIndex = (_currentFavouriteIndex + 1) % _favouritesList.Count;
-        SetStation(_favouritesList[_currentFavouriteIndex]);
+        var idx = playlist.FindIndex(s => s.Id == CurrentStation?.Id);
+        idx = (idx + 1) % playlist.Count;
+        SetStationCore(playlist[idx]);
     }
 
     [RelayCommand]
     private async Task PreviousStation()
     {
-        await RefreshFavouritesListAsync();
-        if (_favouritesList.Count == 0) return;
+        var playlist = await GetEffectivePlaylistAsync();
+        if (playlist.Count == 0) return;
 
-        _currentFavouriteIndex = _favouritesList.FindIndex(s => s.Id == CurrentStation?.Id);
-        _currentFavouriteIndex = _currentFavouriteIndex <= 0
-            ? _favouritesList.Count - 1
-            : _currentFavouriteIndex - 1;
-        SetStation(_favouritesList[_currentFavouriteIndex]);
+        var idx = playlist.FindIndex(s => s.Id == CurrentStation?.Id);
+        idx = idx <= 0 ? playlist.Count - 1 : idx - 1;
+        SetStationCore(playlist[idx]);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────
+
+    private async Task<List<Station>> GetEffectivePlaylistAsync()
+    {
+        if (_currentPlaylist.Count > 0) return _currentPlaylist;
+        // Fallback: iterate favourites when no context playlist is set
+        var favs = await _stationService.GetFavouritesAsync();
+        _currentPlaylist = favs;
+        return _currentPlaylist;
+    }
 
     private void OnMetadataChanged(object? sender, string rawNowPlaying)
     {
@@ -177,10 +196,5 @@ public partial class MiniPlayerViewModel : ObservableObject
             NowPlayingArtist = artist;
             NowPlayingTitle = title;
         });
-    }
-
-    private async Task RefreshFavouritesListAsync()
-    {
-        _favouritesList = await _stationService.GetFavouritesAsync();
     }
 }

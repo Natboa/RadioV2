@@ -26,6 +26,7 @@ FIXED: Three-stage fix —
 *add puctures to groups, ask the user how we should implement this so its easy to change pictures and upload them somewhere
 
 *in the audio bar at the button, the symbol when its muted will be changed to be a speaker with a line over it 
+FIXED
 
 *to the right of the speaker bar, theres a hear button that does nothing. remove it.
 FIXED: Removed the non-functional heart/favourite button from MiniPlayer.xaml (ToggleFavouriteCommand was never implemented in MiniPlayerViewModel). (Controls/MiniPlayer.xaml)
@@ -34,10 +35,13 @@ FIXED: Removed the non-functional heart/favourite button from MiniPlayer.xaml (T
 FIXED: Raised MaxWidth from 200→320 on both station name and now-playing TextBlocks. Added ToolTip="{Binding ...}" to each — WPF-UI auto-styles tooltips to match the active Fluent light/dark theme, so hovering shows the full text. (Controls/MiniPlayer.xaml)
 
 *theres a button that minimizes and exmands the left side, when its not minimized,the button will go to the right side of the bar and the symbols will be to arrows poiting outside or inside diagonal
+FIXED
 
 *when clicking on pause, the button at the button will turn to the pause button, a triangle. it will have a smooth transition animation when clicked
+FIXED: Two issues — (1) LibVLC's Paused event was not subscribed, so IsPlaying never updated to false when pausing; added _mediaPlayer.Paused handler that invokes PlaybackStopped, which sets IsPlaying=false and swaps the icon to Play24 (triangle). (2) Added ScaleTransform + EventTrigger animation on Button.Click that scales 1→0.85→1 over 160ms for a smooth press feel. (Services/RadioPlayerService.cs, Controls/MiniPlayer.xaml)
 
-*when the user clicks on his keyboard the next or previous button, it will iterate through the stations, if its a station in a group then iterate the group stations, if in favorite then iterate favorites.
+*when the user clicks on his keyboard the next or previous button, it will iterate through the stations, if its a station in a group then iterate the group stations, if in favorite then iterate favorites. same for the pause and continue button on the keyboard
+FIXED: MiniPlayerViewModel now tracks a playlist context. Each page ViewModel passes its current list when calling SetStation (BrowseViewModel → Stations, DiscoverViewModel → GroupStations, FavouritesViewModel → Favourites). NextStation/PreviousStation navigate within that context list; fallback to favourites from DB if no context is set. Play/Pause via media key was already wired through MediaKeyHook → PlayPauseCommand. (ViewModels/MiniPlayerViewModel.cs, ViewModels/BrowseViewModel.cs, ViewModels/DiscoverViewModel.cs, ViewModels/FavouritesViewModel.cs)
 
 *browse page, when clicking the browse it will show prevous searches.
 
