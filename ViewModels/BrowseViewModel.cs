@@ -3,11 +3,17 @@ using CommunityToolkit.Mvvm.Input;
 using RadioV2.Models;
 using RadioV2.Services;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Text.Json;
 
 namespace RadioV2.ViewModels;
 
 public partial class BrowseViewModel : ObservableObject
 {
+    private static readonly string HistoryPath =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RadioV2", "search_history.json");
+
     private readonly IStationService _stationService;
     private readonly MiniPlayerViewModel _miniPlayer;
     private int _skip;
@@ -23,6 +29,8 @@ public partial class BrowseViewModel : ObservableObject
     [ObservableProperty] private string _searchQuery = string.Empty;
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _hasMoreItems = true;
+    [ObservableProperty] private ObservableCollection<string> _historyItems = [];
+    [ObservableProperty] private bool _isHistoryVisible;
 
     partial void OnSearchQueryChanged(string value)
     {
@@ -36,12 +44,62 @@ public partial class BrowseViewModel : ObservableObject
         try
         {
             await Task.Delay(300, ct);
+            IsHistoryVisible = false;
             Stations.Clear();
             _skip = 0;
             HasMoreItems = true;
             await LoadMoreAsync(ct);
         }
         catch (OperationCanceledException) { }
+    }
+
+    public void ShowHistory()
+    {
+        LoadHistory();
+        IsHistoryVisible = HistoryItems.Count > 0;
+    }
+
+    public void HideHistory() => IsHistoryVisible = false;
+
+    public void SaveCurrentQueryToHistory()
+    {
+        if (SearchQuery.Length >= 2) SaveToHistory(SearchQuery);
+    }
+
+    [RelayCommand]
+    private void SelectHistoryItem(string item)
+    {
+        IsHistoryVisible = false;
+        SearchQuery = item;
+    }
+
+    private void LoadHistory()
+    {
+        if (!File.Exists(HistoryPath)) return;
+        try
+        {
+            var list = JsonSerializer.Deserialize<List<string>>(File.ReadAllText(HistoryPath)) ?? [];
+            HistoryItems.Clear();
+            foreach (var h in list) HistoryItems.Add(h);
+        }
+        catch { }
+    }
+
+    private void SaveToHistory(string query)
+    {
+        LoadHistory();
+        var list = HistoryItems.ToList();
+        list.Remove(query);
+        list.Insert(0, query);
+        if (list.Count > 7) list = [.. list.Take(7)];
+        HistoryItems.Clear();
+        foreach (var h in list) HistoryItems.Add(h);
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(HistoryPath)!);
+            File.WriteAllText(HistoryPath, JsonSerializer.Serialize(list));
+        }
+        catch { }
     }
 
     [RelayCommand]
