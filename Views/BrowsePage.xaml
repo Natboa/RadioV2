@@ -40,26 +40,33 @@
                     KeyDown="SearchBox_KeyDown" />
 
         <!-- Search history (in-layout, no Popup/overlay) -->
-        <Border Grid.Row="2"
+        <Border x:Name="HistoryBorder"
+                Grid.Row="2"
                 Margin="0,2,0,10"
                 Background="{ui:ThemeResource ApplicationBackgroundBrush}"
                 BorderBrush="{ui:ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="6"
+                PreviewMouseDown="HistoryBorder_PreviewMouseDown"
                 Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <ItemsControl ItemsSource="{Binding HistoryItems}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <ui:Button Content="{Binding}"
-                                   Command="{Binding DataContext.SelectHistoryItemCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                   CommandParameter="{Binding}"
-                                   HorizontalAlignment="Stretch"
-                                   HorizontalContentAlignment="Left"
-                                   Appearance="Transparent"
-                                   Padding="12,8"
-                                   BorderThickness="0"
-                                   FontSize="13"
-                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                        <Border Padding="12,8" CornerRadius="4" Cursor="Hand">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{ui:ThemeResource SubtleFillColorHoverBrush}" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding}"
+                                       FontSize="13"
+                                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                        </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

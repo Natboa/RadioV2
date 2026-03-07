@@ -1,6 +1,7 @@
 using RadioV2.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace RadioV2.Views;
 
@@ -27,5 +28,20 @@ public partial class BrowsePage : Page
     {
         if (e.Key == System.Windows.Input.Key.Enter)
             _viewModel.SaveCurrentQueryToHistory();
+    }
+
+    private void HistoryBorder_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // Walk up the visual tree from the click source to find the string DataContext
+        DependencyObject? el = e.OriginalSource as DependencyObject;
+        while (el != null && el != HistoryBorder)
+        {
+            if (el is FrameworkElement fe && fe.DataContext is string query)
+            {
+                _viewModel.SelectHistoryItem(query);
+                return;
+            }
+            el = VisualTreeHelper.GetParent(el);
+        }
     }
 }

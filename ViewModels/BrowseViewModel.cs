@@ -67,7 +67,7 @@ public partial class BrowseViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectHistoryItem(string item)
+    public void SelectHistoryItem(string item)
     {
         IsHistoryVisible = false;
         SearchQuery = item;
