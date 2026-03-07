@@ -7,6 +7,23 @@
              mc:Ignorable="d"
              d:DesignHeight="72" d:DesignWidth="1100">
 
+    <UserControl.Resources>
+        <Storyboard x:Key="PlayPulse">
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                             From="1" To="1.22" Duration="0:0:0.09" AutoReverse="True">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                             From="1" To="1.22" Duration="0:0:0.09" AutoReverse="True">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -59,18 +76,16 @@
                 <ui:SymbolIcon Symbol="Previous24" />
             </ui:Button>
 
-            <ui:Button Appearance="Primary"
+            <ui:Button x:Name="PlayPauseBtn"
+                       Appearance="Primary"
                        Command="{Binding PlayPauseCommand}"
                        Margin="4,0"
-                       ToolTip="Play / Pause">
+                       ToolTip="Play / Pause"
+                       RenderTransformOrigin="0.5,0.5">
+                <ui:Button.RenderTransform>
+                    <ScaleTransform />
+                </ui:Button.RenderTransform>
                 <ui:SymbolIcon Symbol="{Binding IsPlaying, Converter={StaticResource BoolToPlayIconConverter}}" />
-            </ui:Button>
-
-            <ui:Button Appearance="Transparent"
-                       Command="{Binding StopCommand}"
-                       Margin="0,0,4,0"
-                       ToolTip="Stop">
-                <ui:SymbolIcon Symbol="Stop24" />
             </ui:Button>
 
             <ui:Button Appearance="Transparent"

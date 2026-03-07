@@ -32,4 +32,17 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="RadioV2.Core\**\*" />
+    <Compile Remove="RadioV2.DevTool\**\*" />
+    <Page Remove="RadioV2.Core\**\*" />
+    <Page Remove="RadioV2.DevTool\**\*" />
+    <None Remove="RadioV2.Core\**\*" />
+    <None Remove="RadioV2.DevTool\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="RadioV2.Core\RadioV2.Core.csproj" />
+  </ItemGroup>
+
 </Project>

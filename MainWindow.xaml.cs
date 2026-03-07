@@ -70,6 +70,35 @@ public partial class MainWindow : FluentWindow
         var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
         source?.AddHook(_mediaKeyHook.WndProc);
         RootNavigation.Navigate(typeof(Views.BrowsePage));
+
+        UpdatePaneToggleButton();
+        DependencyPropertyDescriptor
+            .FromProperty(Wpf.Ui.Controls.NavigationView.IsPaneOpenProperty, typeof(Wpf.Ui.Controls.NavigationView))
+            ?.AddValueChanged(RootNavigation, (_, _) => UpdatePaneToggleButton());
+    }
+
+    private void UpdatePaneToggleButton()
+    {
+        bool isOpen = RootNavigation.IsPaneOpen;
+
+        PaneToggleIcon.Symbol = isOpen
+            ? SymbolRegular.FullScreenMinimize20
+            : SymbolRegular.FullScreenMaximize20;
+
+        double openLen = RootNavigation.OpenPaneLength;
+        double compactLen = RootNavigation.CompactPaneLength;
+        double btnW = PaneToggleBtn.Width;
+
+        // When open: button sits at the right edge of the expanded pane.
+        // When compact: button sits at the right edge of the compact strip.
+        PaneToggleBtn.Margin = isOpen
+            ? new Thickness(openLen - btnW - 4, 8, 0, 0)
+            : new Thickness(compactLen - btnW - 4, 8, 0, 0);
+    }
+
+    private void OnPaneToggleClick(object sender, RoutedEventArgs e)
+    {
+        RootNavigation.IsPaneOpen = !RootNavigation.IsPaneOpen;
     }
 
     protected override void OnClosing(CancelEventArgs e)

@@ -83,9 +83,12 @@ public partial class DiscoverPage : Page
         {
             if (!viewModel.IsGroupView) return;
             // Require VerticalOffset > 0 so loading doesn't trigger at the top.
-            if (_stationsSv.ScrollableHeight > 0 &&
+            // Use 80% of ScrollableHeight so we only load when genuinely near the
+            // bottom — fixed 200px threshold was too small when ScrollableHeight < 200.
+            if (!viewModel.IsLoading &&
+                _stationsSv.ScrollableHeight > 0 &&
                 _stationsSv.VerticalOffset > 0 &&
-                _stationsSv.VerticalOffset >= _stationsSv.ScrollableHeight - 200)
+                _stationsSv.VerticalOffset >= _stationsSv.ScrollableHeight * 0.8)
                 await viewModel.LoadMoreGroupStationsAsync();
         };
     }

@@ -14,6 +14,7 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
         _mediaPlayer = new MediaPlayer(_libVLC);
 
         _mediaPlayer.Playing += (s, e) => PlaybackStarted?.Invoke(this, EventArgs.Empty);
+        _mediaPlayer.Paused  += (s, e) => PlaybackStopped?.Invoke(this, EventArgs.Empty);
         _mediaPlayer.Stopped += (s, e) => PlaybackStopped?.Invoke(this, EventArgs.Empty);
         _mediaPlayer.Buffering += (s, e) => BufferingChanged?.Invoke(this, e.Cache);
         _mediaPlayer.EncounteredError += (s, e) => PlaybackError?.Invoke(this, "Stream error");
