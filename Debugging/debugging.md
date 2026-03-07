@@ -16,7 +16,10 @@ FIXED: Three-stage fix —
   1. HeartOff24 → Heart24 (HeartOff24 glyph renders as 'j' in Segoe Fluent Icons; WPF-UI 4.2.0 has no HeartFilled24 either).
   2. Added BoolToHeartColorConverter: returns Brushes.Red when favourite, DependencyProperty.UnsetValue otherwise (returning null made the icon invisible).
   3. Bound ui:SymbolIcon.Foreground to IsFavorite via BoolToHeartColorConverter so heart turns red when favourited.
-  (Converters/BoolToHeartIconConverter.cs, Converters/BoolToHeartColorConverter.cs, Controls/StationListItem.xaml, App.xaml)
+  4. Station implements INotifyPropertyChanged on IsFavorite so heart colour updates instantly on click.
+  5. Heart hidden by default (Visibility=Hidden on wrapper Grid, not Collapsed — preserves layout space), visible on hover OR when favourited.
+  6. Replaced ToggleButton with ui:Button inside a Grid wrapper — ToggleButton had WPF-UI accent blue background when IsChecked=True; ui:Button Appearance=Transparent has no such issue.
+  (Converters/BoolToHeartIconConverter.cs, Converters/BoolToHeartColorConverter.cs, Controls/StationListItem.xaml, App.xaml, Models/Station.cs)
 
 *add puctures to groups, ask the user how we should implement this so its easy to change pictures and upload them somewhere
 
