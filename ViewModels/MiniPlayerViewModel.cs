@@ -82,6 +82,8 @@ public partial class MiniPlayerViewModel : ObservableObject
             _playerService.Volume = value;
     }
 
+    public event EventHandler<Station>? StationStarted;
+
     public Station? CurrentStation { get; private set; }
 
     public string? NowPlayingDisplay => (NowPlayingArtist, NowPlayingTitle) switch
@@ -119,6 +121,7 @@ public partial class MiniPlayerViewModel : ObservableObject
         NowPlayingTitle = null;
         _playerService.Volume = IsMuted ? 0 : Volume;
         _playerService.Play(station.StreamUrl);
+        StationStarted?.Invoke(this, station);
     }
 
     // ── Commands ──────────────────────────────────────────────────────────

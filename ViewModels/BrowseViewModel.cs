@@ -14,6 +14,12 @@ public partial class BrowseViewModel : ObservableObject
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "RadioV2", "search_history.json");
 
+    private static readonly string RecentPath =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RadioV2", "recent_stations.json");
+
+    private record RecentEntry(int Id, string Name, string StreamUrl, string? LogoUrl, int GroupId);
+
     private readonly IStationService _stationService;
     private readonly MiniPlayerViewModel _miniPlayer;
     private int _skip;
@@ -23,6 +29,8 @@ public partial class BrowseViewModel : ObservableObject
     {
         _stationService = stationService;
         _miniPlayer = miniPlayer;
+        _miniPlayer.StationStarted += OnStationStarted;
+        LoadRecentStations();
     }
 
     [ObservableProperty] private ObservableCollection<Station> _stations = [];
@@ -31,9 +39,12 @@ public partial class BrowseViewModel : ObservableObject
     [ObservableProperty] private bool _hasMoreItems = true;
     [ObservableProperty] private ObservableCollection<string> _historyItems = [];
     [ObservableProperty] private bool _isHistoryVisible;
+    [ObservableProperty] private ObservableCollection<Station> _recentStations = [];
+    [ObservableProperty] private bool _isRecentVisible;
 
     partial void OnSearchQueryChanged(string value)
     {
+        IsRecentVisible = value.Length < 2 && RecentStations.Count > 0;
         _searchCts.Cancel();
         _searchCts = new CancellationTokenSource();
         _ = DebounceSearchAsync(_searchCts.Token);
@@ -98,6 +109,40 @@ public partial class BrowseViewModel : ObservableObject
         {
             Directory.CreateDirectory(Path.GetDirectoryName(HistoryPath)!);
             File.WriteAllText(HistoryPath, JsonSerializer.Serialize(list));
+        }
+        catch { }
+    }
+
+    private void OnStationStarted(object? sender, Station station)
+    {
+        var existing = RecentStations.FirstOrDefault(s => s.Id == station.Id);
+        if (existing is not null) RecentStations.Remove(existing);
+        RecentStations.Insert(0, station);
+        while (RecentStations.Count > 15) RecentStations.RemoveAt(RecentStations.Count - 1);
+        IsRecentVisible = SearchQuery.Length < 2;
+        SaveRecentStations();
+    }
+
+    private void LoadRecentStations()
+    {
+        if (!File.Exists(RecentPath)) return;
+        try
+        {
+            var entries = JsonSerializer.Deserialize<List<RecentEntry>>(File.ReadAllText(RecentPath)) ?? [];
+            foreach (var e in entries)
+                RecentStations.Add(new Station { Id = e.Id, Name = e.Name, StreamUrl = e.StreamUrl, LogoUrl = e.LogoUrl, GroupId = e.GroupId });
+            IsRecentVisible = RecentStations.Count > 0 && SearchQuery.Length < 2;
+        }
+        catch { }
+    }
+
+    private void SaveRecentStations()
+    {
+        try
+        {
+            var entries = RecentStations.Select(s => new RecentEntry(s.Id, s.Name, s.StreamUrl, s.LogoUrl, s.GroupId)).ToList();
+            Directory.CreateDirectory(Path.GetDirectoryName(RecentPath)!);
+            File.WriteAllText(RecentPath, JsonSerializer.Serialize(entries));
         }
         catch { }
     }

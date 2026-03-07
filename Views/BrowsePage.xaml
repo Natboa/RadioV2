@@ -16,6 +16,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -71,14 +72,51 @@
             </ListBox>
         </Border>
 
+        <!-- Recent Stations -->
+        <StackPanel Grid.Row="3"
+                    Margin="0,8,0,0"
+                    Visibility="{Binding IsRecentVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="Recent Stations"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,6"
+                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+            <ListBox ItemsSource="{Binding RecentStations}"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     MaxHeight="400"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Recycling">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <controls:StationListItem />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+        </StackPanel>
+
         <!-- Station list -->
-        <ListBox Grid.Row="3"
+        <ListBox Grid.Row="4"
                  ItemsSource="{Binding Stations}"
                  BorderThickness="0"
                  Background="Transparent"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  VirtualizingStackPanel.IsVirtualizing="True"
-                 VirtualizingStackPanel.VirtualizationMode="Recycling">
+                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                 Visibility="{Binding IsRecentVisible, Converter={StaticResource BoolToInverseVisibilityConverter}}">
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -102,7 +140,7 @@
         </ListBox>
 
         <!-- Loading spinner -->
-        <ui:ProgressRing Grid.Row="4"
+        <ui:ProgressRing Grid.Row="5"
                          IsIndeterminate="True"
                          Width="32" Height="32"
                          Margin="0,8"
