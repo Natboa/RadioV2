@@ -44,6 +44,7 @@ FIXED: Two issues — (1) LibVLC's Paused event was not subscribed, so IsPlaying
 FIXED: MiniPlayerViewModel now tracks a playlist context. Each page ViewModel passes its current list when calling SetStation (BrowseViewModel → Stations, DiscoverViewModel → GroupStations, FavouritesViewModel → Favourites). NextStation/PreviousStation navigate within that context list; fallback to favourites from DB if no context is set. Play/Pause via media key was already wired through MediaKeyHook → PlayPauseCommand. (ViewModels/MiniPlayerViewModel.cs, ViewModels/BrowseViewModel.cs, ViewModels/DiscoverViewModel.cs, ViewModels/FavouritesViewModel.cs)
 
 *browse page, when clicking the browse it will show prevous searches.
+FIXED: Added search history dropdown using an in-layout Border+ItemsControl (Grid.Row="2", no Popup/overlay). History saved to %LocalAppData%/RadioV2/search_history.json, up to 7 entries, deduped. Shows on TextBox GotFocus (if history exists), hides on LostFocus (Dispatcher.Background delay so clicks register). Selecting a history item sets SearchQuery and triggers search. Styled with ApplicationBackgroundBrush + CardStrokeColorDefaultBrush border, themed automatically. (ViewModels/BrowseViewModel.cs, Views/BrowsePage.xaml, Views/BrowsePage.xaml.cs)
 
 *in the browse page it will say recent sttations and it will show stations you clicked on while searching or while in the discovery. it will show up to the last 15 stations.
 

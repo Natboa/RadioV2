@@ -15,6 +15,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -29,13 +30,43 @@
 
         <!-- Search box -->
         <ui:TextBox Grid.Row="1"
+                    x:Name="SearchBox"
                     Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
                     PlaceholderText="Search stations..."
                     Icon="{ui:SymbolIcon Search24}"
-                    Margin="0,0,0,12" />
+                    Margin="0,0,0,0"
+                    GotFocus="SearchBox_GotFocus"
+                    LostFocus="SearchBox_LostFocus"
+                    KeyDown="SearchBox_KeyDown" />
+
+        <!-- Search history (in-layout, no Popup/overlay) -->
+        <Border Grid.Row="2"
+                Margin="0,2,0,10"
+                Background="{ui:ThemeResource ApplicationBackgroundBrush}"
+                BorderBrush="{ui:ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <ItemsControl ItemsSource="{Binding HistoryItems}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <ui:Button Content="{Binding}"
+                                   Command="{Binding DataContext.SelectHistoryItemCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                   CommandParameter="{Binding}"
+                                   HorizontalAlignment="Stretch"
+                                   HorizontalContentAlignment="Left"
+                                   Appearance="Transparent"
+                                   Padding="12,8"
+                                   BorderThickness="0"
+                                   FontSize="13"
+                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
 
         <!-- Station list -->
-        <ListBox Grid.Row="2"
+        <ListBox Grid.Row="3"
                  ItemsSource="{Binding Stations}"
                  BorderThickness="0"
                  Background="Transparent"
@@ -65,7 +96,7 @@
         </ListBox>
 
         <!-- Loading spinner -->
-        <ui:ProgressRing Grid.Row="3"
+        <ui:ProgressRing Grid.Row="4"
                          IsIndeterminate="True"
                          Width="32" Height="32"
                          Margin="0,8"
