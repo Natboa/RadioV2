@@ -31,6 +31,7 @@ FIXED: Three-stage fix —
 FIXED: Removed the non-functional heart/favourite button from MiniPlayer.xaml (ToggleFavouriteCommand was never implemented in MiniPlayerViewModel). (Controls/MiniPlayer.xaml)
 
 *where it says the current artist and song name, its sometimes long,  make it longer before cutting to ... and also when the mouse hovers on the song or the artist it will show the full name, it will be looking nice and according to the theme, eather dark or light mode
+FIXED: Raised MaxWidth from 200→320 on both station name and now-playing TextBlocks. Added ToolTip="{Binding ...}" to each — WPF-UI auto-styles tooltips to match the active Fluent light/dark theme, so hovering shows the full text. (Controls/MiniPlayer.xaml)
 
 *theres a button that minimizes and exmands the left side, when its not minimized,the button will go to the right side of the bar and the symbols will be to arrows poiting outside or inside diagonal
 
