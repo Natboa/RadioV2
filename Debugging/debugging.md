@@ -51,6 +51,7 @@ FIXED: Added search history dropdown using an in-layout Border+ItemsControl (Gri
 *in light mode, some text that is color of grey is too light grey and hard to read, make darker
 
 *when scrolling down in all the pages, the name of the page will stay on top, with the back arrow and the search bar if there is one
+FIXED: SettingsPage was the only broken page — its title TextBlock was inside the ScrollViewer so it scrolled away. Fixed by wrapping the page in a Grid (Auto row for title, * row for ScrollViewer) so the title stays pinned at the top while the cards scroll. Browse/Discover/Favourites already had correct structure (title in Height="Auto" Grid rows above the ListBox/ScrollViewer content rows). (Views/SettingsPage.xaml)
 
 *future features:
  installer that includes the db aswell.
