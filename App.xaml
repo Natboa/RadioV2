@@ -17,6 +17,29 @@
             <converters:BoolToInverseVisibilityConverter x:Key="BoolToInverseVisibilityConverter" />
             <converters:StringEqualConverter x:Key="StringEqualConverter" />
             <converters:BoolToSpeakerIconConverter x:Key="BoolToSpeakerIconConverter" />
+
+            <!-- Override NavigationViewContentPresenter template: keep the DynamicScrollViewer
+                 but disable vertical scrolling so pages get a constrained height (enabling
+                 internal ListBox/ScrollViewer scrolling) while mouse-wheel events pass
+                 through to each page's own scroll container. Sticky headers work because
+                 the outer DynamicScrollViewer no longer scrolls. -->
+            <Style TargetType="{x:Type ui:NavigationViewContentPresenter}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ui:NavigationViewContentPresenter}">
+                            <ui:DynamicScrollViewer
+                                VerticalScrollBarVisibility="Disabled"
+                                HorizontalScrollBarVisibility="Disabled"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                Focusable="False">
+                                <ContentPresenter x:Name="PART_FrameCP"
+                                                  Margin="{TemplateBinding Padding}" />
+                            </ui:DynamicScrollViewer>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

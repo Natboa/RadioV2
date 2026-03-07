@@ -51,7 +51,9 @@ FIXED: Added search history dropdown using an in-layout Border+ItemsControl (Gri
 *in light mode, some text that is color of grey is too light grey and hard to read, make darker
 
 *when scrolling down in all the pages, the name of the page will stay on top, with the back arrow and the search bar if there is one
-FIXED: SettingsPage was the only broken page — its title TextBlock was inside the ScrollViewer so it scrolled away. Fixed by wrapping the page in a Grid (Auto row for title, * row for ScrollViewer) so the title stays pinned at the top while the cards scroll. Browse/Discover/Favourites already had correct structure (title in Height="Auto" Grid rows above the ListBox/ScrollViewer content rows). (Views/SettingsPage.xaml)
+FIXED: Root cause was WPF-UI's NavigationViewContentPresenter wrapping ALL page content in a DynamicScrollViewer by default — so titles always scrolled with content regardless of page structure. Fix: override the NavigationViewContentPresenter ControlTemplate in App.xaml to use a DynamicScrollViewer with VerticalScrollBarVisibility="Disabled". This constrains pages to the NavigationView's real height so internal Height="*" Grid rows and ListBox/ScrollViewer scrolling work correctly. Also rewrote DiscoverPage.xaml.cs to use GroupsScrollViewer and the ListBox's internal ScrollViewer directly (old code forwarded events to the now-disabled outer SV). Fixed InfiniteScrollBehavior conditions to add VerticalOffset > 0 guard (prevented false triggers at the top when ScrollableHeight was small). SettingsPage.xaml title was also moved outside its ScrollViewer (auto row above, * row for cards). See Debugging/sticky-header-implementation.md for full history. (App.xaml, Views/DiscoverPage.xaml.cs, Helpers/InfiniteScrollBehavior.cs, Views/SettingsPage.xaml)
+
+*theres a button to expand and minimize the left side menu, i want that button to be two arrow pointing out diagonally for exanding and for minimizing they will be pointing inward. the button will be on the right side of the menu when it is expanded instead of stayin at the same place
 
 *future features:
  installer that includes the db aswell.

@@ -1,0 +1,1 @@
+Get-WinEvent -LogName Application -MaxEvents 50 | Where-Object { $_.ProviderName -match 'Application Error|\.NET Runtime|Windows Error' } | Select-Object TimeCreated, LevelDisplayName, Message | Format-List | Out-String
