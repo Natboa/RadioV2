@@ -62,7 +62,7 @@ public partial class BrowseViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PlayStation(Station station) => _miniPlayer.SetStation(station);
+    private void PlayStation(Station station) => _miniPlayer.SetStation(station, Stations);
 
     [RelayCommand]
     private async Task ToggleFavourite(Station station)

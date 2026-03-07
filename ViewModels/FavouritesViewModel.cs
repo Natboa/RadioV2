@@ -54,7 +54,7 @@ public partial class FavouritesViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PlayStation(Station station) => _miniPlayer.SetStation(station);
+    private void PlayStation(Station station) => _miniPlayer.SetStation(station, Favourites);
 
     [RelayCommand]
     private async Task ImportFavourites()

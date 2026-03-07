@@ -116,7 +116,7 @@ public partial class DiscoverViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PlayStation(Station station) => _miniPlayer.SetStation(station);
+    private void PlayStation(Station station) => _miniPlayer.SetStation(station, GroupStations);
 
     [RelayCommand]
     private async Task ToggleFavourite(Station station)
