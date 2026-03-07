@@ -8,15 +8,22 @@
       d:DesignHeight="700" d:DesignWidth="900"
       Title="Settings">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24,16" MaxWidth="640" HorizontalAlignment="Left">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-            <!-- Title -->
-            <TextBlock Text="Settings"
-                       FontSize="28"
-                       FontWeight="SemiBold"
-                       Margin="0,0,0,24"
-                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+        <!-- Title (sticky — outside scroll) -->
+        <TextBlock Grid.Row="0"
+                   Text="Settings"
+                   FontSize="28"
+                   FontWeight="SemiBold"
+                   Margin="24,16,24,12"
+                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24,0,24,16" MaxWidth="640" HorizontalAlignment="Left">
 
             <!-- Appearance card -->
             <ui:Card Margin="0,0,0,16">
@@ -98,5 +105,6 @@
             </ui:Card>
 
         </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
+    </Grid>
 </Page>
