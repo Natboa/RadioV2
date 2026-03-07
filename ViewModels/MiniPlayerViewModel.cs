@@ -132,13 +132,14 @@ public partial class MiniPlayerViewModel : ObservableObject
         if (IsMuted)
         {
             IsMuted = false;
-            _playerService.Volume = _previousVolume;
+            Volume = _previousVolume; // restores slider and player volume via OnVolumeChanged
         }
         else
         {
             _previousVolume = Volume;
             IsMuted = true;
             _playerService.Volume = 0;
+            Volume = 0; // moves slider to left; OnVolumeChanged skips player while muted
         }
     }
 
