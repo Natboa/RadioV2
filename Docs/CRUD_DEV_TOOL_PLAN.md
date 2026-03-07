@@ -205,20 +205,20 @@ The main `RadioV2` project also adds a project reference to `RadioV2.Core` and r
 
 | Step | Status | Notes |
 |---|---|---|
-| 1. Create `RadioV2.Core` class library project | Not started | |
-| 2. Move models + DbContext into `RadioV2.Core` | Not started | Move `Station.cs`, `Group.cs`, `Setting.cs`, `RadioDbContext.cs` from `RadioV2/` |
-| 3. Add `RadioV2.Core` reference to `RadioV2` | Not started | Ensure main app still builds |
-| 4. Create `RadioV2.DevTool` WPF project | Not started | Add to solution, reference `RadioV2.Core` |
-| 5. Scaffold DevTool — `App.xaml`, `MainWindow`, `TabControl` shell | Not started | |
-| 6. Implement `DevDbService` | Not started | EF Core wrapper, hardcoded DB path |
-| 7. Stations tab — list + search + group filter + pagination | Not started | |
-| 8. Stations tab — side panel edit form (Edit + Delete) | Not started | |
-| 9. Stations tab — Create new station | Not started | Inline duplicate StreamUrl error |
-| 10. Groups tab — list with station counts | Not started | |
-| 11. Groups tab — Create + Rename | Not started | |
-| 12. Groups tab — Delete group (with count in confirmation) | Not started | |
-| 13. Groups tab — Merge groups (with preview dialog) | Not started | |
-| 14. Reusable `ConfirmDialog` | Not started | Used by Delete and Merge flows |
+| 1. Create `RadioV2.Core` class library project | Complete | `RadioV2.Core/RadioV2.Core.csproj` — net8.0, EF Core SQLite |
+| 2. Move models + DbContext into `RadioV2.Core` | Complete | `Station.cs`, `Group.cs`, `Setting.cs`, `GroupWithCount.cs`, `RadioDbContext.cs` — same namespaces kept |
+| 3. Add `RadioV2.Core` reference to `RadioV2` | Complete | ProjectReference added; Compile/Page/None excludes prevent double-compilation from subdirs |
+| 4. Create `RadioV2.DevTool` WPF project | Complete | Added to solution; references `RadioV2.Core`; WPF-UI 4.2, EF Core, CommunityToolkit.Mvvm |
+| 5. Scaffold DevTool — `App.xaml`, `MainWindow`, `TabControl` shell | Complete | Dark theme via `ThemesDictionary`; TabControl with Stations/Groups tabs |
+| 6. Implement `DevDbService` | Complete | All CRUD + merge ops; hardcoded path 4 levels up from bin to solution root |
+| 7. Stations tab — list + search + group filter + pagination | Complete | 50-at-a-time with Load More button; search + group filter each reset offset |
+| 8. Stations tab — side panel edit form (Edit + Delete) | Complete | Select station → form populates; Save updates; Delete shows ConfirmDialog |
+| 9. Stations tab — Create new station | Complete | New Station clears form; duplicate StreamUrl caught and shown inline |
+| 10. Groups tab — list with station counts | Complete | Groups listed with `{N:N0}` stations count |
+| 11. Groups tab — Create + Rename | Complete | New Group = create mode; select existing = rename mode |
+| 12. Groups tab — Delete group (with count in confirmation) | Complete | ConfirmDialog shows exact station count before delete |
+| 13. Groups tab — Merge groups (with preview dialog) | Complete | Source = selected; target = dropdown; ConfirmDialog shows count before merge |
+| 14. Reusable `ConfirmDialog` | Complete | `Dialogs/ConfirmDialog.xaml` — static `Show()` returns bool; red Confirm button |
 
 ---
 

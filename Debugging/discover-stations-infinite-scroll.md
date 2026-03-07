@@ -88,3 +88,27 @@ private static ScrollViewer? FindParentScrollViewer(DependencyObject child)
 **Root cause:** `StationsListBox.Loaded` was subscribed inside `Page.Loaded`. WPF fires child `Loaded` events before the parent's, so by the time the `Page.Loaded` handler runs, `StationsListBox.Loaded` has already fired. The late subscription is never invoked → `FindParentScrollViewer` never runs → no `ScrollChanged` hook → infinite scroll silently does nothing.
 
 **Fix (Attempt 6):** Removed the `StationsListBox.Loaded += ...` wrapper. Since `Page.Loaded` fires after all children are already loaded and in the visual tree, calling `FindParentScrollViewer(StationsListBox)` directly inside `Page.Loaded` works correctly. The outer NavigationView `ScrollViewer` is found, and the `ScrollChanged` handler is wired up successfully.
+
+---
+
+## Bug 2: Stations loaded too early (after tiny scroll)
+
+**Symptom:** Opening a group and scrolling just a little immediately triggered the next batch — didn't need to scroll to the bottom.
+
+**Root cause:** The threshold was `VerticalOffset >= ScrollableHeight - 200` (fixed 200px offset from bottom). When `ScrollableHeight < 200` (which happens with a short first batch), `ScrollableHeight - 200` goes negative. Any non-zero `VerticalOffset` satisfies `>= negative_number`, so even a 1px scroll triggered a load.
+
+**Fix:** Changed to a percentage-based threshold — `VerticalOffset >= ScrollableHeight * 0.8`. Load only fires when 80% scrolled through the content, regardless of how much content is loaded.
+
+**File:** `Views/DiscoverPage.xaml.cs` — `_stationsSv.ScrollChanged` handler.
+
+---
+
+## Bug 3: Two batches loaded at once when reaching the bottom
+
+**Symptom:** Scrolling to the bottom of a group loaded two batches of stations back-to-back instead of one.
+
+**Root cause:** `ScrollChanged` fires multiple times as WPF layout settles after items are added (each `GroupStations.Add(s)` call can trigger a layout pass → `ScrollChanged`). The VM's `_isLoadingStations` flag is set to `false` in `finally` before all layout passes complete. A `ScrollChanged` event queued on the UI thread checks `_isLoadingStations` after it's been cleared and fires a second load.
+
+**Fix:** Added `!viewModel.IsLoading` check to the scroll handler in addition to the VM's internal flag. `IsLoading` is set synchronously to `true` before any `await` inside `LoadMoreGroupStationsAsync`, so by the time control returns to the UI thread and any queued `ScrollChanged` handlers run, the flag is already true and blocks the second call.
+
+**File:** `Views/DiscoverPage.xaml.cs` — `_stationsSv.ScrollChanged` handler.

@@ -37,7 +37,11 @@
         <ui:NavigationView Grid.Row="1"
             x:Name="RootNavigation"
             PaneDisplayMode="Left"
-            IsBackButtonVisible="Visible">
+            IsBackButtonVisible="Collapsed"
+            IsPaneToggleVisible="False">
+            <ui:NavigationView.PaneHeader>
+                <Border Height="44"/>
+            </ui:NavigationView.PaneHeader>
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem Content="Browse"
                     TargetPageType="{x:Type views:BrowsePage}"
@@ -55,6 +59,24 @@
                     Icon="{ui:SymbolIcon Settings24}" />
             </ui:NavigationView.FooterMenuItems>
         </ui:NavigationView>
+
+        <!-- Custom pane toggle: diagonal arrows, floats at right edge of pane -->
+        <Button Grid.Row="1"
+                x:Name="PaneToggleBtn"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Width="36" Height="36"
+                Margin="0,8,0,0"
+                Padding="0"
+                Background="Transparent"
+                BorderThickness="0"
+                Cursor="Hand"
+                ToolTip="Toggle menu"
+                Click="OnPaneToggleClick">
+            <ui:SymbolIcon x:Name="PaneToggleIcon"
+                           Symbol="FullScreenMinimize20"
+                           FontSize="14"/>
+        </Button>
 
         <Border Grid.Row="2" Height="72"
                 Background="{ui:ThemeResource ControlFillColorDefaultBrush}"
