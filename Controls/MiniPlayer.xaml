@@ -88,15 +88,26 @@
 
             <ui:Button Appearance="Transparent"
                        Command="{Binding ToggleMuteCommand}"
-                       ToolTip="Mute">
-                <ui:SymbolIcon Symbol="Speaker224" />
+                       ToolTip="Mute / Unmute">
+                <ui:SymbolIcon Symbol="{Binding IsMuted, Converter={StaticResource BoolToSpeakerIconConverter}}" />
             </ui:Button>
 
             <Slider Value="{Binding Volume}"
                     Minimum="0" Maximum="100"
                     Width="120"
                     VerticalAlignment="Center"
-                    Margin="4,0,12,0" />
+                    Margin="4,0,12,0"
+                    IsMoveToPointEnabled="True">
+                <Slider.Style>
+                    <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                                <Setter Property="IsEnabled" Value="False" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Slider.Style>
+            </Slider>
 
         </StackPanel>
     </Grid>

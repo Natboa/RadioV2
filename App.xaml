@@ -16,6 +16,7 @@
             <converters:BoolToHeartColorConverter x:Key="BoolToHeartColorConverter" />
             <converters:BoolToInverseVisibilityConverter x:Key="BoolToInverseVisibilityConverter" />
             <converters:StringEqualConverter x:Key="StringEqualConverter" />
+            <converters:BoolToSpeakerIconConverter x:Key="BoolToSpeakerIconConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
