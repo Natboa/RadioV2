@@ -5,7 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="60" d:DesignWidth="600">
+             d:DesignHeight="60" d:DesignWidth="600"
+             Background="Transparent">
 
     <Grid Margin="8,4" Background="Transparent">
         <Grid.ColumnDefinitions>
