@@ -47,29 +47,28 @@
                 BorderBrush="{ui:ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="6"
-                PreviewMouseDown="HistoryBorder_PreviewMouseDown"
                 Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-            <ItemsControl ItemsSource="{Binding HistoryItems}">
-                <ItemsControl.ItemTemplate>
+            <ListBox x:Name="HistoryList"
+                     ItemsSource="{Binding HistoryItems}"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     SelectionChanged="HistoryList_SelectionChanged">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Padding="12,8" CornerRadius="4" Cursor="Hand">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="Transparent" />
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{ui:ThemeResource SubtleFillColorHoverBrush}" />
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="{Binding}"
-                                       FontSize="13"
-                                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                        </Border>
+                        <TextBlock Text="{Binding}"
+                                   Padding="12,8"
+                                   FontSize="13"
+                                   Cursor="Hand"
+                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </Border>
 
         <!-- Station list -->

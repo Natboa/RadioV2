@@ -30,18 +30,12 @@ public partial class BrowsePage : Page
             _viewModel.SaveCurrentQueryToHistory();
     }
 
-    private void HistoryBorder_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    private void HistoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        // Walk up the visual tree from the click source to find the string DataContext
-        DependencyObject? el = e.OriginalSource as DependencyObject;
-        while (el != null && el != HistoryBorder)
+        if (sender is System.Windows.Controls.ListBox lb && lb.SelectedItem is string query)
         {
-            if (el is FrameworkElement fe && fe.DataContext is string query)
-            {
-                _viewModel.SelectHistoryItem(query);
-                return;
-            }
-            el = VisualTreeHelper.GetParent(el);
+            lb.SelectedItem = null;
+            _viewModel.SelectHistoryItem(query);
         }
     }
 }
