@@ -107,6 +107,10 @@ public partial class App : Application
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
+        // Warm up: pre-load and cache Discover categories on a thread-pool thread.
+        // SQLite has no true async I/O, so Task.Run is required to keep the UI thread free.
+        _ = Task.Run(() => _host.Services.GetRequiredService<IStationService>().GetCategoriesWithGroupsAsync());
+
         base.OnStartup(e);
     }
 

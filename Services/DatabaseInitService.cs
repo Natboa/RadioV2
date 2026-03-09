@@ -28,7 +28,11 @@ public static class DatabaseInitService
         }
         catch { /* column already exists — safe to ignore */ }
 
-        // 3. Seed the 9 categories and link groups to them (skips if already done)
+        // 3. Index GroupId on Stations — critical for GROUP BY count performance
+        await db.Database.ExecuteSqlRawAsync(
+            "CREATE INDEX IF NOT EXISTS idx_stations_groupid ON Stations(GroupId);");
+
+        // 4. Seed the 9 categories and link groups to them (skips if already done)
         await CategorySeeder.SeedAsync(db);
     }
 }
