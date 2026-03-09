@@ -15,7 +15,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- LEFT: Search + group list + new button -->
-        <Grid Grid.Column="0">
+        <Grid Grid.Column="0" IsEnabled="{Binding IsNotBusy}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -52,7 +52,7 @@
         <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" />
 
         <!-- RIGHT: Group form + merge section -->
-        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding IsNotBusy}">
             <StackPanel Margin="16" MaxWidth="460">
                 <TextBlock Text="{Binding IsEditMode, Converter={StaticResource BoolToModeConverter}, ConverterParameter=Group}"
                            FontSize="16"
@@ -111,5 +111,15 @@
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
+        <!-- Busy overlay -->
+        <Grid Grid.Column="0" Grid.ColumnSpan="3"
+              Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Background="#80000000">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="200" Height="6" Margin="0,0,0,12" />
+                <TextBlock Text="Working…" Foreground="White" FontSize="14"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

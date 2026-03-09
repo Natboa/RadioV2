@@ -18,7 +18,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="48" />
         </Grid.RowDefinitions>
 
         <!-- Title -->
@@ -87,11 +87,13 @@
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      MaxHeight="400"
                      VirtualizingStackPanel.IsVirtualizing="True"
-                     VirtualizingStackPanel.VirtualizationMode="Recycling">
+                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                     VirtualizingStackPanel.ScrollUnit="Pixel">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                         <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,0,16,0" />
                         <Setter Property="Background" Value="Transparent" />
                     </Style>
                 </ListBox.ItemContainerStyle>
@@ -117,11 +119,13 @@
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  VirtualizingStackPanel.IsVirtualizing="True"
                  VirtualizingStackPanel.VirtualizationMode="Recycling"
+                 VirtualizingStackPanel.ScrollUnit="Pixel"
                  Visibility="{Binding IsRecentVisible, Converter={StaticResource BoolToInverseVisibilityConverter}}">
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0,0,16,0" />
                     <Setter Property="Background" Value="Transparent" />
                 </Style>
             </ListBox.ItemContainerStyle>

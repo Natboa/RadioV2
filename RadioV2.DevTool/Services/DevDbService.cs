@@ -7,28 +7,46 @@ namespace RadioV2.DevTool.Services;
 
 public class DevDbService
 {
-    private readonly string _dbPath;
+    // Shared across all instances so EF Core model is built once and WAL is set once
+    private static DbContextOptions<RadioDbContext>? _options;
+    private static bool _walDone;
 
     public DevDbService()
     {
-        // From bin/Debug/net8.0-windows/ go up 4 levels to solution root, then into Data/
-        _dbPath = Path.GetFullPath(Path.Combine(
-            AppDomain.CurrentDomain.BaseDirectory,
-            @"..\..\..\..\Data\radioapp_large_groups.db"));
+        if (_options != null) return;
+
+        _options = new DbContextOptionsBuilder<RadioDbContext>()
+            .UseSqlite($"Data Source={FindDbPath()}")
+            .Options;
     }
 
-    private RadioDbContext CreateContext()
+    private static string FindDbPath()
     {
-        var opts = new DbContextOptionsBuilder<RadioDbContext>()
-            .UseSqlite($"Data Source={_dbPath}")
-            .Options;
-        return new RadioDbContext(opts);
+        var dir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+        while (dir != null)
+        {
+            var candidate = Path.Combine(dir.FullName, "Data", "radioapp_large_groups.db");
+            if (File.Exists(candidate)) return candidate;
+            dir = dir.Parent;
+        }
+        throw new FileNotFoundException("Could not find radioapp_large_groups.db in any parent directory.");
+    }
+
+    private RadioDbContext CreateContext() => new(_options!);
+
+    private async Task EnsureWalAsync()
+    {
+        if (_walDone) return;
+        await using var db = CreateContext();
+        await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
+        _walDone = true;
     }
 
     // ── Groups ────────────────────────────────────────────────────────────────
 
     public async Task<List<GroupWithCount>> GetGroupsAsync(string? search = null)
     {
+        await EnsureWalAsync();
         await using var db = CreateContext();
         var query = db.Groups.AsNoTracking()
             .Select(g => new GroupWithCount

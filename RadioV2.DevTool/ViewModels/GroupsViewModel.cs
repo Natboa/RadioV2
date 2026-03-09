@@ -19,6 +19,10 @@ public partial class GroupsViewModel : ObservableObject
     [ObservableProperty] string formName = "";
     [ObservableProperty] bool isEditMode;
     [ObservableProperty] string? errorMessage;
+    [ObservableProperty] bool isBusy;
+
+    public bool IsNotBusy => !IsBusy;
+    partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(IsNotBusy));
 
     public GroupsViewModel()
     {
@@ -27,7 +31,7 @@ public partial class GroupsViewModel : ObservableObject
 
     private async Task LoadGroupsAsync()
     {
-        var list = await _db.GetGroupsAsync(SearchText.Trim());
+        var list = await Task.Run(() => _db.GetGroupsAsync(SearchText.Trim()));
         Groups.Clear();
         foreach (var g in list) Groups.Add(g);
         RefreshMergeTargets();
@@ -104,7 +108,7 @@ public partial class GroupsViewModel : ObservableObject
     {
         if (SelectedGroup == null) return;
 
-        int count = await _db.GetStationCountForGroupAsync(SelectedGroup.Id);
+        int count = await Task.Run(() => _db.GetStationCountForGroupAsync(SelectedGroup.Id));
 
         var confirmed = Dialogs.ConfirmDialog.Show(
             $"Delete group '{SelectedGroup.Name}' and its {count:N0} station(s)?\n\nThis cannot be undone.",
@@ -112,9 +116,17 @@ public partial class GroupsViewModel : ObservableObject
 
         if (!confirmed) return;
 
-        await _db.DeleteGroupWithStationsAsync(SelectedGroup.Id);
-        NewGroup();
-        await LoadGroupsAsync();
+        IsBusy = true;
+        try
+        {
+            await Task.Run(() => _db.DeleteGroupWithStationsAsync(SelectedGroup.Id));
+            NewGroup();
+            await LoadGroupsAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]
@@ -135,8 +147,16 @@ public partial class GroupsViewModel : ObservableObject
 
         if (!confirmed) return;
 
-        await _db.MergeGroupsAsync(SelectedGroup.Id, MergeTargetGroup.Id);
-        NewGroup();
-        await LoadGroupsAsync();
+        IsBusy = true;
+        try
+        {
+            await Task.Run(() => _db.MergeGroupsAsync(SelectedGroup.Id, MergeTargetGroup.Id));
+            NewGroup();
+            await LoadGroupsAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 }
