@@ -14,7 +14,31 @@ public partial class BrowsePage : Page
         _viewModel = viewModel;
         DataContext = viewModel;
         InitializeComponent();
-        Loaded += async (_, _) => await viewModel.LoadMoreAsync();
+        Loaded += async (_, _) =>
+        {
+            var sv = FindChildScrollViewer(StationListBox);
+            if (sv != null)
+            {
+                sv.ScrollChanged += (_, _) =>
+                {
+                    viewModel.IsAtBottom = sv.ScrollableHeight == 0 ||
+                        sv.VerticalOffset >= sv.ScrollableHeight - 200;
+                };
+            }
+            await viewModel.LoadMoreAsync();
+        };
+    }
+
+    private static ScrollViewer? FindChildScrollViewer(DependencyObject parent)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is ScrollViewer sv) return sv;
+            var result = FindChildScrollViewer(child);
+            if (result != null) return result;
+        }
+        return null;
     }
 
     private void SearchBox_GotFocus(object sender, RoutedEventArgs e)

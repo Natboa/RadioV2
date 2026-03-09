@@ -8,6 +8,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="RadioV2"
+        Icon="Assets/RadioV2_Logo.ico"
         Width="1100" Height="700"
         WindowBackdropType="Mica"
         ExtendsContentIntoTitleBar="True">
@@ -40,7 +41,7 @@
             IsBackButtonVisible="Collapsed"
             IsPaneToggleVisible="False">
             <ui:NavigationView.PaneHeader>
-                <Border Height="44"/>
+                <Border Height="44" />
             </ui:NavigationView.PaneHeader>
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem Content="Browse"

@@ -35,8 +35,15 @@ public partial class BrowseViewModel : ObservableObject
 
     [ObservableProperty] private ObservableCollection<Station> _stations = [];
     [ObservableProperty] private string _searchQuery = string.Empty;
-    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowLoadingSpinner))]
+    private bool _isLoading;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowLoadingSpinner))]
+    private bool _isAtBottom = true;
     [ObservableProperty] private bool _hasMoreItems = true;
+
+    public bool ShowLoadingSpinner => IsLoading && IsAtBottom;
     [ObservableProperty] private ObservableCollection<string> _historyItems = [];
     [ObservableProperty] private bool _isHistoryVisible;
     [ObservableProperty] private ObservableCollection<Station> _recentStations = [];

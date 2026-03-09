@@ -33,9 +33,10 @@ public class TrayIconManager : IDisposable
         menu.Items.Add(new ToolStripMenuItem("Quit", null,
             (s, e) => quitAction()));
 
+        var appIcon = LoadAppIcon();
         _notifyIcon = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = appIcon ?? SystemIcons.Application,
             Text = "RadioV2",
             Visible = true,
             ContextMenuStrip = menu
@@ -48,6 +49,19 @@ public class TrayIconManager : IDisposable
             if (e.PropertyName is nameof(MiniPlayerViewModel.StationName) or nameof(MiniPlayerViewModel.NowPlayingDisplay))
                 UpdateLabel();
         };
+    }
+
+    private static Icon? LoadAppIcon()
+    {
+        try
+        {
+            var uri = new Uri("pack://application:,,,/Assets/RadioV2_Logo.ico", UriKind.Absolute);
+            var info = System.Windows.Application.GetResourceStream(uri);
+            if (info != null)
+                return new Icon(info.Stream);
+        }
+        catch { }
+        return null;
     }
 
     private void UpdateLabel()

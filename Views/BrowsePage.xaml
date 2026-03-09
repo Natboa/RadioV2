@@ -109,7 +109,8 @@
         </StackPanel>
 
         <!-- Station list -->
-        <ListBox Grid.Row="4"
+        <ListBox x:Name="StationListBox"
+                 Grid.Row="4"
                  ItemsSource="{Binding Stations}"
                  BorderThickness="0"
                  Background="Transparent"
@@ -145,6 +146,6 @@
                          Width="32" Height="32"
                          Margin="0,8"
                          HorizontalAlignment="Center"
-                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
+                         Visibility="{Binding ShowLoadingSpinner, Converter={StaticResource BoolToVisibilityConverter}}" />
     </Grid>
 </Page>

@@ -69,7 +69,7 @@ public partial class MainWindow : FluentWindow
     {
         var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
         source?.AddHook(_mediaKeyHook.WndProc);
-        RootNavigation.Navigate(typeof(Views.BrowsePage));
+        RootNavigation.Navigate(typeof(Views.FavouritesPage));
 
         UpdatePaneToggleButton();
         DependencyPropertyDescriptor

@@ -96,10 +96,13 @@
                         <Run Text="Move all stations from '" /><Run Text="{Binding SelectedGroup.Name}" FontWeight="SemiBold" /><Run Text="' into:" />
                     </TextBlock>
 
+                    <TextBox Text="{Binding MergeSearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,4,0,4" />
+
                     <ComboBox ItemsSource="{Binding MergeTargets}"
                               SelectedItem="{Binding MergeTargetGroup}"
                               DisplayMemberPath="Name"
-                              Margin="0,4,0,12" />
+                              Margin="0,0,0,12" />
 
                     <Button Content="Merge Groups"
                             Width="130"

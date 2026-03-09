@@ -31,21 +31,34 @@ public partial class DiscoverPage : Page
 
             // Auto-fill: keep loading batches until the viewport has enough content
             // to scroll (avoids a screen that is only partially filled on first load).
+            // Also tracks IsAtBottom so the loading spinner only shows when near the bottom.
             GroupsScrollViewer.ScrollChanged += async (_, _) =>
             {
-                if (!viewModel.IsGroupView && viewModel.HasMoreGroups &&
-                    GroupsScrollViewer.ScrollableHeight < 400)
-                    await viewModel.LoadMoreGroupsAsync();
+                if (!viewModel.IsGroupView)
+                {
+                    viewModel.IsAtBottom = GroupsScrollViewer.ScrollableHeight == 0 ||
+                        GroupsScrollViewer.VerticalOffset >= GroupsScrollViewer.ScrollableHeight - 200;
+                    if (viewModel.HasMoreGroups && GroupsScrollViewer.ScrollableHeight < 400)
+                        await viewModel.LoadMoreGroupsAsync();
+                }
             };
 
             // ── STATIONS VIEW ─────────────────────────────────────────────────────────
             viewModel.PropertyChanged += (_, e) =>
             {
                 // Switching into station view: scroll to top and ensure SV is wired.
+                // Defer TrySetupStationsScrollViewer to after the layout pass — on the first
+                // visit StationsListBox is inside a Collapsed Grid and has no visual tree yet.
+                // DispatcherPriority.Loaded runs after measure/arrange, so the ScrollViewer
+                // inside the ListBox template is guaranteed to exist by then.
                 if (e.PropertyName == nameof(viewModel.IsGroupView) && viewModel.IsGroupView)
                 {
-                    TrySetupStationsScrollViewer(viewModel);
-                    _stationsSv?.ScrollToTop();
+                    viewModel.IsAtBottom = true; // reset so spinner shows during initial station load
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        TrySetupStationsScrollViewer(viewModel);
+                        _stationsSv?.ScrollToTop();
+                    }, DispatcherPriority.Loaded);
                 }
 
                 // After each genre batch finishes loading, auto-fill if still not full.
@@ -82,6 +95,8 @@ public partial class DiscoverPage : Page
         _stationsSv.ScrollChanged += async (_, _) =>
         {
             if (!viewModel.IsGroupView) return;
+            viewModel.IsAtBottom = _stationsSv.ScrollableHeight == 0 ||
+                _stationsSv.VerticalOffset >= _stationsSv.ScrollableHeight * 0.8;
             // Require VerticalOffset > 0 so loading doesn't trigger at the top.
             // Use 80% of ScrollableHeight so we only load when genuinely near the
             // bottom — fixed 200px threshold was too small when ScrollableHeight < 200.

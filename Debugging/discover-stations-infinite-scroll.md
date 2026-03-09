@@ -112,3 +112,33 @@ private static ScrollViewer? FindParentScrollViewer(DependencyObject child)
 **Fix:** Added `!viewModel.IsLoading` check to the scroll handler in addition to the VM's internal flag. `IsLoading` is set synchronously to `true` before any `await` inside `LoadMoreGroupStationsAsync`, so by the time control returns to the UI thread and any queued `ScrollChanged` handlers run, the flag is already true and blocks the second call.
 
 **File:** `Views/DiscoverPage.xaml.cs` — `_stationsSv.ScrollChanged` handler.
+
+---
+
+## Bug 4: First group opened — scrolling to the bottom never loads more stations; second group works fine
+
+**Symptom:** Open the app, navigate to Discover, enter any group, scroll to the bottom — nothing loads. Go back, re-enter the same (or any other) group — infinite scroll works correctly from that point on.
+
+**Root cause:** `StationsListBox` is inside a `Grid` whose `Visibility` is bound to `IsGroupView` via `BoolToVisibilityConverter`. While `IsGroupView = false`, that Grid is `Collapsed`. In WPF, **Collapsed elements are never measured or arranged**, which means the ListBox's ControlTemplate is never applied and its internal `ScrollViewer` does not exist in the visual tree.
+
+`TrySetupStationsScrollViewer` was called in two places:
+1. At the end of `Page.Loaded` — the Grid is still `Collapsed` here → `FindChildScrollViewer` returns `null` → `_stationsSvSetup` stays `false`.
+2. In the `PropertyChanged` handler when `IsGroupView` becomes `true` — but this fires **synchronously**, before WPF has scheduled a layout pass to realize the newly visible Grid. The ListBox template still doesn't exist in the visual tree at that instant → `FindChildScrollViewer` returns `null` again → `ScrollChanged` is never subscribed.
+
+On the **second** visit, WPF preserves the realized visual tree even after the Grid is collapsed again. So the next call to `TrySetupStationsScrollViewer` finds the ScrollViewer immediately and wires up the listener.
+
+**Fix:** In the `PropertyChanged` handler, wrapped `TrySetupStationsScrollViewer` + `ScrollToTop` in `Dispatcher.InvokeAsync(..., DispatcherPriority.Loaded)`. `DispatcherPriority.Loaded` runs after the measure/arrange pass, so the ListBox ControlTemplate is fully applied by then and `FindChildScrollViewer` succeeds on the very first group visit.
+
+```csharp
+if (e.PropertyName == nameof(viewModel.IsGroupView) && viewModel.IsGroupView)
+{
+    viewModel.IsAtBottom = true;
+    Dispatcher.InvokeAsync(() =>
+    {
+        TrySetupStationsScrollViewer(viewModel);
+        _stationsSv?.ScrollToTop();
+    }, DispatcherPriority.Loaded);
+}
+```
+
+**File:** `Views/DiscoverPage.xaml.cs` — `PropertyChanged` handler inside `Page.Loaded`.

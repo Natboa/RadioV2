@@ -81,6 +81,52 @@
                 </StackPanel>
             </ui:Card>
 
+            <!-- Favourites card -->
+            <ui:Card Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Favourites"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,4"
+                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    <TextBlock Text="Import or export your saved stations as an M3U playlist or JSON file."
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12"
+                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button Command="{Binding ImportFavouritesCommand}"
+                                   Appearance="Secondary"
+                                   Margin="0,0,8,0"
+                                   ToolTip="Import favourites from M3U or JSON">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowDownload24" Margin="0,0,6,0" />
+                                <TextBlock Text="Import" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Command="{Binding ExportFavouritesCommand}"
+                                   Appearance="Secondary"
+                                   ToolTip="Export favourites to M3U or JSON">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowUpload24" Margin="0,0,6,0" />
+                                <TextBlock Text="Export" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ui:Button>
+                    </StackPanel>
+
+                    <Border CornerRadius="6"
+                            Background="{ui:ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                            Padding="12,8"
+                            Margin="0,12,0,0"
+                            Visibility="{Binding HasFavouritesStatus, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding FavouritesStatusMessage}"
+                                   FontSize="13"
+                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    </Border>
+                </StackPanel>
+            </ui:Card>
+
             <!-- About card -->
             <ui:Card>
                 <StackPanel>
