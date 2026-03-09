@@ -7,6 +7,7 @@ namespace RadioV2.Services;
 public class StationService : IStationService
 {
     private readonly IDbContextFactory<RadioDbContext> _factory;
+    private volatile List<CategoryWithGroups>? _categoriesCache;
 
     public StationService(IDbContextFactory<RadioDbContext> factory) => _factory = factory;
 
@@ -31,26 +32,44 @@ public class StationService : IStationService
 
     public async Task<List<CategoryWithGroups>> GetCategoriesWithGroupsAsync(CancellationToken ct = default)
     {
+        if (_categoriesCache is not null)
+            return _categoriesCache;
+
         using var db = _factory.CreateDbContext();
-        return await db.Categories
+
+        // Query 1: single GROUP BY aggregation — avoids correlated subquery per group
+        var counts = await db.Stations
+            .AsNoTracking()
+            .GroupBy(s => s.GroupId)
+            .Select(g => new { GroupId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.GroupId, x => x.Count, ct);
+
+        // Query 2: categories + groups, no counts, no subqueries
+        var categories = await db.Categories
             .AsNoTracking()
             .OrderBy(c => c.DisplayOrder)
-            .Select(c => new CategoryWithGroups
-            {
-                Id = c.Id,
-                Name = c.Name,
-                DisplayOrder = c.DisplayOrder,
-                Groups = c.Groups
-                    .Select(g => new GroupWithCount
-                    {
-                        Id = g.Id,
-                        Name = g.Name,
-                        StationCount = g.Stations.Count
-                    })
-                    .OrderBy(g => g.Name)
-                    .ToList()
-            })
+            .Include(c => c.Groups)
             .ToListAsync(ct);
+
+        // In-memory join
+        var result = categories.Select(c => new CategoryWithGroups
+        {
+            Id = c.Id,
+            Name = c.Name,
+            DisplayOrder = c.DisplayOrder,
+            Groups = c.Groups
+                .Select(g => new GroupWithCount
+                {
+                    Id = g.Id,
+                    Name = g.Name,
+                    StationCount = counts.GetValueOrDefault(g.Id, 0)
+                })
+                .OrderBy(g => g.Name)
+                .ToList()
+        }).ToList();
+
+        _categoriesCache = result;
+        return result;
     }
 
     public async Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default)
