@@ -22,14 +22,6 @@ public partial class DiscoverPage : Page
             {
                 _pageSetup = true;
 
-                // Carousel cards consume PreviewMouseWheel — forward it to the outer ScrollViewer
-                CarouselScrollViewer.PreviewMouseWheel += (_, e) =>
-                {
-                    CarouselScrollViewer.ScrollToVerticalOffset(
-                        CarouselScrollViewer.VerticalOffset - e.Delta);
-                    e.Handled = true;
-                };
-
                 // Wire station drill-down scroll viewer when IsGroupView changes
                 viewModel.PropertyChanged += (_, e) =>
                 {
