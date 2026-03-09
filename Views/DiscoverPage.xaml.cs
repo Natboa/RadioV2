@@ -17,74 +17,33 @@ public partial class DiscoverPage : Page
         InitializeComponent();
         Loaded += async (_, _) =>
         {
-            // ── GENRES VIEW ──────────────────────────────────────────────────────────
-            // GroupsScrollViewer is now the actual scroll container (outer NavigationView
-            // DynamicScrollViewer is disabled via App.xaml template override).
-            // ui:Card children still consume PreviewMouseWheel, so intercept it here
-            // and forward directly to GroupsScrollViewer.
-            GroupsScrollViewer.PreviewMouseWheel += (_, e) =>
+            // Carousel cards consume PreviewMouseWheel — forward it to the outer ScrollViewer
+            CarouselScrollViewer.PreviewMouseWheel += (_, e) =>
             {
-                GroupsScrollViewer.ScrollToVerticalOffset(
-                    GroupsScrollViewer.VerticalOffset - e.Delta);
+                CarouselScrollViewer.ScrollToVerticalOffset(
+                    CarouselScrollViewer.VerticalOffset - e.Delta);
                 e.Handled = true;
             };
 
-            // Auto-fill: keep loading batches until the viewport has enough content
-            // to scroll (avoids a screen that is only partially filled on first load).
-            // Also tracks IsAtBottom so the loading spinner only shows when near the bottom.
-            GroupsScrollViewer.ScrollChanged += async (_, _) =>
-            {
-                if (!viewModel.IsGroupView)
-                {
-                    viewModel.IsAtBottom = GroupsScrollViewer.ScrollableHeight == 0 ||
-                        GroupsScrollViewer.VerticalOffset >= GroupsScrollViewer.ScrollableHeight - 200;
-                    if (!viewModel.IsLoading && viewModel.HasMoreGroups && GroupsScrollViewer.ScrollableHeight < 400)
-                        await viewModel.LoadMoreGroupsAsync();
-                }
-            };
-
-            // ── STATIONS VIEW ─────────────────────────────────────────────────────────
+            // Wire station drill-down scroll viewer when IsGroupView changes
             viewModel.PropertyChanged += (_, e) =>
             {
-                // Switching into station view: scroll to top and ensure SV is wired.
-                // Defer TrySetupStationsScrollViewer to after the layout pass — on the first
-                // visit StationsListBox is inside a Collapsed Grid and has no visual tree yet.
-                // DispatcherPriority.Loaded runs after measure/arrange, so the ScrollViewer
-                // inside the ListBox template is guaranteed to exist by then.
                 if (e.PropertyName == nameof(viewModel.IsGroupView) && viewModel.IsGroupView)
                 {
-                    viewModel.IsAtBottom = true; // reset so spinner shows during initial station load
+                    viewModel.IsAtBottom = true;
                     Dispatcher.InvokeAsync(() =>
                     {
                         TrySetupStationsScrollViewer(viewModel);
                         _stationsSv?.ScrollToTop();
                     }, DispatcherPriority.Loaded);
                 }
-
-                // After each genre batch finishes loading, auto-fill if still not full.
-                if (e.PropertyName == nameof(viewModel.IsLoading) && !viewModel.IsLoading)
-                {
-                    Dispatcher.InvokeAsync(async () =>
-                    {
-                        if (!viewModel.IsGroupView && viewModel.HasMoreGroups &&
-                            GroupsScrollViewer.ScrollableHeight < 400)
-                            await viewModel.LoadMoreGroupsAsync();
-                    }, DispatcherPriority.Background);
-                }
             };
 
-            // Try wiring up stations SV immediately (ListBox template is usually applied
-            // even when its parent Grid is Collapsed).
             TrySetupStationsScrollViewer(viewModel);
-
-            await viewModel.LoadGroupsAsync();
+            await viewModel.LoadCategoriesAsync();
         };
     }
 
-    /// <summary>
-    /// Finds the ListBox's internal ScrollViewer and hooks it for infinite station loading.
-    /// Called on Page.Loaded and again when IsGroupView becomes true (stations view opens).
-    /// </summary>
     private void TrySetupStationsScrollViewer(DiscoverViewModel viewModel)
     {
         if (_stationsSvSetup) return;
@@ -97,9 +56,6 @@ public partial class DiscoverPage : Page
             if (!viewModel.IsGroupView) return;
             viewModel.IsAtBottom = _stationsSv.ScrollableHeight == 0 ||
                 _stationsSv.VerticalOffset >= _stationsSv.ScrollableHeight * 0.8;
-            // Require VerticalOffset > 0 so loading doesn't trigger at the top.
-            // Use 80% of ScrollableHeight so we only load when genuinely near the
-            // bottom — fixed 200px threshold was too small when ScrollableHeight < 200.
             if (!viewModel.IsLoading &&
                 _stationsSv.ScrollableHeight > 0 &&
                 _stationsSv.VerticalOffset > 0 &&
@@ -108,7 +64,6 @@ public partial class DiscoverPage : Page
         };
     }
 
-    /// <summary>Walks the visual tree downward to find the first ScrollViewer.</summary>
     private static ScrollViewer? FindChildScrollViewer(DependencyObject parent)
     {
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)

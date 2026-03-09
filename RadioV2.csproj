@@ -36,6 +36,7 @@
   <ItemGroup>
     <Resource Include="Assets\RadioV2_Logo.png" />
     <Resource Include="Assets\RadioV2_Logo.ico" />
+    <Resource Include="Assets\Groups\**\*" />
   </ItemGroup>
 
   <ItemGroup>

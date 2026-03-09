@@ -1,0 +1,200 @@
+<UserControl x:Class="RadioV2.Controls.DiscoverCarouselRow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:converters="clr-namespace:RadioV2.Converters"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="240" d:DesignWidth="900">
+
+    <UserControl.Resources>
+        <converters:GroupNameToImageConverter x:Key="GroupNameToImage" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
+    <Grid Margin="0,0,0,32">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Row header: category title + left/right arrows -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="{Binding CategoryName}"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center"
+                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <ui:Button x:Name="LeftArrowButton"
+                           Appearance="Transparent"
+                           Visibility="Collapsed"
+                           Padding="8"
+                           Click="LeftArrow_Click">
+                    <ui:SymbolIcon Symbol="ChevronLeft24" />
+                </ui:Button>
+                <ui:Button x:Name="RightArrowButton"
+                           Appearance="Transparent"
+                           Padding="8"
+                           Click="RightArrow_Click">
+                    <ui:SymbolIcon Symbol="ChevronRight24" />
+                </ui:Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Horizontally scrollable card strip — no visible scrollbar -->
+        <ScrollViewer x:Name="CarouselScroll"
+                      Grid.Row="1"
+                      HorizontalScrollBarVisibility="Hidden"
+                      VerticalScrollBarVisibility="Disabled"
+                      ScrollChanged="CarouselScroll_ScrollChanged"
+                      PanningMode="HorizontalFirst">
+            <ItemsControl ItemsSource="{Binding Groups}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Group card -->
+                        <Border x:Name="CardBorder"
+                                Width="160"
+                                Margin="0,0,12,0"
+                                CornerRadius="8"
+                                Cursor="Hand"
+                                Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
+
+                            <Border.InputBindings>
+                                <MouseBinding MouseAction="LeftClick"
+                                              Command="{Binding DataContext.SelectGroupCommand,
+                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              CommandParameter="{Binding}" />
+                            </Border.InputBindings>
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="160" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Image area with zoom clip -->
+                                <Border Grid.Row="0"
+                                        CornerRadius="8,8,0,0"
+                                        ClipToBounds="True">
+                                    <Grid>
+                                        <!-- Placeholder shown when no image exists -->
+                                        <Border x:Name="PlaceholderBg"
+                                                Background="{ui:ThemeResource ControlFillColorSecondaryBrush}">
+                                            <ui:SymbolIcon Symbol="MusicNote24"
+                                                           FontSize="40"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                                        </Border>
+
+                                        <!-- Group image -->
+                                        <Image x:Name="GroupImage"
+                                               Stretch="UniformToFill"
+                                               RenderTransformOrigin="0.5,0.5"
+                                               Source="{Binding Name, Converter={StaticResource GroupNameToImage}}">
+                                            <Image.RenderTransform>
+                                                <ScaleTransform x:Name="ImageScale" />
+                                            </Image.RenderTransform>
+                                        </Image>
+
+                                        <!-- Play button — bottom right, hidden until hover -->
+                                        <ui:Button x:Name="PlayButton"
+                                                   Appearance="Primary"
+                                                   Width="36" Height="36"
+                                                   CornerRadius="18"
+                                                   Padding="0"
+                                                   Margin="0,0,8,8"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Bottom"
+                                                   Visibility="Collapsed"
+                                                   Command="{Binding DataContext.SelectGroupCommand,
+                                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                   CommandParameter="{Binding}">
+                                            <ui:SymbolIcon Symbol="Play24" FontSize="14" />
+                                        </ui:Button>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Group name + station count -->
+                                <StackPanel Grid.Row="1" Margin="10,8,10,10">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                                    <TextBlock FontSize="11"
+                                               Margin="0,2,0,0"
+                                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}">
+                                        <Run Text="{Binding StationCount, Mode=OneWay}" /><Run Text=" stations" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Hover triggers -->
+                            <Border.Triggers>
+                                <EventTrigger RoutedEvent="Border.MouseEnter">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.06" Duration="0:0:0.2" />
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.06" Duration="0:0:0.2" />
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
+                                                                           Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0"
+                                                                        Value="{x:Static Visibility.Visible}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="CardBorder"
+                                                                           Storyboard.TargetProperty="Background">
+                                                <DiscreteObjectKeyFrame KeyTime="0">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <SolidColorBrush Color="{DynamicResource ControlFillColorSecondary}" />
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                                <EventTrigger RoutedEvent="Border.MouseLeave">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.0" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.0" Duration="0:0:0.15" />
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
+                                                                           Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0"
+                                                                        Value="{x:Static Visibility.Collapsed}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="CardBorder"
+                                                                           Storyboard.TargetProperty="Background">
+                                                <DiscreteObjectKeyFrame KeyTime="0">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <SolidColorBrush Color="{DynamicResource ControlFillColorDefault}" />
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Border.Triggers>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
