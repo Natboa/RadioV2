@@ -51,7 +51,7 @@ public partial class DiscoverCarouselRow : UserControl
         double distance = target - start;
         if (Math.Abs(distance) < 0.5) return;
 
-        const double duration = 500.0; // ms
+        const double duration = 850.0; // ms
         TimeSpan startTime = TimeSpan.Zero;
         TimeSpan lastRenderTime = TimeSpan.MinValue;
 
