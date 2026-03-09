@@ -7,17 +7,16 @@ namespace RadioV2.Helpers;
 
 /// <summary>
 /// Attached behavior that replaces the default instant mouse-wheel jump on any
-/// ScrollViewer with a smooth, expo-ease-out pixel animation (true 60 fps via
-/// CompositionTarget.Rendering). Accumulates rapid ticks into a single running
-/// animation — no stutter, no overlapping timers.
+/// ScrollViewer with smooth deceleration at true 60 fps (CompositionTarget.Rendering).
+/// Each frame moves a fixed fraction of remaining distance toward the target — this
+/// gives natural exponential decay with no timing state that can stutter on reset.
+/// Rapid wheel ticks simply accumulate into the target; no animation restart needed.
 /// </summary>
 public static class SmoothScrollHelper
 {
     private sealed class ScrollState
     {
         public double TargetOffset;
-        public double StartOffset;
-        public TimeSpan AnimStart;
         public TimeSpan LastRenderTime = TimeSpan.MinValue;
         public EventHandler? RenderHandler;
     }
@@ -64,7 +63,7 @@ public static class SmoothScrollHelper
 
         e.Handled = true;
 
-        // ~3 lines × 16px — matches WPF default feel but in pixels
+        // ~3 lines × 16px per notch
         double delta = e.Delta / 120.0 * 48.0;
 
         if (!_states.TryGetValue(sv, out var state))
@@ -73,12 +72,10 @@ public static class SmoothScrollHelper
             _states[sv] = state;
         }
 
-        // Accumulate target; redirect from current visual position each tick
+        // Accumulate — new ticks just shift the target, no animation restart
         state.TargetOffset = Math.Clamp(state.TargetOffset - delta, 0, sv.ScrollableHeight);
-        state.StartOffset  = sv.VerticalOffset;
-        state.AnimStart    = TimeSpan.Zero;   // reset: running handler picks this up next frame
 
-        if (state.RenderHandler != null) return;   // already animating — just updated target above
+        if (state.RenderHandler != null) return;
 
         EventHandler? handler = null;
         handler = (_, args) =>
@@ -89,19 +86,20 @@ public static class SmoothScrollHelper
             if (rt == state.LastRenderTime) return;
             state.LastRenderTime = rt;
 
-            if (state.AnimStart == TimeSpan.Zero) state.AnimStart = rt;
+            double current   = sv.VerticalOffset;
+            double remaining = state.TargetOffset - current;
 
-            double t     = Math.Min((rt - state.AnimStart).TotalMilliseconds / 350.0, 1.0);
-            double eased = t >= 1.0 ? 1.0 : 1.0 - Math.Pow(2.0, -10.0 * t);
-
-            sv.ScrollToVerticalOffset(state.StartOffset + (state.TargetOffset - state.StartOffset) * eased);
-
-            if (t >= 1.0)
+            if (Math.Abs(remaining) < 0.5)
             {
+                sv.ScrollToVerticalOffset(state.TargetOffset);
                 CompositionTarget.Rendering -= handler;
                 state.RenderHandler = null;
                 _states.Remove(sv);
+                return;
             }
+
+            // Lerp: close 20% of remaining gap each frame → natural exponential deceleration
+            sv.ScrollToVerticalOffset(current + remaining * 0.20);
         };
 
         state.RenderHandler = handler;
