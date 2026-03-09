@@ -1,5 +1,5 @@
 using System.Windows;
-using System.Windows.Threading;
+using System.Windows.Media;
 using UserControl = System.Windows.Controls.UserControl;
 using ScrollChangedEventArgs = System.Windows.Controls.ScrollChangedEventArgs;
 
@@ -7,6 +7,8 @@ namespace RadioV2.Controls;
 
 public partial class DiscoverCarouselRow : UserControl
 {
+    private EventHandler? _renderHandler;
+
     public DiscoverCarouselRow()
     {
         InitializeComponent();
@@ -38,18 +40,48 @@ public partial class DiscoverCarouselRow : UserControl
 
     private void AnimateScrollTo(double target)
     {
-        double start = CarouselScroll.HorizontalOffset;
-        double duration = 300.0; // ms
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-        timer.Tick += (s, e) =>
+        // Cancel any in-progress animation immediately
+        if (_renderHandler != null)
         {
-            double t = Math.Min(sw.ElapsedMilliseconds / duration, 1.0);
-            double eased = 1 - Math.Pow(1 - t, 3); // ease-out cubic
-            CarouselScroll.ScrollToHorizontalOffset(start + (target - start) * eased);
-            if (t >= 1.0) timer.Stop();
+            CompositionTarget.Rendering -= _renderHandler;
+            _renderHandler = null;
+        }
+
+        double start = CarouselScroll.HorizontalOffset;
+        double distance = target - start;
+        if (Math.Abs(distance) < 0.5) return;
+
+        const double duration = 500.0; // ms
+        TimeSpan startTime = TimeSpan.Zero;
+        TimeSpan lastRenderTime = TimeSpan.MinValue;
+
+        EventHandler? handler = null;
+        handler = (s, e) =>
+        {
+            // WPF fires CompositionTarget.Rendering multiple times per vsync frame —
+            // guard against duplicate calls using RenderingTime to get true 60fps
+            var renderTime = ((RenderingEventArgs)e).RenderingTime;
+            if (renderTime == lastRenderTime) return;
+            lastRenderTime = renderTime;
+
+            if (startTime == TimeSpan.Zero) startTime = renderTime;
+
+            double elapsed = (renderTime - startTime).TotalMilliseconds;
+            double t = Math.Min(elapsed / duration, 1.0);
+
+            // Expo ease-out: launches at max velocity, brakes sharply at the end ("slot into place")
+            double eased = t >= 1.0 ? 1.0 : 1.0 - Math.Pow(2.0, -10.0 * t);
+
+            CarouselScroll.ScrollToHorizontalOffset(start + distance * eased);
+
+            if (t >= 1.0)
+            {
+                CompositionTarget.Rendering -= handler;
+                _renderHandler = null;
+            }
         };
-        timer.Start();
+
+        _renderHandler = handler;
+        CompositionTarget.Rendering += handler;
     }
 }
