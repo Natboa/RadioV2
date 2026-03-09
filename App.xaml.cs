@@ -63,7 +63,7 @@ public partial class App : Application
 
                 // Pages
                 services.AddTransient<BrowsePage>();
-                services.AddTransient<DiscoverPage>();
+                services.AddSingleton<DiscoverPage>();
                 services.AddTransient<FavouritesPage>();
                 services.AddTransient<SettingsPage>();
 

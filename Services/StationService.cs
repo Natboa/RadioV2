@@ -11,6 +11,8 @@ public class StationService : IStationService
 
     public StationService(IDbContextFactory<RadioDbContext> factory) => _factory = factory;
 
+    public bool CategoriesAreCached => _categoriesCache is not null;
+
     public async Task<List<Station>> GetStationsAsync(int skip, int take, string? searchQuery = null, CancellationToken ct = default)
     {
         using var db = _factory.CreateDbContext();
