@@ -38,7 +38,7 @@ public partial class DiscoverPage : Page
                 {
                     viewModel.IsAtBottom = GroupsScrollViewer.ScrollableHeight == 0 ||
                         GroupsScrollViewer.VerticalOffset >= GroupsScrollViewer.ScrollableHeight - 200;
-                    if (viewModel.HasMoreGroups && GroupsScrollViewer.ScrollableHeight < 400)
+                    if (!viewModel.IsLoading && viewModel.HasMoreGroups && GroupsScrollViewer.ScrollableHeight < 400)
                         await viewModel.LoadMoreGroupsAsync();
                 }
             };

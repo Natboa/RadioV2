@@ -98,7 +98,10 @@ public partial class MainWindow : FluentWindow
 
     private void OnPaneToggleClick(object sender, RoutedEventArgs e)
     {
+        PaneToggleBtn.Visibility = Visibility.Collapsed;
         RootNavigation.IsPaneOpen = !RootNavigation.IsPaneOpen;
+        Task.Delay(160).ContinueWith(_ =>
+            Dispatcher.Invoke(() => PaneToggleBtn.Visibility = Visibility.Visible));
     }
 
     protected override void OnClosing(CancelEventArgs e)

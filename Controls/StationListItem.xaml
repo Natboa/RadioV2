@@ -41,16 +41,13 @@
         </StackPanel>
 
         <!-- Actions -->
-        <StackPanel Grid.Column="2"
-                    Orientation="Horizontal"
-                    VerticalAlignment="Center">
-            <ui:Button Appearance="Transparent"
-                       Command="{Binding DataContext.PlayStationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                       CommandParameter="{Binding}"
-                       ToolTip="Play">
-                <ui:SymbolIcon Symbol="Play24" />
-            </ui:Button>
-            <Grid>
+        <Grid Grid.Column="2" VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0">
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Hidden" />
@@ -70,15 +67,98 @@
                         </Style.Triggers>
                     </Style>
                 </Grid.Style>
+
+                <!-- Plain icon (no button chrome) shown when favourited but not hovering -->
+                <ui:SymbolIcon Symbol="Heart24"
+                               Filled="True"
+                               Margin="11,5"
+                               Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}">
+                    <ui:SymbolIcon.Style>
+                        <Style TargetType="ui:SymbolIcon">
+                            <Setter Property="Visibility" Value="Hidden" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsFavorite}" Value="True" />
+                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:SymbolIcon.Style>
+                </ui:SymbolIcon>
+
+                <!-- Button with animation, shown only on hover -->
                 <ui:Button Appearance="Transparent"
                            Command="{Binding DataContext.ToggleFavouriteCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                            CommandParameter="{Binding}"
                            ToolTip="Favourite">
-                    <ui:SymbolIcon Symbol="Heart24"
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                            <Setter Property="Visibility" Value="Hidden" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                    <ui:Button.Triggers>
+                        <EventTrigger RoutedEvent="Button.Click">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="HeartIcon"
+                                                                   Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
+                                        <EasingDoubleKeyFrame KeyTime="0" Value="1" />
+                                        <EasingDoubleKeyFrame KeyTime="0:0:0.1" Value="1.4">
+                                            <EasingDoubleKeyFrame.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseOut" />
+                                            </EasingDoubleKeyFrame.EasingFunction>
+                                        </EasingDoubleKeyFrame>
+                                        <EasingDoubleKeyFrame KeyTime="0:0:0.22" Value="1">
+                                            <EasingDoubleKeyFrame.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseIn" />
+                                            </EasingDoubleKeyFrame.EasingFunction>
+                                        </EasingDoubleKeyFrame>
+                                    </DoubleAnimationUsingKeyFrames>
+                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="HeartIcon"
+                                                                   Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
+                                        <EasingDoubleKeyFrame KeyTime="0" Value="1" />
+                                        <EasingDoubleKeyFrame KeyTime="0:0:0.1" Value="1.4">
+                                            <EasingDoubleKeyFrame.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseOut" />
+                                            </EasingDoubleKeyFrame.EasingFunction>
+                                        </EasingDoubleKeyFrame>
+                                        <EasingDoubleKeyFrame KeyTime="0:0:0.22" Value="1">
+                                            <EasingDoubleKeyFrame.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseIn" />
+                                            </EasingDoubleKeyFrame.EasingFunction>
+                                        </EasingDoubleKeyFrame>
+                                    </DoubleAnimationUsingKeyFrames>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </ui:Button.Triggers>
+                    <ui:SymbolIcon x:Name="HeartIcon"
+                                   Symbol="Heart24"
                                    Filled="True"
-                                   Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}" />
+                                   RenderTransformOrigin="0.5,0.5"
+                                   Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}">
+                        <ui:SymbolIcon.RenderTransform>
+                            <ScaleTransform />
+                        </ui:SymbolIcon.RenderTransform>
+                    </ui:SymbolIcon>
                 </ui:Button>
             </Grid>
-        </StackPanel>
+
+            <ui:Button Grid.Column="1"
+                       Appearance="Transparent"
+                       Command="{Binding DataContext.PlayStationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                       CommandParameter="{Binding}"
+                       ToolTip="Play">
+                <ui:SymbolIcon Symbol="Play24" />
+            </ui:Button>
+        </Grid>
     </Grid>
 </UserControl>
