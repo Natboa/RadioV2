@@ -10,6 +10,7 @@ public partial class DiscoverPage : Page
 {
     private ScrollViewer? _stationsSv;
     private bool _stationsSvSetup;
+    private bool _pageSetup;
 
     public DiscoverPage(DiscoverViewModel viewModel)
     {
@@ -17,29 +18,35 @@ public partial class DiscoverPage : Page
         InitializeComponent();
         Loaded += async (_, _) =>
         {
-            // Carousel cards consume PreviewMouseWheel — forward it to the outer ScrollViewer
-            CarouselScrollViewer.PreviewMouseWheel += (_, e) =>
+            if (!_pageSetup)
             {
-                CarouselScrollViewer.ScrollToVerticalOffset(
-                    CarouselScrollViewer.VerticalOffset - e.Delta);
-                e.Handled = true;
-            };
+                _pageSetup = true;
 
-            // Wire station drill-down scroll viewer when IsGroupView changes
-            viewModel.PropertyChanged += (_, e) =>
-            {
-                if (e.PropertyName == nameof(viewModel.IsGroupView) && viewModel.IsGroupView)
+                // Carousel cards consume PreviewMouseWheel — forward it to the outer ScrollViewer
+                CarouselScrollViewer.PreviewMouseWheel += (_, e) =>
                 {
-                    viewModel.IsAtBottom = true;
-                    Dispatcher.InvokeAsync(() =>
-                    {
-                        TrySetupStationsScrollViewer(viewModel);
-                        _stationsSv?.ScrollToTop();
-                    }, DispatcherPriority.Loaded);
-                }
-            };
+                    CarouselScrollViewer.ScrollToVerticalOffset(
+                        CarouselScrollViewer.VerticalOffset - e.Delta);
+                    e.Handled = true;
+                };
 
-            TrySetupStationsScrollViewer(viewModel);
+                // Wire station drill-down scroll viewer when IsGroupView changes
+                viewModel.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(viewModel.IsGroupView) && viewModel.IsGroupView)
+                    {
+                        viewModel.IsAtBottom = true;
+                        Dispatcher.InvokeAsync(() =>
+                        {
+                            TrySetupStationsScrollViewer(viewModel);
+                            _stationsSv?.ScrollToTop();
+                        }, DispatcherPriority.Loaded);
+                    }
+                };
+
+                TrySetupStationsScrollViewer(viewModel);
+            }
+
             await viewModel.LoadCategoriesAsync();
         };
     }

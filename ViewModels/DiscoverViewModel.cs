@@ -27,7 +27,8 @@ public partial class DiscoverViewModel : ObservableObject
     public async Task LoadCategoriesAsync(CancellationToken ct = default)
     {
         if (CategoriesLoaded) return;
-        IsLoading = true;
+        var cached = _stationService.CategoriesAreCached;
+        if (!cached) IsLoading = true;
         try
         {
             var categories = await Task.Run(() => _stationService.GetCategoriesWithGroupsAsync(ct), ct);
