@@ -55,12 +55,18 @@
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Hidden" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsFavorite}" Value="True">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
+                            <!-- Always show on hover -->
                             <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
+                            <!-- Show when favorited, but only when not in hover-only mode -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsFavorite}" Value="True" />
+                                    <Condition Binding="{Binding HoverOnlyHeart, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible" />
+                            </MultiDataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Grid.Style>
@@ -69,6 +75,7 @@
                            CommandParameter="{Binding}"
                            ToolTip="Favourite">
                     <ui:SymbolIcon Symbol="Heart24"
+                                   Filled="True"
                                    Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}" />
                 </ui:Button>
             </Grid>

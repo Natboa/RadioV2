@@ -15,6 +15,7 @@ public partial class GroupsViewModel : ObservableObject
     [ObservableProperty] GroupWithCount? selectedGroup;
     [ObservableProperty] GroupWithCount? mergeTargetGroup;
     [ObservableProperty] string searchText = "";
+    [ObservableProperty] string mergeSearchText = "";
     [ObservableProperty] string formName = "";
     [ObservableProperty] bool isEditMode;
     [ObservableProperty] string? errorMessage;
@@ -35,6 +36,9 @@ public partial class GroupsViewModel : ObservableObject
     partial void OnSearchTextChanged(string value)
         => _ = LoadGroupsAsync();
 
+    partial void OnMergeSearchTextChanged(string value)
+        => RefreshMergeTargets();
+
     partial void OnSelectedGroupChanged(GroupWithCount? value)
     {
         if (value == null) return;
@@ -46,11 +50,13 @@ public partial class GroupsViewModel : ObservableObject
 
     private void RefreshMergeTargets()
     {
+        var filter = MergeSearchText.Trim();
         MergeTargets.Clear();
         foreach (var g in Groups)
         {
-            if (g.Id != SelectedGroup?.Id)
-                MergeTargets.Add(g);
+            if (g.Id == SelectedGroup?.Id) continue;
+            if (!string.IsNullOrEmpty(filter) && !g.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)) continue;
+            MergeTargets.Add(g);
         }
         MergeTargetGroup = MergeTargets.FirstOrDefault();
     }

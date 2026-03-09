@@ -116,8 +116,49 @@
                     IsMoveToPointEnabled="True">
                 <Slider.Style>
                     <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
-                        <Setter Property="Padding" Value="0" />
                         <Style.Triggers>
+                            <!--  Override template to fix track margin so the visible circle aligns with track endpoints  -->
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type Slider}">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <!--  Margin="10,0" insets the track line by half the thumb width so it ends where the circle ends  -->
+                                                <Border
+                                                    x:Name="TrackBackground"
+                                                    Grid.Row="1"
+                                                    Height="4"
+                                                    Margin="10,0"
+                                                    Background="{DynamicResource SliderTrackFill}"
+                                                    BorderThickness="0"
+                                                    CornerRadius="2" />
+                                                <Track x:Name="PART_Track" Grid.Row="1">
+                                                    <Track.DecreaseRepeatButton>
+                                                        <RepeatButton Command="Slider.DecreaseLarge" Style="{StaticResource UiSliderButtonStyle}" />
+                                                    </Track.DecreaseRepeatButton>
+                                                    <Track.Thumb>
+                                                        <Thumb x:Name="Thumb" Style="{StaticResource UiSliderThumbStyle}" />
+                                                    </Track.Thumb>
+                                                    <Track.IncreaseRepeatButton>
+                                                        <RepeatButton Command="Slider.IncreaseLarge" Style="{StaticResource UiSliderButtonStyle}" />
+                                                    </Track.IncreaseRepeatButton>
+                                                </Track>
+                                            </Grid>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="TrackBackground" Property="Background" Value="{DynamicResource SliderTrackFillPointerOver}" />
+                                                    <Setter TargetName="Thumb" Property="Foreground" Value="{DynamicResource SliderThumbBackgroundPointerOver}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
                             <DataTrigger Binding="{Binding IsMuted}" Value="True">
                                 <Setter Property="IsEnabled" Value="False" />
                             </DataTrigger>

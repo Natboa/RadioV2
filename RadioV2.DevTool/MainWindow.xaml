@@ -5,7 +5,8 @@
         Title="RadioV2 Dev Tool"
         Height="780" Width="1200"
         MinHeight="600" MinWidth="900"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ApplicationBackgroundBrush}">
     <TabControl Margin="8">
         <TabItem Header="  Stations  ">
             <views:StationsTab />

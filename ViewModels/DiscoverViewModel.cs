@@ -26,8 +26,15 @@ public partial class DiscoverViewModel : ObservableObject
     [ObservableProperty] private ObservableCollection<Station> _groupStations = [];
     [ObservableProperty] private string _groupSearchQuery = string.Empty;
     [ObservableProperty] private bool _isGroupView;
-    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowLoadingSpinner))]
+    private bool _isLoading;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowLoadingSpinner))]
+    private bool _isAtBottom = true;
     [ObservableProperty] private bool _hasMoreGroups = true;
+
+    public bool ShowLoadingSpinner => IsLoading && IsAtBottom;
     [ObservableProperty] private bool _hasMoreItems = true;
 
     partial void OnGroupSearchQueryChanged(string value)

@@ -57,6 +57,16 @@ FIXED: Root cause was WPF-UI's NavigationViewContentPresenter wrapping ALL page 
 *theres a button to expand and minimize the left side menu, i want that button to be two arrow pointing out diagonally for exanding and for minimizing they will be pointing inward. the button will be on the right side of the menu when it is expanded instead of stayin at the same place
 FIXED: Hid the default WPF-UI hamburger (IsPaneToggleVisible="False") and added a custom overlay Button (PaneToggleBtn) in Grid.Row="1". Uses SymbolRegular.ArrowMaximizeTopLeftBottomRight20 (outward diagonal arrows) when pane is closed and SymbolRegular.ArrowMinimizeTopLeftBottomRight20 (inward diagonal arrows) when open. Margin is updated in UpdatePaneToggleButton() to always sit at the right edge of the pane — (OpenPaneLength - 40, 8) when expanded, (CompactPaneLength - 40, 8) when compact. IsPaneOpen toggled on click; DependencyPropertyDescriptor watches NavigationView.IsPaneOpenProperty to keep icon/position in sync. (MainWindow.xaml, MainWindow.xaml.cs)
 
+*add search bar to groups
+
+*browse doesnt work, doesnt search all the stations
+
+*first time entering a group, scrolling to the bottom did not load more stations; leaving and re-entering the group fixed it
+FIXED: StationsListBox lives inside a Collapsed Grid on startup, so its visual tree (including the internal ScrollViewer) is never realized before the first group is opened. TrySetupStationsScrollViewer was called synchronously on the PropertyChanged event for IsGroupView — before WPF's layout pass ran — so FindChildScrollViewer returned null and the ScrollChanged listener was never attached. On the second visit WPF keeps the realized visual tree even when collapsed, so it worked. Fix: wrapped TrySetupStationsScrollViewer + ScrollToTop in Dispatcher.InvokeAsync at DispatcherPriority.Loaded so the layout pass (which realizes the ListBox template) completes first. (Views/DiscoverPage.xaml.cs)
+
+*when scrolling down and it starts to load more stations or groups, the loading spinner stays visible instead of staying at the bottom — scrolling back up while loading keeps the spinner in view
+FIXED: Root cause: ProgressRing was in a Grid row outside the scrollable ListBox/ScrollViewer, so it was always pinned to the viewport bottom regardless of scroll position. Fix: added IsAtBottom (bool, default true) and ShowLoadingSpinner (= IsLoading && IsAtBottom) computed property to BrowseViewModel and DiscoverViewModel. IsAtBottom is tracked via ScrollChanged in the code-behind (same pattern as existing scroll detection) and updated directly on the ViewModel. Spinner Visibility binding changed from IsLoading → ShowLoadingSpinner on all three spinners (BrowsePage, DiscoverPage groups, DiscoverPage station list). IsAtBottom initialises true so the spinner shows on first load, becomes false when user scrolls above the threshold, and resets to true when entering a group's station list. Attempted a behavior DP approach first (IsAtBottom as a DP on InfiniteScrollBehavior with OneWayToSource binding) — this silently broke the LoadMoreCommand binding, reverted. Final implementation uses code-behind ScrollChanged handlers only. (ViewModels/BrowseViewModel.cs, ViewModels/DiscoverViewModel.cs, Views/BrowsePage.xaml, Views/BrowsePage.xaml.cs, Views/DiscoverPage.xaml, Views/DiscoverPage.xaml.cs)
+
 *future features:
  installer that includes the db aswell.
 
@@ -64,6 +74,10 @@ FIXED: Hid the default WPF-UI hamburger (IsPaneToggleVisible="False") and added 
 
  *crud for developer for stations and groups (seperate from the package and installer, its just for developement)
  the crud will also include merging two groups
+
+ *make a script with a crawler to find images for stations without a picture
+
+ *change the groups page to have groups of groups like spotify
 
 
 

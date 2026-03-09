@@ -12,8 +12,6 @@
     <Grid Margin="24,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -25,47 +23,8 @@
                    Margin="0,0,0,16"
                    Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
 
-        <!-- Toolbar -->
-        <Border Grid.Row="1"
-                CornerRadius="8"
-                Background="{ui:ThemeResource ControlFillColorDefaultBrush}"
-                Padding="12,8"
-                Margin="0,0,0,12">
-            <StackPanel Orientation="Horizontal">
-                <ui:Button Command="{Binding ImportFavouritesCommand}"
-                           Appearance="Secondary"
-                           Margin="0,0,8,0"
-                           ToolTip="Import favourites from M3U or JSON">
-                    <StackPanel Orientation="Horizontal">
-                        <ui:SymbolIcon Symbol="ArrowDownload24" Margin="0,0,6,0" />
-                        <TextBlock Text="Import" VerticalAlignment="Center" />
-                    </StackPanel>
-                </ui:Button>
-                <ui:Button Command="{Binding ExportFavouritesCommand}"
-                           Appearance="Secondary"
-                           ToolTip="Export favourites to M3U or JSON">
-                    <StackPanel Orientation="Horizontal">
-                        <ui:SymbolIcon Symbol="ArrowUpload24" Margin="0,0,6,0" />
-                        <TextBlock Text="Export" VerticalAlignment="Center" />
-                    </StackPanel>
-                </ui:Button>
-            </StackPanel>
-        </Border>
-
-        <!-- Status message -->
-        <Border Grid.Row="2"
-                CornerRadius="6"
-                Background="{ui:ThemeResource SystemFillColorSuccessBackgroundBrush}"
-                Padding="12,8"
-                Margin="0,0,0,12"
-                Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVisibilityConverter}}">
-            <TextBlock Text="{Binding StatusMessage}"
-                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}"
-                       FontSize="13" />
-        </Border>
-
         <!-- Favourites list -->
-        <ListBox Grid.Row="3"
+        <ListBox Grid.Row="1"
                  ItemsSource="{Binding Favourites}"
                  Background="Transparent"
                  BorderThickness="0"
@@ -80,13 +39,13 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <controls:StationListItem />
+                    <controls:StationListItem HoverOnlyHeart="True" />
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
 
         <!-- Empty state -->
-        <StackPanel Grid.Row="3"
+        <StackPanel Grid.Row="1"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
