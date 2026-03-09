@@ -88,7 +88,7 @@
                                         <!-- Placeholder shown when no image exists -->
                                         <Border x:Name="PlaceholderBg"
                                                 Background="{ui:ThemeResource ControlFillColorSecondaryBrush}">
-                                            <ui:SymbolIcon Symbol="MusicNote24"
+                                            <ui:SymbolIcon Symbol="Play24"
                                                            FontSize="40"
                                                            HorizontalAlignment="Center"
                                                            VerticalAlignment="Center"
