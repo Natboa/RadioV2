@@ -96,11 +96,13 @@ public partial class App : Application
         Log.Information("RadioV2 starting up");
 
         await _host.StartAsync();
-        await RestoreSessionAsync();
 
-        // Preload first batch of groups so Discover page is instant on first visit
-        var discoverVm = _host.Services.GetRequiredService<DiscoverViewModel>();
-        _ = discoverVm.LoadGroupsAsync();
+        // Apply schema additions and seed category data (safe on every launch)
+        var dbFactory = _host.Services.GetRequiredService<IDbContextFactory<RadioDbContext>>();
+        using (var db = dbFactory.CreateDbContext())
+            await DatabaseInitService.InitialiseAsync(db);
+
+        await RestoreSessionAsync();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();

@@ -29,6 +29,30 @@ public class StationService : IStationService
             .ToListAsync(ct);
     }
 
+    public async Task<List<CategoryWithGroups>> GetCategoriesWithGroupsAsync(CancellationToken ct = default)
+    {
+        using var db = _factory.CreateDbContext();
+        return await db.Categories
+            .AsNoTracking()
+            .OrderBy(c => c.DisplayOrder)
+            .Select(c => new CategoryWithGroups
+            {
+                Id = c.Id,
+                Name = c.Name,
+                DisplayOrder = c.DisplayOrder,
+                Groups = c.Groups
+                    .Select(g => new GroupWithCount
+                    {
+                        Id = g.Id,
+                        Name = g.Name,
+                        StationCount = g.Stations.Count
+                    })
+                    .OrderBy(g => g.Name)
+                    .ToList()
+            })
+            .ToListAsync(ct);
+    }
+
     public async Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default)
     {
         using var db = _factory.CreateDbContext();

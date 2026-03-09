@@ -17,6 +17,7 @@
             <converters:BoolToInverseVisibilityConverter x:Key="BoolToInverseVisibilityConverter" />
             <converters:StringEqualConverter x:Key="StringEqualConverter" />
             <converters:BoolToSpeakerIconConverter x:Key="BoolToSpeakerIconConverter" />
+            <converters:GroupNameToImageConverter x:Key="GroupNameToImageConverter" />
 
             <!-- Override NavigationViewContentPresenter template: keep the DynamicScrollViewer
                  but disable vertical scrolling so pages get a constrained height (enabling

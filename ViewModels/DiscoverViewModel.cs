@@ -10,7 +10,6 @@ public partial class DiscoverViewModel : ObservableObject
 {
     private readonly IStationService _stationService;
     private readonly MiniPlayerViewModel _miniPlayer;
-    private int _groupsSkip;
     private int _groupSkip;
     private bool _isLoadingStations;
     private CancellationTokenSource _searchCts = new();
@@ -21,7 +20,35 @@ public partial class DiscoverViewModel : ObservableObject
         _miniPlayer = miniPlayer;
     }
 
-    [ObservableProperty] private ObservableCollection<GroupWithCount> _groups = [];
+    // ── Carousel (category rows) ─────────────────────────────────────────────
+    [ObservableProperty] private ObservableCollection<CarouselRowViewModel> _categoryRows = [];
+    [ObservableProperty] private bool _categoriesLoaded;
+
+    public async Task LoadCategoriesAsync(CancellationToken ct = default)
+    {
+        if (CategoriesLoaded) return;
+        IsLoading = true;
+        try
+        {
+            var categories = await Task.Run(() => _stationService.GetCategoriesWithGroupsAsync(ct), ct);
+            CategoryRows.Clear();
+            foreach (var cat in categories)
+            {
+                CategoryRows.Add(new CarouselRowViewModel
+                {
+                    CategoryId = cat.Id,
+                    CategoryName = cat.Name,
+                    Groups = cat.Groups,
+                    SelectGroupCommand = SelectGroupCommand
+                });
+            }
+            CategoriesLoaded = true;
+        }
+        catch (OperationCanceledException) { }
+        finally { IsLoading = false; }
+    }
+
+    // ── Station drill-down ───────────────────────────────────────────────────
     [ObservableProperty] private GroupWithCount? _selectedGroup;
     [ObservableProperty] private ObservableCollection<Station> _groupStations = [];
     [ObservableProperty] private string _groupSearchQuery = string.Empty;
@@ -32,10 +59,9 @@ public partial class DiscoverViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadingSpinner))]
     private bool _isAtBottom = true;
-    [ObservableProperty] private bool _hasMoreGroups = true;
+    [ObservableProperty] private bool _hasMoreItems = true;
 
     public bool ShowLoadingSpinner => IsLoading && IsAtBottom;
-    [ObservableProperty] private bool _hasMoreItems = true;
 
     partial void OnGroupSearchQueryChanged(string value)
     {
@@ -56,28 +82,6 @@ public partial class DiscoverViewModel : ObservableObject
             await LoadMoreGroupStationsAsync(ct);
         }
         catch (OperationCanceledException) { }
-    }
-
-    [RelayCommand]
-    public Task LoadGroupsAsync(CancellationToken ct = default)
-    {
-        if (Groups.Count > 0) return Task.CompletedTask;
-        return LoadMoreGroupsAsync(ct);
-    }
-
-    [RelayCommand]
-    public async Task LoadMoreGroupsAsync(CancellationToken ct = default)
-    {
-        if (IsLoading || !HasMoreGroups) return;
-        IsLoading = true;
-        try
-        {
-            var batch = await Task.Run(() => _stationService.GetGroupsWithCountsAsync(_groupsSkip, 30, ct), ct);
-            foreach (var g in batch) Groups.Add(g);
-            _groupsSkip += batch.Count;
-            HasMoreGroups = batch.Count == 30;
-        }
-        finally { IsLoading = false; }
     }
 
     [RelayCommand]

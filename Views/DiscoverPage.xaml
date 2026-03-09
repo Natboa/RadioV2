@@ -3,7 +3,6 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:RadioV2.Controls"
-      xmlns:helpers="clr-namespace:RadioV2.Helpers"
       xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -11,72 +10,54 @@
       d:DesignHeight="600" d:DesignWidth="800"
       Title="Discover">
 
-    <Grid Margin="24,16">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />   <!-- sticky header -->
+            <RowDefinition Height="*" />       <!-- scrollable content -->
+        </Grid.RowDefinitions>
 
-        <!-- Genre grid (IsGroupView = false) -->
-        <Grid Visibility="{Binding IsGroupView, Converter={StaticResource BoolToInverseVisibilityConverter}}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="48" />
-            </Grid.RowDefinitions>
-
-            <TextBlock Grid.Row="0"
-                       Text="Discover"
+        <!-- ── Sticky semi-transparent header ────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="{ui:ThemeResource LayerFillColorDefaultBrush}"
+                BorderBrush="{ui:ThemeResource ControlStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="24,14"
+                Panel.ZIndex="1">
+            <TextBlock Text="Discover"
                        FontSize="28"
                        FontWeight="SemiBold"
-                       Margin="0,0,0,16"
                        Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+        </Border>
 
-            <ScrollViewer x:Name="GroupsScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <i:Interaction.Behaviors>
-                    <helpers:ScrollViewerInfiniteScrollBehavior LoadMoreCommand="{Binding DataContext.LoadMoreGroupsCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
-                </i:Interaction.Behaviors>
-                <ItemsControl ItemsSource="{Binding Groups}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
+        <!-- ── Carousel view (categories → groups) ───────────────────────── -->
+        <ScrollViewer x:Name="CarouselScrollViewer"
+                      Grid.Row="1"
+                      Visibility="{Binding IsGroupView, Converter={StaticResource BoolToInverseVisibilityConverter}}"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="24,16,24,0">
+            <StackPanel>
+                <ItemsControl ItemsSource="{Binding CategoryRows}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <ui:Card Margin="4"
-                                     Width="180"
-                                     Cursor="Hand"
-                                     Padding="12">
-                                <ui:Card.InputBindings>
-                                    <MouseBinding MouseAction="LeftClick"
-                                                  Command="{Binding DataContext.SelectGroupCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                  CommandParameter="{Binding}" />
-                                </ui:Card.InputBindings>
-                                <StackPanel>
-                                    <TextBlock Text="{Binding Name}"
-                                               FontSize="16"
-                                               FontWeight="SemiBold"
-                                               TextTrimming="CharacterEllipsis"
-                                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                                    <TextBlock FontSize="12"
-                                               Margin="0,4,0,0"
-                                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}">
-                                        <Run Text="{Binding StationCount, Mode=OneWay}" /><Run Text=" stations" />
-                                    </TextBlock>
-                                </StackPanel>
-                            </ui:Card>
+                            <controls:DiscoverCarouselRow />
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </ScrollViewer>
 
-            <ui:ProgressRing Grid.Row="2"
-                             IsIndeterminate="True"
-                             Width="32" Height="32"
-                             Margin="0,8"
-                             HorizontalAlignment="Center"
-                             Visibility="{Binding ShowLoadingSpinner, Converter={StaticResource BoolToVisibilityConverter}}" />
-        </Grid>
+                <ui:ProgressRing IsIndeterminate="True"
+                                 Width="32" Height="32"
+                                 Margin="0,8,0,24"
+                                 HorizontalAlignment="Center"
+                                 Visibility="{Binding ShowLoadingSpinner,
+                                     Converter={StaticResource BoolToVisibilityConverter}}" />
+            </StackPanel>
+        </ScrollViewer>
 
-        <!-- Station list view (IsGroupView = true) -->
-        <Grid Visibility="{Binding IsGroupView, Converter={StaticResource BoolToVisibilityConverter}}">
+        <!-- ── Station list view (drill-down into a group) ───────────────── -->
+        <Grid Grid.Row="1"
+              Visibility="{Binding IsGroupView, Converter={StaticResource BoolToVisibilityConverter}}"
+              Margin="24,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -85,7 +66,7 @@
             </Grid.RowDefinitions>
 
             <!-- Header: back + group name -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,12,0,12">
                 <ui:Button Appearance="Transparent"
                            Command="{Binding BackToGroupsCommand}"
                            Margin="0,0,8,0">
@@ -98,7 +79,7 @@
                            Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
             </StackPanel>
 
-            <!-- Search within genre -->
+            <!-- Search within group -->
             <ui:TextBox Grid.Row="1"
                         Text="{Binding GroupSearchQuery, UpdateSourceTrigger=PropertyChanged}"
                         PlaceholderText="{Binding SelectedGroup.Name, StringFormat='Filter within {0}...'}"
@@ -140,7 +121,8 @@
                              Width="32" Height="32"
                              Margin="0,8"
                              HorizontalAlignment="Center"
-                             Visibility="{Binding ShowLoadingSpinner, Converter={StaticResource BoolToVisibilityConverter}}" />
+                             Visibility="{Binding ShowLoadingSpinner,
+                                 Converter={StaticResource BoolToVisibilityConverter}}" />
         </Grid>
     </Grid>
 </Page>
