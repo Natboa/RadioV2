@@ -14,4 +14,7 @@ public class CarouselRowViewModel
     /// without needing a reference to the page.
     /// </summary>
     public IRelayCommand<GroupWithCount> SelectGroupCommand { get; init; } = null!;
+
+    public bool IsCountryCategory =>
+        CategoryName is "Europe" or "Americas" or "Asia, Pacific & Africa";
 }

@@ -85,15 +85,18 @@ public partial class MainWindow : FluentWindow
             ? SymbolRegular.FullScreenMinimize20
             : SymbolRegular.FullScreenMaximize20;
 
+        PaneToggleBtn.ToolTip = isOpen ? "Minimize" : "Expand";
+
         double openLen = RootNavigation.OpenPaneLength;
         double compactLen = RootNavigation.CompactPaneLength;
         double btnW = PaneToggleBtn.Width;
 
-        // When open: button sits at the right edge of the expanded pane.
-        // When compact: button sits at the right edge of the compact strip.
-        PaneToggleBtn.Margin = isOpen
-            ? new Thickness(openLen - btnW - 4, 8, 0, 0)
-            : new Thickness(compactLen - btnW - 4, 8, 0, 0);
+        // When open: float at the right edge of the expanded pane.
+        // When compact: centre within the icon column so it aligns with the nav icons below.
+        double leftMargin = isOpen
+            ? openLen - btnW - 4
+            : Math.Round((compactLen - btnW) / 2);
+        PaneToggleBtn.Margin = new Thickness(leftMargin, 8, 0, 0);
     }
 
     private void OnPaneToggleClick(object sender, RoutedEventArgs e)

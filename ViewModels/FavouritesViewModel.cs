@@ -24,15 +24,21 @@ public partial class FavouritesViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
     private int _favouriteCount;
 
-    public bool IsEmpty => FavouriteCount == 0;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    private bool _isLoading = true;
+
+    public bool IsEmpty => !IsLoading && FavouriteCount == 0;
 
     [RelayCommand]
     public async Task LoadFavouritesAsync()
     {
+        IsLoading = true;
         var list = await Task.Run(() => _stationService.GetFavouritesAsync());
         Favourites.Clear();
         foreach (var s in list) Favourites.Add(s);
         FavouriteCount = Favourites.Count;
+        IsLoading = false;
     }
 
     [RelayCommand]
