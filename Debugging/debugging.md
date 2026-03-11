@@ -77,10 +77,12 @@ FIXED: Root cause: ProgressRing was in a Grid row outside the scrollable ListBox
 
  *make a script with a crawler to find images for stations without a picture
 
- *change the groups page to have groups of groups like spotify
 
-*import stations parses m3u files and adds stations to imported group
+*import fav stations parses m3u files and adds 
 
 *save images as local cache so it wont load everytime stations pics
 
+*script that deletes stations with same name in same group
+
+*script that has lots of common words and group names and for each group deletes stations that include those words if they dont fit the group they are in
 

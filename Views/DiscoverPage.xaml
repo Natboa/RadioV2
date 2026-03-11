@@ -61,6 +61,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="48" />
             </Grid.RowDefinitions>
@@ -86,9 +87,40 @@
                         Icon="{ui:SymbolIcon Search24}"
                         Margin="0,0,0,12" />
 
+            <!-- Featured stations section -->
+            <Border Grid.Row="2"
+                    Visibility="{Binding HasFeaturedStations, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="Featured"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Margin="0,8,0,4"
+                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    <ListBox ItemsSource="{Binding FeaturedStations}"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,16,0" />
+                                <Setter Property="Background" Value="Transparent" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <controls:StationListItem />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Separator Margin="0,4,16,4" />
+                </StackPanel>
+            </Border>
+
             <!-- Station list -->
             <ListBox x:Name="StationsListBox"
-                     Grid.Row="2"
+                     Grid.Row="3"
                      ItemsSource="{Binding GroupStations}"
                      BorderThickness="0"
                      Background="Transparent"
@@ -116,7 +148,7 @@
                 </ListBox.ItemsPanel>
             </ListBox>
 
-            <ui:ProgressRing Grid.Row="3"
+            <ui:ProgressRing Grid.Row="4"
                              IsIndeterminate="True"
                              Width="32" Height="32"
                              Margin="0,8"
