@@ -133,37 +133,54 @@ def check_stream(url: str, timeout: int) -> tuple[str, int | None, str | None]:
     'fail'    = server responded but with a bad code or empty body  (internet was up)
     'timeout' = no response within timeout                          (could be outage)
     'error'   = connection-level error: DNS, refused, etc.          (could be outage)
-    """
-    try:
-        with requests.get(
-            url,
-            headers=HEADERS,
-            stream=True,
-            timeout=(timeout, timeout),
-            allow_redirects=True,
-        ) as r:
-            code = r.status_code
-            if code == 200:
-                chunk = next(r.iter_content(READ_BYTES), b"")
-                if chunk:
-                    return "ok", code, None
-                return "fail", code, "connected but empty response"
-            else:
-                return "fail", code, f"HTTP {code}"
 
-    except Timeout:
-        return "timeout", None, "timed out"
-    except ReqConnectionError as e:
-        msg = str(e)
-        if "Name or service not known" in msg or "getaddrinfo failed" in msg or "nodename nor servname" in msg:
-            return "error", None, "DNS lookup failed"
-        if "Connection refused" in msg:
-            return "error", None, "connection refused"
-        return "error", None, msg[:100]
-    except RequestException as e:
-        return "error", None, str(e)[:100]
-    except Exception as e:
-        return "error", None, str(e)[:100]
+    The actual HTTP work runs in a daemon thread so that trickle-data streams
+    (which reset the requests read-timeout on every byte) can never block
+    indefinitely.  If the daemon thread doesn't finish within timeout+5 s we
+    abandon it and return a hard-deadline timeout.
+    """
+    result: list = [None]
+
+    def _do():
+        try:
+            with requests.get(
+                url,
+                headers=HEADERS,
+                stream=True,
+                timeout=(timeout, timeout),
+                allow_redirects=True,
+            ) as r:
+                code = r.status_code
+                if code == 200:
+                    chunk = next(r.iter_content(READ_BYTES), b"")
+                    if chunk:
+                        result[0] = ("ok", code, None)
+                    else:
+                        result[0] = ("fail", code, "connected but empty response")
+                else:
+                    result[0] = ("fail", code, f"HTTP {code}")
+        except Timeout:
+            result[0] = ("timeout", None, "timed out")
+        except ReqConnectionError as e:
+            msg = str(e)
+            if "Name or service not known" in msg or "getaddrinfo failed" in msg or "nodename nor servname" in msg:
+                result[0] = ("error", None, "DNS lookup failed")
+            elif "Connection refused" in msg:
+                result[0] = ("error", None, "connection refused")
+            else:
+                result[0] = ("error", None, msg[:100])
+        except RequestException as e:
+            result[0] = ("error", None, str(e)[:100])
+        except Exception as e:
+            result[0] = ("error", None, str(e)[:100])
+
+    t = threading.Thread(target=_do, daemon=True)
+    t.start()
+    t.join(timeout + 5)          # hard wall-clock deadline
+
+    if result[0] is None:
+        return "timeout", None, "hard deadline exceeded"
+    return result[0]
 
 
 # ── Outage tracker (thread-safe) ──────────────────────────────────────────────
@@ -332,7 +349,11 @@ def main():
         print(f"  {checked_count:<6,}  {symbol} {status:<6}  {code_str:<5}  {sname[:60]}{note}")
 
     def run_batch(pending, group_id, group_name, timeout):
-        """Submit a list of stations to the thread pool and collect results."""
+        """Submit a list of stations to the thread pool and collect results.
+
+        check_stream() always returns within timeout+5 s (daemon-thread guarantee),
+        so as_completed() never blocks indefinitely here.
+        """
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
             futures = {
                 executor.submit(check_stream, surl, timeout): (sid, sname, surl)
@@ -347,11 +368,9 @@ def main():
 
                 handle_result(sid, sname, surl, group_id, group_name, status, http_code, error_msg)
 
-                # If outage was just detected, wait for internet to come back
                 if not outage.paused.is_set():
                     wait_for_internet()
-                    outage.paused.set()  # resume
-                    # Retry the held stations now that we're back online
+                    outage.paused.set()
                     with retry_lock:
                         to_retry = list(retry_queue)
                         retry_queue.clear()
