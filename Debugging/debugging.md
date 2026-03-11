@@ -79,5 +79,8 @@ FIXED: Root cause: ProgressRing was in a Grid row outside the scrollable ListBox
 
  *change the groups page to have groups of groups like spotify
 
+*import stations parses m3u files and adds stations to imported group
+
+*save images as local cache so it wont load everytime stations pics
 
 

@@ -72,7 +72,6 @@
                 Background="Transparent"
                 BorderThickness="0"
                 Cursor="Hand"
-                ToolTip="Toggle menu"
                 Click="OnPaneToggleClick">
             <ui:SymbolIcon x:Name="PaneToggleIcon"
                            Symbol="FullScreenMinimize20"

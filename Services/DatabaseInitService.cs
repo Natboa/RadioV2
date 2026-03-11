@@ -32,7 +32,16 @@ public static class DatabaseInitService
         await db.Database.ExecuteSqlRawAsync(
             "CREATE INDEX IF NOT EXISTS idx_stations_groupid ON Stations(GroupId);");
 
-        // 4. Seed the 9 categories and link groups to them (skips if already done)
+        // 4. If the old single "Countries & Regions" category exists, wipe all categories
+        //    so SeedAsync re-runs with the new Europe / Americas / Asia split.
+        bool hasOldCountries = await db.Categories.AnyAsync(c => c.Name == "Countries & Regions");
+        if (hasOldCountries)
+        {
+            await db.Database.ExecuteSqlRawAsync("UPDATE Groups SET CategoryId = NULL");
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM Categories");
+        }
+
+        // 5. Seed the 11 categories and link groups to them (skips if already done)
         await CategorySeeder.SeedAsync(db);
     }
 }

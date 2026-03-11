@@ -25,7 +25,8 @@ public partial class BrowsePage : Page
                         sv.VerticalOffset >= sv.ScrollableHeight - 200;
                 };
             }
-            await viewModel.LoadMoreAsync();
+            if (!viewModel.IsRecentVisible)
+                await viewModel.LoadMoreAsync();
         };
     }
 

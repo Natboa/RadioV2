@@ -10,20 +10,23 @@ public static class CategorySeeder
     // Ordered list — carousel rows appear in exactly this sequence on the Discover page
     private static readonly (string CategoryName, string[] GroupKeys)[] SeedData =
     [
-        ("Countries & Regions",
+        ("Europe",
         [
-            // Europe
-            "austria","belgium","croatia","czech_republic","europe","france","germany",
+            "austria","belgium","croatia","czech_republic","france","germany",
             "greece","hungary","ireland","italy","netherlands","norway","poland",
             "portugal","romania","russia","serbia","slovakia","spain","sweden",
-            "switzerland","turkey","uk","ukraine",
-            // Americas
+            "switzerland","turkey","uk","ukraine","europe",
+        ]),
+        ("Americas",
+        [
             "argentina","brazil","canada","chile","colombia","ecuador","guatemala",
-            "mexico","north_america","paraguay","peru","puerto_rico","south_america",
-            "uruguay","usa","venezuela",
-            // Asia, Oceania & Africa
+            "mexico","paraguay","peru","puerto_rico","uruguay","usa","venezuela",
+            "north_america","south_america",
+        ]),
+        ("Asia, Pacific & Africa",
+        [
             "australia","india","indonesia","israel","japan","new_zealand","philippines",
-            "saudi_arabia","singapore","south_africa","thailand","uae","uganda"
+            "saudi_arabia","singapore","south_africa","thailand","uae","uganda",
         ]),
         ("Rock & Metal",
         [
@@ -43,7 +46,7 @@ public static class CategorySeeder
         ]),
         ("Urban & Latin",
         [
-            "disco","disco_fox","funk","hiphop","rap","reggae","rnb","soul","urban",
+            "disco","funk","hiphop","rap","reggae","rnb","soul","urban",
             "espanol","latin","reggaeton","salsa","sertaneja","tropical"
         ]),
         ("Jazz, Chill & Instrumental",
