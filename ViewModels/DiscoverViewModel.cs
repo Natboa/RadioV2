@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using RadioV2.Models;
 using RadioV2.Services;
 using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace RadioV2.ViewModels;
 
@@ -120,10 +122,22 @@ public partial class DiscoverViewModel : ObservableObject
             var query = GroupSearchQuery.Length >= 2 ? GroupSearchQuery : null;
             var isFirstBatch = _groupSkip == 0;
             var batch = await Task.Run(() => _stationService.GetStationsByGroupAsync(SelectedGroup.Id, _groupSkip, 100, query, ct), ct);
-            // First batch: assign a new collection (one CollectionChanged/Reset instead of 100 Add events).
-            // Subsequent batches (infinite scroll): append individually.
+            // First batch: populate in chunks, yielding at Background priority between each chunk.
+            // This lets the compositor render animation frames (ProgressRing) between bursts.
+            // DispatcherPriority.Background (4) is below Render (7) so render passes happen before resuming.
             if (isFirstBatch)
-                GroupStations = new ObservableCollection<Station>(batch);
+            {
+                var newCollection = new ObservableCollection<Station>();
+                GroupStations = newCollection;
+                var dispatcher = Application.Current.Dispatcher;
+                const int chunkSize = 15;
+                for (int i = 0; i < batch.Count; i += chunkSize)
+                {
+                    for (int j = i; j < Math.Min(i + chunkSize, batch.Count); j++)
+                        newCollection.Add(batch[j]);
+                    await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                }
+            }
             else
                 foreach (var s in batch) GroupStations.Add(s);
             _groupSkip += batch.Count;
