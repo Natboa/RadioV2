@@ -122,7 +122,7 @@ public partial class DiscoverViewModel : ObservableObject
         {
             var query = GroupSearchQuery.Length >= 2 ? GroupSearchQuery : null;
             var isFirstBatch = _groupSkip == 0;
-            var batch = await Task.Run(() => _stationService.GetStationsByGroupAsync(SelectedGroup.Id, _groupSkip, 100, query, ct), ct);
+            var batch = await Task.Run(() => _stationService.GetStationsByGroupAsync(SelectedGroup.Id, _groupSkip, 30, query, ct), ct);
             // First batch: populate in chunks, yielding at Background priority between each chunk.
             // This lets the compositor render animation frames (ProgressRing) between bursts.
             // DispatcherPriority.Background (4) is below Render (7) so render passes happen before resuming.
@@ -153,7 +153,7 @@ public partial class DiscoverViewModel : ObservableObject
                 }
             }
             _groupSkip += batch.Count;
-            HasMoreItems = batch.Count == 100;
+            HasMoreItems = batch.Count == 30;
         }
         catch (OperationCanceledException) { }
         finally
