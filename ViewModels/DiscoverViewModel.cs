@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using RadioV2.Models;
 using RadioV2.Services;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -128,12 +129,18 @@ public partial class DiscoverViewModel : ObservableObject
             var targetCollection = isFirstBatch ? new ObservableCollection<Station>() : GroupStations;
             if (isFirstBatch) GroupStations = targetCollection;
             var dispatcher = Application.Current.Dispatcher;
-            const int chunkSize = 15;
-            for (int i = 0; i < batch.Count; i += chunkSize)
+            // Yield to the dispatcher every ~8ms (half a 60fps frame budget).
+            // Time-based chunking is adaptive: fast items → more per chunk, slow items → fewer.
+            // Background priority (4) is below Input (5) so scroll events always run before resuming.
+            var sw = Stopwatch.StartNew();
+            foreach (var s in batch)
             {
-                for (int j = i; j < Math.Min(i + chunkSize, batch.Count); j++)
-                    targetCollection.Add(batch[j]);
-                await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                targetCollection.Add(s);
+                if (sw.ElapsedMilliseconds >= 8)
+                {
+                    await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                    sw.Restart();
+                }
             }
             _groupSkip += batch.Count;
             HasMoreItems = batch.Count == 100;
