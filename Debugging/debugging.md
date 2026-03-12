@@ -83,42 +83,18 @@ FIXED: Two causes —
   (MainWindow.xaml, ViewModels/FavouritesViewModel.cs)
 
 *future features:
- installer that includes the db aswell.
 
- *the app will check everyday if a db online has changed, if so it will update the local db
+*when scrolling down and it loads more stations then the scrolling freezes of a brief moment
+FIXED: Root cause — StationsListBox was inside ScrollViewer > StackPanel (unconstrained height), disabling WPF virtualization. Every Add() created a StationListItem container immediately, so each infinite-scroll batch blocked the UI thread. Fix: removed GroupScrollViewer/StackPanel wrapper; restructured group view as a 5-row Grid (Auto/Auto/Auto/*/48). StationsListBox now sits in Height="*" row with VirtualizingStackPanel.IsVirtualizing="True", VirtualizationMode="Recycling", ScrollUnit="Pixel" — only visible containers are created; Add() for off-screen items is nearly free. TrySetupStationsScrollViewer updated to find the ListBox's internal ScrollViewer via FindChildScrollViewer (added to DiscoverPage.xaml.cs). GroupScrollViewer.ScrollToTop() replaced with _stationsSv?.ScrollToTop(). (Views/DiscoverPage.xaml, Views/DiscoverPage.xaml.cs)
 
- *crud for developer for stations and groups (seperate from the package and installer, its just for developement)
- the crud will also include merging two groups
-
- *make a script with a crawler to find images for stations without a picture
-
-
-*import fav stations parses m3u files and adds 
+*import fav stations parses m3u files and adds
+(check if works)
 
 *save images that are in fav list as local cache so it wont load everytime stations pics
 
-*script that deletes stations with same name in same group
 
 *script that has lots of common words and group names and for each group deletes stations that include those words if they dont fit the group they are in
 
-*for all the groups make it the first latter upper case, if more than one word, all the wors starts with uppercase, instead of _ between words there will be space, and rnb will be R&B, also Rock & Roll and the such, make sure they are changed everywhere, db, image names, everything that needs to change
 
-*fetured stations will not show in the other stations list
+*when start to scroll up a back to top button will appear
 
-*while searching in a group, the search will show stations that are in both the featured and in all the rest of the stations
-
-
-*when scrolling down in a group and going to a diff group, for a second it starts at the buttom instead of at the top
-
-*when start to scroll up a back to top button button
-
-*app crashed in the middle of nothing:
-info: Microsoft.EntityFrameworkCore.Database.Command[20101]
-      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
-      SELECT "f"."StationId"
-      FROM "Favourites" AS "f"
-info: Microsoft.EntityFrameworkCore.Database.Command[20101]
-      Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
-      UPDATE Stations SET IsFeatured = @p0 WHERE Id = @p1
-[0000016603de20f0] main input error: VLC is unable to open the MRL 'https://rnrw--di--rnrw-ais-01--02--cdn
-dotnet watch ❌ [RadioV2 (net8.0-windows)] Exited with error code -805306369
