@@ -30,9 +30,6 @@ packages/
 # LibVLC native libs (downloaded via NuGet, don't commit)
 libvlc/
 
-# Database (too large for git, will be added once trimmed)
-*.db
-
 # Claude Code
 .claude/
 
