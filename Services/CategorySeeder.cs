@@ -48,12 +48,10 @@ public static class CategorySeeder
         [
             "country","english","folk","schlager","traditional","world"
         ]),
-        ("Europe",
+        ("Asia, Pacific & Africa",
         [
-            "austria","belgium","croatia","czech_republic","france","germany",
-            "greece","hungary","ireland","italy","netherlands","norway","poland",
-            "portugal","romania","russia","serbia","slovakia","spain","sweden",
-            "switzerland","turkey","uk","ukraine","europe",
+            "australia","india","indonesia","israel","japan","new_zealand","philippines",
+            "saudi_arabia","singapore","south_africa","thailand","uae","uganda",
         ]),
         ("Americas",
         [
@@ -61,10 +59,12 @@ public static class CategorySeeder
             "mexico","paraguay","peru","puerto_rico","uruguay","usa","venezuela",
             "north_america","south_america",
         ]),
-        ("Asia, Pacific & Africa",
+        ("Europe",
         [
-            "australia","india","indonesia","israel","japan","new_zealand","philippines",
-            "saudi_arabia","singapore","south_africa","thailand","uae","uganda",
+            "austria","belgium","croatia","czech_republic","france","germany",
+            "greece","hungary","ireland","italy","netherlands","norway","poland",
+            "portugal","romania","russia","serbia","slovakia","spain","sweden",
+            "switzerland","turkey","uk","ukraine","europe",
         ]),
     ];
 

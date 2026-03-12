@@ -63,9 +63,9 @@ public static class DatabaseInitService
             ("News, Talk & Sports",        5),
             ("Specialty & Mood",           6),
             ("Global & Cultural",          7),
-            ("Europe",                     8),
+            ("Asia, Pacific & Africa",     8),
             ("Americas",                   9),
-            ("Asia, Pacific & Africa",    10),
+            ("Europe",                    10),
         };
         foreach (var (name, order) in orderMap)
             await db.Database.ExecuteSqlAsync(

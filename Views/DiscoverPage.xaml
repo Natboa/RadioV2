@@ -99,36 +99,48 @@
                                        FontWeight="SemiBold"
                                        Margin="0,8,0,4"
                                        Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                            <ItemsControl ItemsSource="{Binding FeaturedStations}">
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="FrameworkElement">
+                            <ListBox ItemsSource="{Binding FeaturedStations}"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
                                         <Setter Property="Margin" Value="0,0,16,0" />
+                                        <Setter Property="Background" Value="Transparent" />
                                     </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.ItemTemplate>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <controls:StationListItem />
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                             <Separator Margin="0,4,16,4" />
                         </StackPanel>
                     </Border>
 
                     <!-- Station list -->
-                    <ItemsControl x:Name="StationsListBox"
-                                  ItemsSource="{Binding GroupStations}">
-                        <ItemsControl.ItemContainerStyle>
-                            <Style TargetType="FrameworkElement">
+                    <ListBox x:Name="StationsListBox"
+                             ItemsSource="{Binding GroupStations}"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
                                 <Setter Property="Margin" Value="0,0,16,0" />
+                                <Setter Property="Background" Value="Transparent" />
                             </Style>
-                        </ItemsControl.ItemContainerStyle>
-                        <ItemsControl.ItemTemplate>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <controls:StationListItem />
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
 
                     <ui:ProgressRing IsIndeterminate="True"
                                      Width="32" Height="32"
