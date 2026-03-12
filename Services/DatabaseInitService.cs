@@ -51,5 +51,24 @@ public static class DatabaseInitService
 
         // 6. Seed the 11 categories and link groups to them (skips if already done)
         await CategorySeeder.SeedAsync(db);
+
+        // 7. Re-apply DisplayOrder in case the category order was changed after initial seeding
+        var orderMap = new (string Name, int Order)[]
+        {
+            ("Rock & Metal",               0),
+            ("Electronic & Dance",         1),
+            ("Pop, Charts & Decades",      2),
+            ("Urban & Latin",              3),
+            ("Jazz, Chill & Instrumental", 4),
+            ("News, Talk & Sports",        5),
+            ("Specialty & Mood",           6),
+            ("Global & Cultural",          7),
+            ("Europe",                     8),
+            ("Americas",                   9),
+            ("Asia, Pacific & Africa",    10),
+        };
+        foreach (var (name, order) in orderMap)
+            await db.Database.ExecuteSqlRawAsync(
+                $"UPDATE Categories SET DisplayOrder = {order} WHERE Name = '{name}'");
     }
 }
