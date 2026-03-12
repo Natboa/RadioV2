@@ -28,11 +28,19 @@ public static class DatabaseInitService
         }
         catch { /* column already exists — safe to ignore */ }
 
-        // 3. Index GroupId on Stations — critical for GROUP BY count performance
+        // 3. Add IsFeatured column to Stations if it doesn't exist yet
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE Stations ADD COLUMN IsFeatured INTEGER NOT NULL DEFAULT 0;");
+        }
+        catch { /* column already exists — safe to ignore */ }
+
+        // 4. Index GroupId on Stations — critical for GROUP BY count performance
         await db.Database.ExecuteSqlRawAsync(
             "CREATE INDEX IF NOT EXISTS idx_stations_groupid ON Stations(GroupId);");
 
-        // 4. If the old single "Countries & Regions" category exists, wipe all categories
+        // 5. If the old single "Countries & Regions" category exists, wipe all categories
         //    so SeedAsync re-runs with the new Europe / Americas / Asia split.
         bool hasOldCountries = await db.Categories.AnyAsync(c => c.Name == "Countries & Regions");
         if (hasOldCountries)
@@ -41,7 +49,7 @@ public static class DatabaseInitService
             await db.Database.ExecuteSqlRawAsync("DELETE FROM Categories");
         }
 
-        // 5. Seed the 11 categories and link groups to them (skips if already done)
+        // 6. Seed the 11 categories and link groups to them (skips if already done)
         await CategorySeeder.SeedAsync(db);
     }
 }

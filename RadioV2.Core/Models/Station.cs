@@ -22,6 +22,18 @@ public class Station : INotifyPropertyChanged
         }
     }
 
+    private bool _isFeatured;
+    public bool IsFeatured
+    {
+        get => _isFeatured;
+        set
+        {
+            if (_isFeatured == value) return;
+            _isFeatured = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFeatured)));
+        }
+    }
+
     public Group Group { get; set; } = null!;
 
     public event PropertyChangedEventHandler? PropertyChanged;
