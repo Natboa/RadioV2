@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RadioV2.Data;
 using RadioV2.Helpers;
+using RadioV2.Models;
 using RadioV2.Services;
 using RadioV2.ViewModels;
 using RadioV2.Views;
@@ -32,7 +33,6 @@ public partial class App : Application
             .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
             .CreateLogger();
 
-        // Catch unhandled exceptions on any thread
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             Log.Fatal(e.ExceptionObject as Exception, "Unhandled exception");
 
@@ -41,26 +41,49 @@ public partial class App : Application
         _host = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                // Database — stored in AppData so builds never overwrite user data (favorites, etc.)
                 var appDataDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "RadioV2");
                 Directory.CreateDirectory(appDataDir);
-                var dbPath = Path.Combine(appDataDir, "radioapp_large_groups.db");
-                if (!File.Exists(dbPath))
+
+                var dataDir = Path.Combine(appDataDir, "Data");
+                Directory.CreateDirectory(dataDir);
+
+                // ── stations.db (installer-managed seed data) ──────────────────
+                var stationsDbPath = Path.Combine(dataDir, "stations.db");
+                var legacyDbPath   = Path.Combine(appDataDir, "radioapp_large_groups.db");
+
+                if (!File.Exists(stationsDbPath))
                 {
-                    var seedPath = Path.Combine(AppContext.BaseDirectory, "Data", "radioapp_large_groups.db");
-                    File.Copy(seedPath, dbPath);
+                    if (File.Exists(legacyDbPath))
+                    {
+                        // Migrate from old single-DB layout
+                        File.Copy(legacyDbPath, stationsDbPath);
+                    }
+                    else
+                    {
+                        // Fresh install — copy seed from app directory
+                        var seedPath = Path.Combine(AppContext.BaseDirectory, "Data", "stations.db");
+                        if (File.Exists(seedPath))
+                            File.Copy(seedPath, stationsDbPath);
+                    }
                 }
-                services.AddDbContextFactory<RadioDbContext>(options =>
-                    options.UseSqlite($"Data Source={dbPath}"));
+
+                services.AddDbContextFactory<StationsDbContext>(options =>
+                    options.UseSqlite($"Data Source={stationsDbPath}"));
+
+                // ── userdata.db (user-owned: favourites + settings) ────────────
+                var userDbPath = Path.Combine(dataDir, "userdata.db");
+                services.AddDbContextFactory<UserDbContext>(options =>
+                    options.UseSqlite($"Data Source={userDbPath}"));
 
                 // Services
                 services.AddSingleton<IStationService, StationService>();
                 services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
-                services.AddScoped<IFavouritesIOService, FavouritesIOService>();
-                services.AddScoped<M3UParserService>();
+                services.AddSingleton<IFavouritesIOService, FavouritesIOService>();
+                services.AddSingleton<M3UParserService>();
                 services.AddSingleton<ISnackbarService, SnackbarService>();
+                services.AddSingleton<UpdateCheckerService>();
 
                 // ViewModels
                 services.AddSingleton<MainWindowViewModel>();
@@ -92,7 +115,6 @@ public partial class App : Application
         }
         catch (AbandonedMutexException)
         {
-            // Previous instance was killed (e.g. by dotnet watch) — we now own the mutex
             isNew = true;
         }
         if (!isNew)
@@ -106,25 +128,27 @@ public partial class App : Application
 
         await _host.StartAsync();
 
-        // Apply schema additions and seed category data (safe on every launch)
-        var dbFactory = _host.Services.GetRequiredService<IDbContextFactory<RadioDbContext>>();
-        using (var db = dbFactory.CreateDbContext())
-            await DatabaseInitService.InitialiseAsync(db);
+        // Initialise userdata.db (creates tables on first run)
+        var userDbFactory = _host.Services.GetRequiredService<IDbContextFactory<UserDbContext>>();
+        using (var userDb = userDbFactory.CreateDbContext())
+        {
+            await userDb.Database.EnsureCreatedAsync();
+            await MigrateLegacyFavouritesAsync(userDb);
+        }
+
+        // Initialise stations.db schema (safe on every launch)
+        var stationsDbFactory = _host.Services.GetRequiredService<IDbContextFactory<StationsDbContext>>();
+        using (var stationsDb = stationsDbFactory.CreateDbContext())
+            await DatabaseInitService.InitialiseAsync(stationsDb);
 
         await RestoreSessionAsync();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
-        // Warm up: pre-populate DiscoverViewModel so the first click on Discover is instant.
-        // LoadCategoriesAsync already offloads the DB query via Task.Run, so this is safe to
-        // fire-and-forget from the UI thread — it won't block startup.
+        // Pre-warm DiscoverViewModel and image cache
         _ = _host.Services.GetRequiredService<DiscoverViewModel>().LoadCategoriesAsync();
 
-        // Warm up: pre-decode and cache all group card images in the background.
-        // GroupImageHelper.GetImage is called per group card during Discover's first render;
-        // without pre-warming, ~300 images decode synchronously on the UI thread (~500ms freeze).
-        // Task.Run is used because BitmapImage creation with OnLoad is CPU-bound.
         var svcForImages = _host.Services.GetRequiredService<IStationService>();
         _ = Task.Run(async () =>
         {
@@ -134,9 +158,7 @@ public partial class App : Application
                     GroupImageHelper.GetImage(g.Name);
         });
 
-        // Warm up: compile EF Core query shapes for group station queries.
-        // The first call per query shape triggers LINQ→SQL compilation which adds ~300ms.
-        // Calling with groupId=0 returns no rows but pre-compiles the plan.
+        // Pre-compile EF query shapes
         var svc = _host.Services.GetRequiredService<IStationService>();
         _ = Task.Run(() => svc.GetStationsByGroupAsync(0, 0, 1));
         _ = Task.Run(() => svc.GetFeaturedStationsByGroupAsync(0));
@@ -156,6 +178,56 @@ public partial class App : Application
         base.OnExit(e);
     }
 
+    /// <summary>
+    /// One-time migration: if the legacy single-DB had IsFavorite=1 rows and userdata.db
+    /// was just created empty, port those StationIds into UserDbContext.Favourites.
+    /// Uses SQLite ATTACH to avoid opening RadioDbContext.
+    /// </summary>
+    private async Task MigrateLegacyFavouritesAsync(UserDbContext userDb)
+    {
+        if (await userDb.Favourites.AnyAsync()) return;
+
+        var appDataDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RadioV2");
+        var legacyDbPath = Path.Combine(appDataDir, "radioapp_large_groups.db");
+        if (!File.Exists(legacyDbPath)) return;
+
+        try
+        {
+            var conn = userDb.Database.GetDbConnection();
+            await conn.OpenAsync();
+
+            using var attachCmd = conn.CreateCommand();
+            attachCmd.CommandText = $"ATTACH DATABASE '{legacyDbPath.Replace("'", "''")}' AS legacy";
+            await attachCmd.ExecuteNonQueryAsync();
+
+            var favIds = new List<int>();
+            using (var selectCmd = conn.CreateCommand())
+            {
+                selectCmd.CommandText = "SELECT Id FROM legacy.Stations WHERE IsFavorite = 1";
+                using var reader = await selectCmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                    favIds.Add(reader.GetInt32(0));
+            }
+
+            if (favIds.Count > 0)
+            {
+                foreach (var id in favIds)
+                    userDb.Favourites.Add(new Favourite { StationId = id });
+                await userDb.SaveChangesAsync();
+                Log.Information("Migrated {Count} favourites from legacy database", favIds.Count);
+            }
+
+            using var detachCmd = conn.CreateCommand();
+            detachCmd.CommandText = "DETACH DATABASE legacy";
+            await detachCmd.ExecuteNonQueryAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Could not migrate favourites from legacy database — skipping");
+        }
+    }
+
     private async Task RestoreSessionAsync()
     {
         var stationService = _host.Services.GetRequiredService<IStationService>();
@@ -169,22 +241,26 @@ public partial class App : Application
         if (int.TryParse(await stationService.GetSettingAsync("Volume"), out var volume))
             miniPlayer.Volume = volume;
 
-        // Last played station (restore display info — do NOT auto-play)
+        // Last played station (restore display — do NOT auto-play)
         var lastIdStr = await stationService.GetSettingAsync("LastPlayedStationId");
         if (int.TryParse(lastIdStr, out var lastId) && lastId > 0)
         {
-            var dbFactory = _host.Services.GetRequiredService<IDbContextFactory<RadioDbContext>>();
-            using var db = dbFactory.CreateDbContext();
-            var station = await db.Stations
+            var stationsFactory = _host.Services.GetRequiredService<IDbContextFactory<StationsDbContext>>();
+            var userFactory     = _host.Services.GetRequiredService<IDbContextFactory<UserDbContext>>();
+
+            using var stationsDb = stationsFactory.CreateDbContext();
+            var station = await stationsDb.Stations
                 .Include(s => s.Group)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == lastId);
 
             if (station != null)
             {
-                miniPlayer.StationName = station.Name;
+                miniPlayer.StationName    = station.Name;
                 miniPlayer.StationLogoUrl = station.LogoUrl;
-                miniPlayer.IsFavourite = station.IsFavorite;
+
+                using var userDb = userFactory.CreateDbContext();
+                miniPlayer.IsFavourite = await userDb.Favourites.AnyAsync(f => f.StationId == lastId);
             }
         }
     }
@@ -202,6 +278,6 @@ public partial class App : Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         Log.Error(e.Exception, "Unhandled dispatcher exception");
-        e.Handled = true; // prevent crash; let the app keep running
+        e.Handled = true;
     }
 }

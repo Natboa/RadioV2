@@ -72,7 +72,7 @@ public static class CategorySeeder
     /// Inserts the 9 categories and assigns groups to them. Safe to call on every
     /// startup — exits immediately if categories already exist.
     /// </summary>
-    public static async Task SeedAsync(RadioDbContext db)
+    public static async Task SeedAsync(StationsDbContext db)
     {
         if (await db.Categories.AnyAsync()) return;
 

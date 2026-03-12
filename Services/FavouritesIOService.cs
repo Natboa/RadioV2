@@ -10,7 +10,8 @@ namespace RadioV2.Services;
 
 public class FavouritesIOService : IFavouritesIOService
 {
-    private readonly RadioDbContext _db;
+    private readonly IDbContextFactory<StationsDbContext> _stationsFactory;
+    private readonly IDbContextFactory<UserDbContext> _userFactory;
     private readonly M3UParserService _m3uParser;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -19,9 +20,13 @@ public class FavouritesIOService : IFavouritesIOService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public FavouritesIOService(RadioDbContext db, M3UParserService m3uParser)
+    public FavouritesIOService(
+        IDbContextFactory<StationsDbContext> stationsFactory,
+        IDbContextFactory<UserDbContext> userFactory,
+        M3UParserService m3uParser)
     {
-        _db = db;
+        _stationsFactory = stationsFactory;
+        _userFactory = userFactory;
         _m3uParser = m3uParser;
     }
 
@@ -85,28 +90,91 @@ public class FavouritesIOService : IFavouritesIOService
         var payload = JsonSerializer.Deserialize<FavouritesExport>(json, JsonOptions);
         if (payload?.Favourites is null) return 0;
 
-        var urls = payload.Favourites.Select(f => f.StreamUrl).ToHashSet();
-        return await MarkFavouritesByUrls(urls);
+        var urlMap = payload.Favourites
+            .GroupBy(f => f.StreamUrl)
+            .ToDictionary(g => g.Key, g => g.First());
+        return await AddFavouritesByUrls(urlMap);
     }
 
     private async Task<int> ImportM3UAsync(string filePath)
     {
         var parsed = _m3uParser.Parse(filePath);
-        var urls = parsed.Select(p => p.StreamUrl).ToHashSet();
-        return await MarkFavouritesByUrls(urls);
+        var urlMap = parsed
+            .GroupBy(p => p.StreamUrl)
+            .ToDictionary(g => g.Key, g => new FavouriteEntry
+            {
+                Name = g.First().Name,
+                StreamUrl = g.Key,
+                LogoUrl = g.First().LogoUrl,
+                Group = g.First().GroupName
+            });
+        return await AddFavouritesByUrls(urlMap);
     }
 
-    private async Task<int> MarkFavouritesByUrls(HashSet<string> urls)
+    private async Task<int> AddFavouritesByUrls(Dictionary<string, FavouriteEntry> urlMap)
     {
-        var matched = await _db.Stations
-            .Where(s => urls.Contains(s.StreamUrl) && !s.IsFavorite)
+        var urls = urlMap.Keys.ToHashSet();
+
+        // 1. Find existing station IDs in stations.db that match the URLs
+        using var stationsDb = _stationsFactory.CreateDbContext();
+        var matched = await stationsDb.Stations
+            .AsNoTracking()
+            .Where(s => urls.Contains(s.StreamUrl))
+            .Select(s => new { s.Id, s.StreamUrl })
             .ToListAsync();
 
-        foreach (var station in matched)
-            station.IsFavorite = true;
+        var matchedUrls = matched.Select(s => s.StreamUrl).ToHashSet();
+        var unmatchedUrls = urls.Except(matchedUrls).ToList();
 
-        await _db.SaveChangesAsync();
-        return matched.Count;
+        // 2. For unmatched URLs, create minimal station records in stations.db
+        var newIds = new List<int>();
+        foreach (var url in unmatchedUrls)
+        {
+            if (!urlMap.TryGetValue(url, out var entry)) continue;
+
+            var groupName = string.IsNullOrWhiteSpace(entry.Group) ? "Imported" : entry.Group;
+            var group = await stationsDb.Groups.FirstOrDefaultAsync(g => g.Name == groupName);
+            if (group is null)
+            {
+                group = new Group { Name = groupName };
+                stationsDb.Groups.Add(group);
+                await stationsDb.SaveChangesAsync();
+            }
+
+            var newStation = new Station
+            {
+                Name = entry.Name,
+                StreamUrl = url,
+                LogoUrl = entry.LogoUrl,
+                GroupId = group.Id
+            };
+            stationsDb.Stations.Add(newStation);
+            await stationsDb.SaveChangesAsync();
+            newIds.Add(newStation.Id);
+        }
+
+        // 3. Add all matching station IDs to UserDbContext.Favourites (skip already-added)
+        var allIds = matched.Select(s => s.Id).Concat(newIds).ToList();
+        if (allIds.Count == 0) return 0;
+
+        using var userDb = _userFactory.CreateDbContext();
+        var alreadyFaved = (await userDb.Favourites.AsNoTracking()
+            .Where(f => allIds.Contains(f.StationId))
+            .Select(f => f.StationId)
+            .ToListAsync()).ToHashSet();
+
+        int added = 0;
+        foreach (var id in allIds)
+        {
+            if (alreadyFaved.Contains(id)) continue;
+            userDb.Favourites.Add(new Favourite { StationId = id });
+            added++;
+        }
+
+        if (added > 0)
+            await userDb.SaveChangesAsync();
+
+        return added;
     }
 
     // ── DTOs ──────────────────────────────────────────────────────────────

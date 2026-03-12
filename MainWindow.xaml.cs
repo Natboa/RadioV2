@@ -3,6 +3,7 @@ using RadioV2.Helpers;
 using RadioV2.Services;
 using RadioV2.ViewModels;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Interop;
 using Wpf.Ui;
@@ -16,10 +17,13 @@ public partial class MainWindow : FluentWindow
     private readonly TrayIconManager _trayIcon;
     private readonly NetworkMonitor _networkMonitor;
     private readonly ISnackbarService _snackbarService;
+    private readonly UpdateCheckerService _updateChecker;
+    private string? _latestVersion;
 
-    public MainWindow(MainWindowViewModel viewModel, IServiceProvider serviceProvider, ISnackbarService snackbarService)
+    public MainWindow(MainWindowViewModel viewModel, IServiceProvider serviceProvider, ISnackbarService snackbarService, UpdateCheckerService updateChecker)
     {
         _snackbarService = snackbarService;
+        _updateChecker = updateChecker;
 
         DataContext = viewModel;
         InitializeComponent();
@@ -75,6 +79,31 @@ public partial class MainWindow : FluentWindow
         DependencyPropertyDescriptor
             .FromProperty(Wpf.Ui.Controls.NavigationView.IsPaneOpenProperty, typeof(Wpf.Ui.Controls.NavigationView))
             ?.AddValueChanged(RootNavigation, (_, _) => UpdatePaneToggleButton());
+
+        // Check for updates in the background — silently skipped if no internet
+        _ = CheckForUpdateAsync();
+    }
+
+    private async Task CheckForUpdateAsync()
+    {
+        _latestVersion = await _updateChecker.CheckForUpdateAsync();
+        if (_latestVersion is null) return;
+
+        Dispatcher.Invoke(() =>
+        {
+            UpdateBannerText.Text = $"RadioV2 v{_latestVersion} is available.";
+            UpdateBanner.Visibility = Visibility.Visible;
+        });
+    }
+
+    private void OnDownloadUpdateClick(object sender, RoutedEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo("https://github.com/Natboa/radioV2/releases/latest") { UseShellExecute = true });
+    }
+
+    private void OnDismissUpdateBannerClick(object sender, RoutedEventArgs e)
+    {
+        UpdateBanner.Visibility = Visibility.Collapsed;
     }
 
     private void UpdatePaneToggleButton()

@@ -8,11 +8,9 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\RadioV2_Logo.ico</ApplicationIcon>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,10 +26,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The source DB is still named radioapp_large_groups.db in the repo.
+         A build target below copies it to the output as stations.db. -->
     <None Update="Data\radioapp_large_groups.db">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="CopyStationsDb" AfterTargets="Build;Publish">
+    <Copy SourceFiles="$(ProjectDir)Data\radioapp_large_groups.db"
+          DestinationFiles="$(OutDir)Data\stations.db"
+          Condition="Exists('$(ProjectDir)Data\radioapp_large_groups.db')"
+          SkipUnchangedFiles="true" />
+  </Target>
 
   <ItemGroup>
     <Resource Include="Assets\RadioV2_Logo.png" />
