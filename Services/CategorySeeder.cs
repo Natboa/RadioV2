@@ -12,9 +12,9 @@ public static class CategorySeeder
     [
         ("Rock & Metal",
         [
-            "alternative","alternative_rock","classic","classic_rock","gothic",
+            "alternative_rock","classic","classic_rock","gothic",
             "hard_rock","heavy_metal","metal","new_wave","progressive_rock","punk",
-            "rock","rock_n_roll","soft_rock"
+            "rock","soft_rock"
         ]),
         ("Electronic & Dance",
         [

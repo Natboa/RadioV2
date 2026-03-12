@@ -57,8 +57,10 @@ public partial class App : Application
                 {
                     if (File.Exists(legacyDbPath))
                     {
-                        // Migrate from old single-DB layout
+                        // Migrate from old single-DB layout, then remove legacy file
+                        // so future resets copy from the seed instead of stale legacy data
                         File.Copy(legacyDbPath, stationsDbPath);
+                        File.Delete(legacyDbPath);
                     }
                     else
                     {

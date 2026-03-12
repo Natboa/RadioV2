@@ -1,3 +1,4 @@
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using RadioV2.Data;
 using RadioV2.Models;
@@ -40,7 +41,7 @@ public class StationService : IStationService
     public async Task<List<Station>> GetStationsAsync(int skip, int take, string? searchQuery = null, CancellationToken ct = default)
     {
         using var db = _stationsFactory.CreateDbContext();
-        var query = db.Stations.AsNoTracking();
+        var query = db.Stations.AsNoTracking().Where(s => !s.IsFeatured);
         if (!string.IsNullOrWhiteSpace(searchQuery))
             query = query.Where(s => EF.Functions.Like(s.Name, $"%{searchQuery}%"));
         var stations = await query.OrderBy(s => s.Name).Skip(skip).Take(take).ToListAsync(ct);
@@ -212,5 +213,32 @@ public class StationService : IStationService
         using var db = _stationsFactory.CreateDbContext();
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"UPDATE Stations SET IsFeatured = {(isFeatured ? 1 : 0)} WHERE Id = {stationId}", ct);
+
+#if DEBUG
+        // Also write to the source DB so featured data is baked into the seed for future builds
+        var sourceDb = FindSourceDbPath();
+        if (sourceDb != null)
+        {
+            using var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={sourceDb}");
+            await conn.OpenAsync(ct);
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"UPDATE Stations SET IsFeatured = {(isFeatured ? 1 : 0)} WHERE Id = {stationId}";
+            await cmd.ExecuteNonQueryAsync(ct);
+        }
+#endif
     }
+
+#if DEBUG
+    private static string? FindSourceDbPath()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null)
+        {
+            var candidate = Path.Combine(dir.FullName, "Data", "radioapp_large_groups.db");
+            if (File.Exists(candidate)) return candidate;
+            dir = dir.Parent;
+        }
+        return null;
+    }
+#endif
 }
