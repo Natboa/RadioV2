@@ -95,10 +95,30 @@ FIXED: Two causes —
 
 *import fav stations parses m3u files and adds 
 
-*save images as local cache so it wont load everytime stations pics
+*save images that are in fav list as local cache so it wont load everytime stations pics
 
 *script that deletes stations with same name in same group
 
 *script that has lots of common words and group names and for each group deletes stations that include those words if they dont fit the group they are in
 
 *for all the groups make it the first latter upper case, if more than one word, all the wors starts with uppercase, instead of _ between words there will be space, and rnb will be R&B, also Rock & Roll and the such, make sure they are changed everywhere, db, image names, everything that needs to change
+
+*fetured stations will not show in the other stations list
+
+*while searching in a group, the search will show stations that are in both the featured and in all the rest of the stations
+
+
+*when scrolling down in a group and going to a diff group, for a second it starts at the buttom instead of at the top
+
+*when start to scroll up a back to top button button
+
+*app crashed in the middle of nothing:
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "f"."StationId"
+      FROM "Favourites" AS "f"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE Stations SET IsFeatured = @p0 WHERE Id = @p1
+[0000016603de20f0] main input error: VLC is unable to open the MRL 'https://rnrw--di--rnrw-ais-01--02--cdn
+dotnet watch ❌ [RadioV2 (net8.0-windows)] Exited with error code -805306369
