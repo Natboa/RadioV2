@@ -40,8 +40,8 @@
         <Border Grid.Row="1"
                 x:Name="UpdateBanner"
                 Visibility="Collapsed"
-                Background="{ui:ThemeResource SystemFillColorAttentionBackgroundBrush}"
-                BorderBrush="{ui:ThemeResource SystemFillColorAttentionBrush}"
+                Background="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ui:ThemeResource ControlStrokeColorDefaultBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="12,6">
             <Grid>
