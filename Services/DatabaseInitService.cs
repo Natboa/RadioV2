@@ -9,7 +9,7 @@ namespace RadioV2.Services;
 /// </summary>
 public static class DatabaseInitService
 {
-    public static async Task InitialiseAsync(RadioDbContext db)
+    public static async Task InitialiseAsync(StationsDbContext db)
     {
         // 1. Create Categories table if it doesn't exist yet
         await db.Database.ExecuteSqlRawAsync(@"
@@ -20,21 +20,20 @@ public static class DatabaseInitService
             );");
 
         // 2. Add CategoryId column to Groups if it doesn't exist yet
-        //    SQLite throws an error if the column already exists — swallow it
-        try
-        {
+        var groupCols = await db.Database
+            .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Groups')")
+            .ToListAsync();
+        if (!groupCols.Contains("CategoryId"))
             await db.Database.ExecuteSqlRawAsync(
                 "ALTER TABLE Groups ADD COLUMN CategoryId INTEGER REFERENCES Categories(Id);");
-        }
-        catch { /* column already exists — safe to ignore */ }
 
         // 3. Add IsFeatured column to Stations if it doesn't exist yet
-        try
-        {
+        var stationCols = await db.Database
+            .SqlQueryRaw<string>("SELECT name FROM pragma_table_info('Stations')")
+            .ToListAsync();
+        if (!stationCols.Contains("IsFeatured"))
             await db.Database.ExecuteSqlRawAsync(
                 "ALTER TABLE Stations ADD COLUMN IsFeatured INTEGER NOT NULL DEFAULT 0;");
-        }
-        catch { /* column already exists — safe to ignore */ }
 
         // 4. Index GroupId on Stations — critical for GROUP BY count performance
         await db.Database.ExecuteSqlRawAsync(
