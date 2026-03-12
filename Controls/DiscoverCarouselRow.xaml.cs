@@ -57,6 +57,10 @@ public partial class DiscoverCarouselRow : UserControl
 
         target = Math.Min(target, CarouselScroll.ScrollableWidth);
         target = Math.Max(target, CarouselScroll.HorizontalOffset);
+
+        if (target >= CarouselScroll.ScrollableWidth)
+            FadeButton(RightArrowButton, false);
+
         AnimateScrollTo(target);
     }
 
@@ -71,6 +75,10 @@ public partial class DiscoverCarouselRow : UserControl
         double snappedLeft = Math.Floor(rawTarget / cardWidth) * cardWidth - cardMargin;
         double target = Math.Max(snappedLeft, 0);
         target = Math.Min(target, CarouselScroll.HorizontalOffset);
+
+        if (target <= 0)
+            FadeButton(LeftArrowButton, false);
+
         AnimateScrollTo(target);
     }
 
@@ -80,7 +88,9 @@ public partial class DiscoverCarouselRow : UserControl
     {
         _canScrollLeft  = CarouselScroll.HorizontalOffset > 0;
         _canScrollRight = CarouselScroll.HorizontalOffset < CarouselScroll.ScrollableWidth;
-        UpdateButtonStates();
+        // Don't update button visibility mid-animation — wait until the animation ends.
+        if (_renderHandler == null)
+            UpdateButtonStates();
     }
 
     // ── Button fade logic ────────────────────────────────────────────────────
@@ -141,6 +151,7 @@ public partial class DiscoverCarouselRow : UserControl
             {
                 CompositionTarget.Rendering -= handler;
                 _renderHandler = null;
+                UpdateButtonStates();
             }
         };
 
