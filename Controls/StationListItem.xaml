@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:helpers="clr-namespace:RadioV2.Helpers"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -43,6 +44,7 @@
         <!-- Actions -->
         <Grid Grid.Column="2" VerticalAlignment="Center">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
@@ -152,7 +154,32 @@
                 </ui:Button>
             </Grid>
 
-            <ui:Button Grid.Column="1"
+            <!-- Star button: Debug builds only, hover to reveal -->
+            <Grid Grid.Column="1"
+                  Visibility="{Binding Source={x:Static helpers:DebugHelper.IsDebugBuild},
+                               Converter={StaticResource BoolToVisibilityConverter}}">
+                <ui:Button Appearance="Transparent"
+                           Command="{Binding DataContext.ToggleFeaturedCommand,
+                               RelativeSource={RelativeSource AncestorType=Page}}"
+                           CommandParameter="{Binding}"
+                           ToolTip="{Binding IsFeatured,
+                               Converter={StaticResource BoolToFeaturedTooltipConverter}}">
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                            <Setter Property="Visibility" Value="Hidden" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                    <ui:SymbolIcon Symbol="{Binding IsFeatured,
+                        Converter={StaticResource BoolToStarIconConverter}}" />
+                </ui:Button>
+            </Grid>
+
+            <ui:Button Grid.Column="2"
                        Appearance="Transparent"
                        Command="{Binding DataContext.PlayStationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                        CommandParameter="{Binding}"

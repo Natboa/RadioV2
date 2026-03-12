@@ -18,6 +18,7 @@ public partial class DiscoverViewModel : ObservableObject
     {
         _stationService = stationService;
         _miniPlayer = miniPlayer;
+        FeaturedStations.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasFeaturedStations));
     }
 
     // ── Carousel (category rows) ─────────────────────────────────────────────
@@ -52,6 +53,11 @@ public partial class DiscoverViewModel : ObservableObject
     // ── Station drill-down ───────────────────────────────────────────────────
     [ObservableProperty] private GroupWithCount? _selectedGroup;
     [ObservableProperty] private ObservableCollection<Station> _groupStations = [];
+
+    [ObservableProperty]
+    private ObservableCollection<Station> _featuredStations = [];
+
+    public bool HasFeaturedStations => FeaturedStations.Count > 0;
     [ObservableProperty] private string _groupSearchQuery = string.Empty;
     [ObservableProperty] private bool _isGroupView;
     [ObservableProperty]
@@ -90,11 +96,17 @@ public partial class DiscoverViewModel : ObservableObject
     {
         SelectedGroup = group;
         GroupStations.Clear();
+        FeaturedStations.Clear();
         GroupSearchQuery = string.Empty;
         _groupSkip = 0;
         HasMoreItems = true;
         IsGroupView = true;
-        await LoadMoreGroupStationsAsync();
+
+        var featuredTask = Task.Run(() => _stationService.GetFeaturedStationsByGroupAsync(group.Id));
+        var stationsTask = LoadMoreGroupStationsAsync();
+        var featured = await featuredTask;
+        foreach (var s in featured) FeaturedStations.Add(s);
+        await stationsTask;
     }
 
     [RelayCommand]
@@ -125,6 +137,7 @@ public partial class DiscoverViewModel : ObservableObject
         IsGroupView = false;
         SelectedGroup = null;
         GroupStations.Clear();
+        FeaturedStations.Clear();
     }
 
     [RelayCommand]
@@ -135,5 +148,28 @@ public partial class DiscoverViewModel : ObservableObject
     {
         await _stationService.ToggleFavouriteAsync(station.Id);
         station.IsFavorite = !station.IsFavorite;
+    }
+
+    [RelayCommand]
+    private async Task ToggleFeatured(Station station)
+    {
+        var newValue = !station.IsFeatured;
+        await _stationService.SetStationFeaturedAsync(station.Id, newValue);
+        station.IsFeatured = newValue;
+
+        // Keep the GroupStations copy in sync (it may be a different object from the featured query)
+        var groupCopy = GroupStations.FirstOrDefault(s => s.Id == station.Id);
+        if (groupCopy != null && !ReferenceEquals(groupCopy, station))
+            groupCopy.IsFeatured = newValue;
+
+        if (newValue)
+        {
+            FeaturedStations.Add(station);
+        }
+        else
+        {
+            var toRemove = FeaturedStations.FirstOrDefault(s => s.Id == station.Id);
+            if (toRemove != null) FeaturedStations.Remove(toRemove);
+        }
     }
 }

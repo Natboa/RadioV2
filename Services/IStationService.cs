@@ -14,4 +14,6 @@ public interface IStationService
     Task<string?> GetSettingAsync(string key, CancellationToken ct = default);
     Task SetSettingAsync(string key, string value, CancellationToken ct = default);
     Task<int> BulkImportStationsAsync(List<ParsedStation> stations, CancellationToken ct = default);
+    Task<List<Station>> GetFeaturedStationsByGroupAsync(int groupId, CancellationToken ct = default);
+    Task SetStationFeaturedAsync(int stationId, bool isFeatured, CancellationToken ct = default);
 }
