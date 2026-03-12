@@ -39,3 +39,8 @@ libvlc/
 # Personal notes
 Commands_for_Me.txt
 
+# Temp/local files
+__pycache__/
+*_wpftmp.csproj
+Scripts and Helpers/stream_check_results.db
+
