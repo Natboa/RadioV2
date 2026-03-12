@@ -24,11 +24,11 @@ public static class CategorySeeder
         ("Pop, Charts & Decades",
         [
             "00s","10s","50s","60s","70s","80s","90s","oldies",
-            "adult_contemporary","charts","hits","pop","pop_rock","top40"
+            "adult_contemporary","charts","hits","pop","pop_rock","top_40"
         ]),
         ("Urban & Latin",
         [
-            "disco","funk","hiphop","rap","reggae","rnb","soul","urban",
+            "disco","funk","hip_hop","rap","reggae","r_b","soul","urban",
             "espanol","latin","reggaeton","salsa","sertaneja","tropical"
         ]),
         ("Jazz, Chill & Instrumental",

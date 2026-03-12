@@ -19,24 +19,24 @@ public static class GroupImageHelper
     /// Result is cached and frozen for cross-thread use.
     /// </summary>
     public static BitmapImage? GetImage(string groupName)
-        => _cache.GetOrAdd(Sanitize(groupName), LoadImageByKey);
+        => _cache.GetOrAdd(groupName, LoadImageByName);
 
-    private static BitmapImage? LoadImageByKey(string key)
+    private static BitmapImage? LoadImageByName(string name)
     {
         foreach (string ext in Extensions)
         {
             try
             {
-                var info = Application.GetResourceStream(new Uri($"pack://application:,,,/Assets/Groups/{key}{ext}"));
+                var info = Application.GetResourceStream(new Uri($"pack://application:,,,/Assets/Groups/{name}{ext}"));
                 if (info is null) continue;
 
                 var bmp = new BitmapImage();
                 bmp.BeginInit();
                 bmp.StreamSource = info.Stream;
-                bmp.CacheOption = BitmapCacheOption.OnLoad; // decode now, not at render time
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
                 bmp.EndInit();
                 info.Stream.Dispose();
-                bmp.Freeze(); // make cross-thread safe for the cache
+                bmp.Freeze();
                 return bmp;
             }
             catch { }
