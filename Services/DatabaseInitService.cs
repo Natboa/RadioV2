@@ -9,7 +9,7 @@ namespace RadioV2.Services;
 /// </summary>
 public static class DatabaseInitService
 {
-    public static async Task InitialiseAsync(RadioDbContext db)
+    public static async Task InitialiseAsync(StationsDbContext db)
     {
         // 1. Create Categories table if it doesn't exist yet
         await db.Database.ExecuteSqlRawAsync(@"

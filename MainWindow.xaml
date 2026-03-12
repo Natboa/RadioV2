@@ -16,6 +16,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -35,7 +36,40 @@
             </ui:TitleBar.TrailingContent>
         </ui:TitleBar>
 
-        <ui:NavigationView Grid.Row="1"
+        <!-- Update available banner — hidden until UpdateCheckerService finds a newer release -->
+        <Border Grid.Row="1"
+                x:Name="UpdateBanner"
+                Visibility="Collapsed"
+                Background="{ui:ThemeResource SystemFillColorAttentionBackgroundBrush}"
+                BorderBrush="{ui:ThemeResource SystemFillColorAttentionBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="12,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:SymbolIcon Grid.Column="0" Symbol="Info24" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" x:Name="UpdateBannerText"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+                <ui:Button Grid.Column="2" Content="Download"
+                           Appearance="Primary"
+                           Margin="8,0,4,0"
+                           Click="OnDownloadUpdateClick" />
+                <Button Grid.Column="3"
+                        Background="Transparent" BorderThickness="0"
+                        VerticalAlignment="Center"
+                        Click="OnDismissUpdateBannerClick"
+                        ToolTip="Dismiss">
+                    <ui:SymbolIcon Symbol="Dismiss24" FontSize="12" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <ui:NavigationView Grid.Row="2"
             x:Name="RootNavigation"
             PaneDisplayMode="Left"
             IsBackButtonVisible="Collapsed"
@@ -63,7 +97,7 @@
         </ui:NavigationView>
 
         <!-- Custom pane toggle: diagonal arrows, floats at right edge of pane -->
-        <Button Grid.Row="1"
+        <Button Grid.Row="2"
                 x:Name="PaneToggleBtn"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Top"
@@ -79,7 +113,7 @@
                            FontSize="14"/>
         </Button>
 
-        <Border Grid.Row="2" Height="72"
+        <Border Grid.Row="3" Height="72"
                 Background="{ui:ThemeResource ControlFillColorDefaultBrush}"
                 CornerRadius="8,8,0,0">
             <controls:MiniPlayer x:Name="MiniPlayerControl" />
@@ -87,7 +121,7 @@
 
         <!-- Snackbar presenter for playback errors and notifications -->
         <ui:SnackbarPresenter x:Name="RootSnackbar"
-                              Grid.Row="0" Grid.RowSpan="3"
+                              Grid.Row="0" Grid.RowSpan="4"
                               VerticalAlignment="Bottom"
                               Margin="16,0,16,80" />
     </Grid>
