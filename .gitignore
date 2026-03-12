@@ -30,6 +30,9 @@ packages/
 # LibVLC native libs (downloaded via NuGet, don't commit)
 libvlc/
 
+# Database (large binary — will be distributed via release artifact)
+Data/*.db
+
 # Claude Code
 .claude/
 
