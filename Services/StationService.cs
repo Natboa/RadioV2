@@ -119,6 +119,23 @@ public class StationService : IStationService
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task<List<Station>> GetFeaturedStationsByGroupAsync(int groupId, CancellationToken ct = default)
+    {
+        using var db = _factory.CreateDbContext();
+        return await db.Stations
+            .AsNoTracking()
+            .Where(s => s.GroupId == groupId && s.IsFeatured)
+            .OrderBy(s => s.Name)
+            .ToListAsync(ct);
+    }
+
+    public async Task SetStationFeaturedAsync(int stationId, bool isFeatured, CancellationToken ct = default)
+    {
+        using var db = _factory.CreateDbContext();
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE Stations SET IsFeatured = {(isFeatured ? 1 : 0)} WHERE Id = {stationId}", ct);
+    }
+
     public async Task<int> BulkImportStationsAsync(List<ParsedStation> stations, CancellationToken ct = default)
     {
         using var db = _factory.CreateDbContext();
