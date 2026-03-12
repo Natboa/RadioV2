@@ -118,8 +118,14 @@ public partial class DiscoverViewModel : ObservableObject
         try
         {
             var query = GroupSearchQuery.Length >= 2 ? GroupSearchQuery : null;
+            var isFirstBatch = _groupSkip == 0;
             var batch = await Task.Run(() => _stationService.GetStationsByGroupAsync(SelectedGroup.Id, _groupSkip, 100, query, ct), ct);
-            foreach (var s in batch) GroupStations.Add(s);
+            // First batch: assign a new collection (one CollectionChanged/Reset instead of 100 Add events).
+            // Subsequent batches (infinite scroll): append individually.
+            if (isFirstBatch)
+                GroupStations = new ObservableCollection<Station>(batch);
+            else
+                foreach (var s in batch) GroupStations.Add(s);
             _groupSkip += batch.Count;
             HasMoreItems = batch.Count == 100;
         }
