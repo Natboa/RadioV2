@@ -127,18 +127,28 @@ public partial class DiscoverViewModel : ObservableObject
             // This lets the compositor render animation frames (ProgressRing) between bursts.
             // DispatcherPriority.Background (4) is below Render (7) so render passes happen before resuming.
             var targetCollection = isFirstBatch ? new ObservableCollection<Station>() : GroupStations;
-            if (isFirstBatch) GroupStations = targetCollection;
             var dispatcher = Application.Current.Dispatcher;
-            // Yield to the dispatcher every ~8ms (half a 60fps frame budget).
-            // Time-based chunking is adaptive: fast items → more per chunk, slow items → fewer.
-            // Background priority (4) is below Input (5) so scroll events always run before resuming.
+            if (isFirstBatch)
+            {
+                GroupStations = targetCollection;
+                // The ItemsControl's ItemsSource binding update is queued at DataBind priority (8),
+                // not applied immediately. If we add items before it fires, ItemsControl sees a
+                // pre-filled collection and creates all containers in one burst.
+                // Yielding at DataBind lets the binding fire so ItemsControl subscribes first —
+                // after this, each Add triggers exactly one container creation (the expensive part),
+                // allowing the Stopwatch to correctly time and chunk the work.
+                await dispatcher.InvokeAsync(() => { }, DispatcherPriority.DataBind);
+            }
+            // Yield at Loaded (6) every ~8ms. Render (7) is higher priority, so a render/animation
+            // frame runs before each resumed chunk → spinner stays animated. Input (5) is lower, so
+            // scroll events are handled after chunks but the short burst keeps stutter minimal.
             var sw = Stopwatch.StartNew();
             foreach (var s in batch)
             {
                 targetCollection.Add(s);
                 if (sw.ElapsedMilliseconds >= 8)
                 {
-                    await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                    await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
                     sw.Restart();
                 }
             }
