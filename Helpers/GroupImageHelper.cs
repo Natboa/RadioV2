@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -10,25 +11,35 @@ public static class GroupImageHelper
 {
     private static readonly string[] Extensions = [".png", ".jpg", ".jpeg", ".webp"];
 
+    // Null sentinel so we don't re-probe group names that have no image.
+    private static readonly ConcurrentDictionary<string, BitmapImage?> _cache = new();
+
     /// <summary>
     /// Resolves a group name to a bundled image resource, or null if none exists.
+    /// Result is cached and frozen for cross-thread use.
     /// </summary>
     public static BitmapImage? GetImage(string groupName)
-    {
-        string key = Sanitize(groupName);
+        => _cache.GetOrAdd(Sanitize(groupName), LoadImageByKey);
 
+    private static BitmapImage? LoadImageByKey(string key)
+    {
         foreach (string ext in Extensions)
         {
-            string uriStr = $"pack://application:,,,/Assets/Groups/{key}{ext}";
             try
             {
-                var info = Application.GetResourceStream(new Uri(uriStr));
+                var info = Application.GetResourceStream(new Uri($"pack://application:,,,/Assets/Groups/{key}{ext}"));
                 if (info is null) continue;
+
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.StreamSource = info.Stream;
+                bmp.CacheOption = BitmapCacheOption.OnLoad; // decode now, not at render time
+                bmp.EndInit();
                 info.Stream.Dispose();
-                return new BitmapImage(new Uri(uriStr));
+                bmp.Freeze(); // make cross-thread safe for the cache
+                return bmp;
             }
-            catch (IOException) { }
-            catch (Exception) { }
+            catch { }
         }
 
         return null;
