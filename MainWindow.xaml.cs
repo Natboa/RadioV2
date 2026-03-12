@@ -92,10 +92,12 @@ public partial class MainWindow : FluentWindow
         double btnW = PaneToggleBtn.Width;
 
         // When open: float at the right edge of the expanded pane.
-        // When compact: centre within the icon column so it aligns with the nav icons below.
+        // When compact: sit at the right edge of the compact icon column.
+        // Guard against CompactPaneLength returning 0 (WPF-UI Left mode quirk).
+        double compactRight = compactLen > btnW ? compactLen - btnW + 2 : 10;
         double leftMargin = isOpen
-            ? openLen - btnW - 4
-            : Math.Round((compactLen - btnW) / 2);
+            ? openLen - btnW
+            : compactRight;
         PaneToggleBtn.Margin = new Thickness(leftMargin, 8, 0, 0);
     }
 

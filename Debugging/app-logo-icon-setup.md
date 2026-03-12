@@ -57,6 +57,21 @@ The radio graphic now fills nearly the entire icon frame at every size, making i
 
 ---
 
+## Problem: icon appeared stretched after logo replacement
+
+When the new logo PNG was substituted, the tight-cropped bounding box was **428×278** (not square). Resizing a non-square crop directly to 256×256 (etc.) stretched the graphic horizontally.
+
+**Fix:** After cropping to the content bounding box, center the cropped image onto a **square canvas** whose side equals the larger dimension (`max(width, height)`), filled with transparent pixels. The ICO frames are then generated from that square canvas, preserving the original aspect ratio at all sizes.
+
+PowerShell steps:
+1. Scan pixels — find tight bounding box of non-transparent pixels (A > 20)
+2. Crop to bounding box + 8px padding
+3. Create a new `Format32bppArgb` bitmap of size `max(cropW, cropH)` × `max(cropW, cropH)`, cleared to `Color.Transparent`
+4. Draw the cropped image centered: `offsetX = (side - cropW) / 2`, `offsetY = (side - cropH) / 2`
+5. Generate multi-resolution ICO (16/32/48/64/128/256px) from the square canvas
+
+---
+
 ## Files changed
 
 | File | Change |
