@@ -125,21 +125,16 @@ public partial class DiscoverViewModel : ObservableObject
             // First batch: populate in chunks, yielding at Background priority between each chunk.
             // This lets the compositor render animation frames (ProgressRing) between bursts.
             // DispatcherPriority.Background (4) is below Render (7) so render passes happen before resuming.
-            if (isFirstBatch)
+            var targetCollection = isFirstBatch ? new ObservableCollection<Station>() : GroupStations;
+            if (isFirstBatch) GroupStations = targetCollection;
+            var dispatcher = Application.Current.Dispatcher;
+            const int chunkSize = 15;
+            for (int i = 0; i < batch.Count; i += chunkSize)
             {
-                var newCollection = new ObservableCollection<Station>();
-                GroupStations = newCollection;
-                var dispatcher = Application.Current.Dispatcher;
-                const int chunkSize = 15;
-                for (int i = 0; i < batch.Count; i += chunkSize)
-                {
-                    for (int j = i; j < Math.Min(i + chunkSize, batch.Count); j++)
-                        newCollection.Add(batch[j]);
-                    await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-                }
+                for (int j = i; j < Math.Min(i + chunkSize, batch.Count); j++)
+                    targetCollection.Add(batch[j]);
+                await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
             }
-            else
-                foreach (var s in batch) GroupStations.Add(s);
             _groupSkip += batch.Count;
             HasMoreItems = batch.Count == 100;
         }
