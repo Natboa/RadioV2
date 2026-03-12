@@ -73,6 +73,21 @@ The uninstaller removes this entire folder plus:
 - `userdata.db` is created automatically by EF Core on first launch if it doesn't exist (using `EnsureCreated()`)
 - Both DB paths resolved at runtime: `Path.Combine(AppContext.BaseDirectory, "Data", "stations.db")` etc.
 
+**Import/export favourites after the split:**
+
+The M3U import and export feature touches both databases and must be explicitly wired to work post-split:
+
+| Operation | Databases touched | Notes |
+|---|---|---|
+| **Export (M3U/JSON)** | `userdata.db` (read `Favourites`) + `stations.db` (read `Stations` to get Name, StreamUrl, LogoUrl) | `IFavouritesService` must inject both `UserDbContext` and `StationsDbContext` to JOIN/resolve station details at export time |
+| **Import (M3U parse)** | `stations.db` (lookup by `StreamUrl`) + `userdata.db` (write `Favourites`) | `M3UParserService` / `IFavouritesService` first queries `StationsDbContext` for a matching station by URL; if found, inserts that `StationId` into `Favourites`; if not found, inserts a minimal station row into `stations.db` then references it |
+
+**Verification checklist for import/export after Phase 0:**
+- [ ] Export: all favourite stations appear in the exported M3U/JSON with correct Name and StreamUrl (confirm station detail JOIN works across both contexts)
+- [ ] Import: importing a previously exported M3U re-populates favourites correctly (no FK violations, no duplicate stations)
+- [ ] Import: importing an M3U with unknown stream URLs creates new station rows in `stations.db` and adds them to `Favourites` in `userdata.db`
+- [ ] No service accidentally holds a cross-context EF navigation (e.g. a `Station` nav prop on a `Favourite` entity) — resolve cross-DB joins in-memory or with explicit two-step queries
+
 **Installer behaviour after this change:**
 - On install/update: always copy `stations.db` to `{app}\Data\`
 - Never touch `userdata.db` — the app creates it on first run
