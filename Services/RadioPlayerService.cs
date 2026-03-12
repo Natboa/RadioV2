@@ -6,6 +6,7 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
 {
     private readonly LibVLC _libVLC;
     private readonly MediaPlayer _mediaPlayer;
+    private Media? _currentMedia;
 
     public RadioPlayerService()
     {
@@ -21,15 +22,18 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
 
         // ICY metadata: MediaChanged fires when a new station is loaded;
         // MetaChanged fires repeatedly as the station updates track info.
+        // Capture the media instance in the closure so MetaChanged always reads
+        // from the correct station, even if the user switches mid-stream.
         _mediaPlayer.MediaChanged += (s, e) =>
         {
-            if (_mediaPlayer.Media != null)
+            var media = _mediaPlayer.Media;
+            if (media != null)
             {
-                _mediaPlayer.Media.MetaChanged += (ms, me) =>
+                media.MetaChanged += (ms, me) =>
                 {
                     if (me.MetadataType == MetadataType.NowPlaying)
                     {
-                        var raw = _mediaPlayer.Media?.Meta(MetadataType.NowPlaying);
+                        var raw = media.Meta(MetadataType.NowPlaying);
                         if (!string.IsNullOrWhiteSpace(raw))
                             MetadataChanged?.Invoke(this, raw);
                     }
@@ -40,8 +44,10 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
 
     public void Play(string streamUrl)
     {
-        var media = new Media(_libVLC, streamUrl, FromType.FromLocation);
-        _mediaPlayer.Play(media);
+        var old = _currentMedia;
+        _currentMedia = new Media(_libVLC, streamUrl, FromType.FromLocation);
+        _mediaPlayer.Play(_currentMedia);
+        old?.Dispose();
     }
 
     public void Pause() => _mediaPlayer.Pause();
@@ -71,6 +77,7 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
     public void Dispose()
     {
         _mediaPlayer.Dispose();
+        _currentMedia?.Dispose();
         _libVLC.Dispose();
     }
 }

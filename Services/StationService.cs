@@ -101,7 +101,7 @@ public class StationService : IStationService
     public async Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default)
     {
         using var db = _stationsFactory.CreateDbContext();
-        var query = db.Stations.AsNoTracking().Where(s => s.GroupId == groupId);
+        var query = db.Stations.AsNoTracking().Where(s => s.GroupId == groupId && !s.IsFeatured);
         if (!string.IsNullOrWhiteSpace(searchQuery))
             query = query.Where(s => EF.Functions.Like(s.Name, $"%{searchQuery}%"));
         var stations = await query.OrderByDescending(s => s.LogoUrl != null && s.LogoUrl != "").ThenBy(s => s.Name).Skip(skip).Take(take).ToListAsync(ct);

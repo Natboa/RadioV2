@@ -59,9 +59,11 @@
               Visibility="{Binding IsGroupView, Converter={StaticResource BoolToVisibilityConverter}}"
               Margin="24,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />   <!-- back + title -->
+                <RowDefinition Height="Auto" />   <!-- search box -->
+                <RowDefinition Height="Auto" />   <!-- featured (collapses when empty) -->
+                <RowDefinition Height="*" />      <!-- stations list — fixed height enables virtualization -->
+                <RowDefinition Height="48" />     <!-- spinner — fixed height prevents layout reflow -->
             </Grid.RowDefinitions>
 
             <!-- Header: back + group name -->
@@ -85,45 +87,16 @@
                         Icon="{ui:SymbolIcon Search24}"
                         Margin="0,0,0,12" />
 
-            <!-- Scrollable content: featured + station list -->
-            <ScrollViewer x:Name="GroupScrollViewer"
-                          Grid.Row="2"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled">
+            <!-- Featured stations section (auto-height, collapses when no featured) -->
+            <Border Grid.Row="2"
+                    Visibility="{Binding HasFeaturedStations, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel>
-                    <!-- Featured stations section -->
-                    <Border Visibility="{Binding HasFeaturedStations, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <StackPanel>
-                            <TextBlock Text="Featured"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Margin="0,8,0,4"
-                                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                            <ListBox ItemsSource="{Binding FeaturedStations}"
-                                     BorderThickness="0"
-                                     Background="Transparent"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                        <Setter Property="Padding" Value="0" />
-                                        <Setter Property="Margin" Value="0,0,16,0" />
-                                        <Setter Property="Background" Value="Transparent" />
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <controls:StationListItem />
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                            <Separator Margin="0,4,16,4" />
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Station list -->
-                    <ListBox x:Name="StationsListBox"
-                             ItemsSource="{Binding GroupStations}"
+                    <TextBlock Text="Featured"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Margin="0,8,0,4"
+                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    <ListBox ItemsSource="{Binding FeaturedStations}"
                              BorderThickness="0"
                              Background="Transparent"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -141,15 +114,50 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-
-                    <ui:ProgressRing IsIndeterminate="True"
-                                     Width="32" Height="32"
-                                     Margin="0,8,0,24"
-                                     HorizontalAlignment="Center"
-                                     Visibility="{Binding ShowLoadingSpinner,
-                                         Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <Separator Margin="0,4,16,4" />
                 </StackPanel>
-            </ScrollViewer>
+            </Border>
+
+            <!-- Station list — Height="*" gives a fixed height so WPF can virtualize.
+                 Only visible containers are created; Add() for off-screen items is nearly free. -->
+            <ListBox x:Name="StationsListBox"
+                     Grid.Row="3"
+                     ItemsSource="{Binding GroupStations}"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                     VirtualizingStackPanel.ScrollUnit="Pixel">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,0,16,0" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <controls:StationListItem />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+
+            <!-- Loading spinner — fixed 48px row so show/hide never causes layout reflow -->
+            <ui:ProgressRing Grid.Row="4"
+                             IsIndeterminate="True"
+                             Width="32" Height="32"
+                             Margin="0,8"
+                             HorizontalAlignment="Center"
+                             Visibility="{Binding ShowLoadingSpinner,
+                                 Converter={StaticResource BoolToVisibilityConverter}}" />
         </Grid>
     </Grid>
 </Page>
