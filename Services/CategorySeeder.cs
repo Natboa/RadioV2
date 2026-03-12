@@ -10,24 +10,6 @@ public static class CategorySeeder
     // Ordered list — carousel rows appear in exactly this sequence on the Discover page
     private static readonly (string CategoryName, string[] GroupKeys)[] SeedData =
     [
-        ("Europe",
-        [
-            "austria","belgium","croatia","czech_republic","france","germany",
-            "greece","hungary","ireland","italy","netherlands","norway","poland",
-            "portugal","romania","russia","serbia","slovakia","spain","sweden",
-            "switzerland","turkey","uk","ukraine","europe",
-        ]),
-        ("Americas",
-        [
-            "argentina","brazil","canada","chile","colombia","ecuador","guatemala",
-            "mexico","paraguay","peru","puerto_rico","uruguay","usa","venezuela",
-            "north_america","south_america",
-        ]),
-        ("Asia, Pacific & Africa",
-        [
-            "australia","india","indonesia","israel","japan","new_zealand","philippines",
-            "saudi_arabia","singapore","south_africa","thailand","uae","uganda",
-        ]),
         ("Rock & Metal",
         [
             "alternative","alternative_rock","classic","classic_rock","gothic",
@@ -65,6 +47,24 @@ public static class CategorySeeder
         ("Global & Cultural",
         [
             "country","english","folk","schlager","traditional","world"
+        ]),
+        ("Europe",
+        [
+            "austria","belgium","croatia","czech_republic","france","germany",
+            "greece","hungary","ireland","italy","netherlands","norway","poland",
+            "portugal","romania","russia","serbia","slovakia","spain","sweden",
+            "switzerland","turkey","uk","ukraine","europe",
+        ]),
+        ("Americas",
+        [
+            "argentina","brazil","canada","chile","colombia","ecuador","guatemala",
+            "mexico","paraguay","peru","puerto_rico","uruguay","usa","venezuela",
+            "north_america","south_america",
+        ]),
+        ("Asia, Pacific & Africa",
+        [
+            "australia","india","indonesia","israel","japan","new_zealand","philippines",
+            "saudi_arabia","singapore","south_africa","thailand","uae","uganda",
         ]),
     ];
 

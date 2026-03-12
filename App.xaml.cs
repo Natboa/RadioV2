@@ -41,8 +41,17 @@ public partial class App : Application
         _host = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                // Database
-                var dbPath = Path.Combine(AppContext.BaseDirectory, "Data", "radioapp_large_groups.db");
+                // Database — stored in AppData so builds never overwrite user data (favorites, etc.)
+                var appDataDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "RadioV2");
+                Directory.CreateDirectory(appDataDir);
+                var dbPath = Path.Combine(appDataDir, "radioapp_large_groups.db");
+                if (!File.Exists(dbPath))
+                {
+                    var seedPath = Path.Combine(AppContext.BaseDirectory, "Data", "radioapp_large_groups.db");
+                    File.Copy(seedPath, dbPath);
+                }
                 services.AddDbContextFactory<RadioDbContext>(options =>
                     options.UseSqlite($"Data Source={dbPath}"));
 
