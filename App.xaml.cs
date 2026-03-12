@@ -120,6 +120,13 @@ public partial class App : Application
         // SQLite has no true async I/O, so Task.Run is required to keep the UI thread free.
         _ = Task.Run(() => _host.Services.GetRequiredService<IStationService>().GetCategoriesWithGroupsAsync());
 
+        // Warm up: compile EF Core query shapes for group station queries.
+        // The first call per query shape triggers LINQ→SQL compilation which adds ~300ms.
+        // Calling with groupId=0 returns no rows but pre-compiles the plan.
+        var svc = _host.Services.GetRequiredService<IStationService>();
+        _ = Task.Run(() => svc.GetStationsByGroupAsync(0, 0, 1));
+        _ = Task.Run(() => svc.GetFeaturedStationsByGroupAsync(0));
+
         base.OnStartup(e);
     }
 
