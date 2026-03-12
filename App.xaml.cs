@@ -116,9 +116,23 @@ public partial class App : Application
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
-        // Warm up: pre-load and cache Discover categories on a thread-pool thread.
-        // SQLite has no true async I/O, so Task.Run is required to keep the UI thread free.
-        _ = Task.Run(() => _host.Services.GetRequiredService<IStationService>().GetCategoriesWithGroupsAsync());
+        // Warm up: pre-populate DiscoverViewModel so the first click on Discover is instant.
+        // LoadCategoriesAsync already offloads the DB query via Task.Run, so this is safe to
+        // fire-and-forget from the UI thread — it won't block startup.
+        _ = _host.Services.GetRequiredService<DiscoverViewModel>().LoadCategoriesAsync();
+
+        // Warm up: pre-decode and cache all group card images in the background.
+        // GroupImageHelper.GetImage is called per group card during Discover's first render;
+        // without pre-warming, ~300 images decode synchronously on the UI thread (~500ms freeze).
+        // Task.Run is used because BitmapImage creation with OnLoad is CPU-bound.
+        var svcForImages = _host.Services.GetRequiredService<IStationService>();
+        _ = Task.Run(async () =>
+        {
+            var categories = await svcForImages.GetCategoriesWithGroupsAsync();
+            foreach (var cat in categories)
+                foreach (var g in cat.Groups)
+                    GroupImageHelper.GetImage(g.Name);
+        });
 
         // Warm up: compile EF Core query shapes for group station queries.
         // The first call per query shape triggers LINQ→SQL compilation which adds ~300ms.
