@@ -86,3 +86,4 @@ FIXED: Root cause: ProgressRing was in a Grid row outside the scrollable ListBox
 
 *script that has lots of common words and group names and for each group deletes stations that include those words if they dont fit the group they are in
 
+*for all the groups make it the first latter upper case, if more than one word, all the wors starts with uppercase, instead of _ between words there will be space, and rnb will be R&B, also Rock & Roll and the such, make sure they are changed everywhere, db, image names, everything that needs to change
