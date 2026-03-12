@@ -50,7 +50,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
-            <ui:SymbolIcon Symbol="HeartOff24"
+            <ui:SymbolIcon Symbol="Heart24"
                            FontSize="48"
                            HorizontalAlignment="Center"
                            Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" />

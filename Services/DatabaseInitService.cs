@@ -68,7 +68,7 @@ public static class DatabaseInitService
             ("Asia, Pacific & Africa",    10),
         };
         foreach (var (name, order) in orderMap)
-            await db.Database.ExecuteSqlRawAsync(
-                $"UPDATE Categories SET DisplayOrder = {order} WHERE Name = '{name}'");
+            await db.Database.ExecuteSqlAsync(
+                $"UPDATE Categories SET DisplayOrder = {order} WHERE Name = {name}");
     }
 }

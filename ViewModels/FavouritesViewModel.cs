@@ -30,9 +30,13 @@ public partial class FavouritesViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && FavouriteCount == 0;
 
+    private bool _hasLoaded;
+
     [RelayCommand]
-    public async Task LoadFavouritesAsync()
+    public async Task LoadFavouritesAsync(bool force = false)
     {
+        if (_hasLoaded && !force) return;
+        _hasLoaded = true;
         IsLoading = true;
         var list = await Task.Run(() => _stationService.GetFavouritesAsync());
         Favourites.Clear();
