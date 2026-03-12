@@ -39,7 +39,8 @@
             x:Name="RootNavigation"
             PaneDisplayMode="Left"
             IsBackButtonVisible="Collapsed"
-            IsPaneToggleVisible="False">
+            IsPaneToggleVisible="False"
+            TransitionDuration="0">
             <ui:NavigationView.PaneHeader>
                 <Border Height="44" />
             </ui:NavigationView.PaneHeader>

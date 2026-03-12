@@ -67,6 +67,13 @@ FIXED: StationsListBox lives inside a Collapsed Grid on startup, so its visual t
 *when scrolling down and it starts to load more stations or groups, the loading spinner stays visible instead of staying at the bottom — scrolling back up while loading keeps the spinner in view
 FIXED: Root cause: ProgressRing was in a Grid row outside the scrollable ListBox/ScrollViewer, so it was always pinned to the viewport bottom regardless of scroll position. Fix: added IsAtBottom (bool, default true) and ShowLoadingSpinner (= IsLoading && IsAtBottom) computed property to BrowseViewModel and DiscoverViewModel. IsAtBottom is tracked via ScrollChanged in the code-behind (same pattern as existing scroll detection) and updated directly on the ViewModel. Spinner Visibility binding changed from IsLoading → ShowLoadingSpinner on all three spinners (BrowsePage, DiscoverPage groups, DiscoverPage station list). IsAtBottom initialises true so the spinner shows on first load, becomes false when user scrolls above the threshold, and resets to true when entering a group's station list. Attempted a behavior DP approach first (IsAtBottom as a DP on InfiniteScrollBehavior with OneWayToSource binding) — this silently broke the LoadMoreCommand binding, reverted. Final implementation uses code-behind ScrollChanged handlers only. (ViewModels/BrowseViewModel.cs, ViewModels/DiscoverViewModel.cs, Views/BrowsePage.xaml, Views/BrowsePage.xaml.cs, Views/DiscoverPage.xaml, Views/DiscoverPage.xaml.cs)
 
+*when clicking on browse page and on fav page, theres a half second delay until it switches
+FIXED: Two causes —
+  1. WPF-UI NavigationView has a built-in page-switch transition animation (~200–300ms by default). Added TransitionDuration="0" to the NavigationView in MainWindow.xaml to make navigation instant.
+  2. FavouritesPage attached LoadFavouritesAsync() to the Loaded event, which fires on EVERY navigation visit (WPF-UI re-adds cached pages to the visual tree each time). This triggered a DB query on every click to the Favourites tab. Fixed by adding a _hasLoaded bool guard in FavouritesViewModel — the DB query only runs on the first visit per session. Subsequent visits return instantly with the already-loaded data. ToggleFavourite still updates the list locally (removing the item in-place) without needing a re-query.
+  Note: BrowsePage already had a correct guard via IsRecentVisible — LoadMoreAsync() is skipped on return visits if recent stations are loaded.
+  (MainWindow.xaml, ViewModels/FavouritesViewModel.cs)
+
 *future features:
  installer that includes the db aswell.
 
