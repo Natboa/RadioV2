@@ -90,6 +90,20 @@
                     Icon="{ui:SymbolIcon Heart24}" />
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
+                <!-- Clock panel — sits above Settings in the footer area.
+                     Visibility and opacity are managed in code-behind. -->
+                <Border x:Name="ClockPanel"
+                        HorizontalAlignment="Stretch"
+                        Padding="0,2,0,2"
+                        Visibility="Collapsed">
+                    <TextBlock Text="{Binding CurrentTime}"
+                               FontSize="80"
+                               FontWeight="Light"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                </Border>
                 <ui:NavigationViewItem Content="Settings"
                     TargetPageType="{x:Type views:SettingsPage}"
                     Icon="{ui:SymbolIcon Settings24}" />

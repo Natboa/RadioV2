@@ -14,9 +14,11 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IStationService _stationService;
     private readonly M3UParserService _m3uParser;
     private readonly IFavouritesIOService _favouritesIOService;
+    private readonly MainWindowViewModel _mainWindowVm;
 
-    public SettingsViewModel(IStationService stationService, M3UParserService m3uParser, IFavouritesIOService favouritesIOService)
+    public SettingsViewModel(MainWindowViewModel mainWindowVm, IStationService stationService, M3UParserService m3uParser, IFavouritesIOService favouritesIOService)
     {
+        _mainWindowVm = mainWindowVm;
         _stationService = stationService;
         _m3uParser = m3uParser;
         _favouritesIOService = favouritesIOService;
@@ -30,14 +32,23 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _isImporting;
     [ObservableProperty] private string _favouritesStatusMessage = string.Empty;
     [ObservableProperty] private bool _hasFavouritesStatus;
+    [ObservableProperty] private bool _isClockEnabled;
 
     private bool _suppressThemeChange;
+    private bool _suppressClockChanges;
 
     partial void OnSelectedThemeChanged(string value)
     {
         if (_suppressThemeChange) return;
         ThemeHelper.ApplyTheme(value);
         _ = _stationService.SetSettingAsync("Theme", value);
+    }
+
+    partial void OnIsClockEnabledChanged(bool value)
+    {
+        if (_suppressClockChanges) return;
+        _mainWindowVm.IsClockEnabled = value;
+        _ = _stationService.SetSettingAsync("ClockEnabled", value ? "true" : "false");
     }
 
     [RelayCommand]
@@ -47,6 +58,11 @@ public partial class SettingsViewModel : ObservableObject
         _suppressThemeChange = true;
         SelectedTheme = theme;
         _suppressThemeChange = false;
+
+        // Sync clock enabled state from MainWindowViewModel (already loaded from DB at startup)
+        _suppressClockChanges = true;
+        IsClockEnabled = _mainWindowVm.IsClockEnabled;
+        _suppressClockChanges = false;
     }
 
     [RelayCommand]

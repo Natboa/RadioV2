@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media.Animation;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 
@@ -71,14 +72,24 @@ public partial class MainWindow : FluentWindow
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+        var hwnd = new WindowInteropHelper(this).Handle;
+        var source = HwndSource.FromHwnd(hwnd);
         source?.AddHook(_mediaKeyHook.WndProc);
+        _mediaKeyHook.Register(hwnd);
         RootNavigation.Navigate(typeof(Views.FavouritesPage));
 
         UpdatePaneToggleButton();
         DependencyPropertyDescriptor
             .FromProperty(Wpf.Ui.Controls.NavigationView.IsPaneOpenProperty, typeof(Wpf.Ui.Controls.NavigationView))
             ?.AddValueChanged(RootNavigation, (_, _) => UpdatePaneToggleButton());
+
+        // React to IsClockEnabled changes from settings page
+        var vm = (MainWindowViewModel)DataContext;
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.IsClockEnabled))
+                UpdateClockPanel();
+        };
 
         // Check for updates in the background — silently skipped if no internet
         _ = CheckForUpdateAsync();
@@ -128,6 +139,43 @@ public partial class MainWindow : FluentWindow
             ? openLen - btnW
             : compactRight;
         PaneToggleBtn.Margin = new Thickness(leftMargin, 8, 0, 0);
+
+        // Clock panel fade on pane toggle
+        var vm = (MainWindowViewModel)DataContext;
+        if (!vm.IsClockEnabled) return;
+
+        if (!isOpen && ClockPanel.Visibility == Visibility.Visible)
+        {
+            var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(100));
+            fadeOut.Completed += (_, _) =>
+            {
+                if (!RootNavigation.IsPaneOpen)
+                    ClockPanel.Visibility = Visibility.Collapsed;
+            };
+            ClockPanel.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+        }
+        else if (isOpen)
+        {
+            ClockPanel.BeginAnimation(UIElement.OpacityProperty, null);
+            ClockPanel.Opacity = 1;
+            ClockPanel.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void UpdateClockPanel()
+    {
+        var vm = (MainWindowViewModel)DataContext;
+        if (!vm.IsClockEnabled)
+        {
+            ClockPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+        // Show only when pane is open
+        if (RootNavigation.IsPaneOpen)
+        {
+            ClockPanel.Opacity = 1;
+            ClockPanel.Visibility = Visibility.Visible;
+        }
     }
 
     private void OnPaneToggleClick(object sender, RoutedEventArgs e)
@@ -140,6 +188,7 @@ public partial class MainWindow : FluentWindow
 
     protected override void OnClosing(CancelEventArgs e)
     {
+        _mediaKeyHook.Dispose();
         _trayIcon.Dispose();
         _networkMonitor.Dispose();
         base.OnClosing(e);

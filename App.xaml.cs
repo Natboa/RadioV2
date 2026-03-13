@@ -239,6 +239,10 @@ public partial class App : Application
         var theme = await stationService.GetSettingAsync("Theme") ?? "Dark";
         ThemeHelper.ApplyTheme(theme);
 
+        // Clock
+        var mainVm = _host.Services.GetRequiredService<MainWindowViewModel>();
+        mainVm.IsClockEnabled = (await stationService.GetSettingAsync("ClockEnabled")) == "true";
+
         // Volume
         if (int.TryParse(await stationService.GetSettingAsync("Volume"), out var volume))
             miniPlayer.Volume = volume;
