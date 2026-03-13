@@ -85,7 +85,7 @@ FIXED: Two causes —
 *future features:
 
 *when scrolling down and it loads more stations then the scrolling freezes of a brief moment
-FIXED: Root cause — StationsListBox was inside ScrollViewer > StackPanel (unconstrained height), disabling WPF virtualization. Every Add() created a StationListItem container immediately, so each infinite-scroll batch blocked the UI thread. Fix: removed GroupScrollViewer/StackPanel wrapper; restructured group view as a 5-row Grid (Auto/Auto/Auto/*/48). StationsListBox now sits in Height="*" row with VirtualizingStackPanel.IsVirtualizing="True", VirtualizationMode="Recycling", ScrollUnit="Pixel" — only visible containers are created; Add() for off-screen items is nearly free. TrySetupStationsScrollViewer updated to find the ListBox's internal ScrollViewer via FindChildScrollViewer (added to DiscoverPage.xaml.cs). GroupScrollViewer.ScrollToTop() replaced with _stationsSv?.ScrollToTop(). (Views/DiscoverPage.xaml, Views/DiscoverPage.xaml.cs)
+FIXED (v3 — final): Root cause was a recurring conflict: fixing the freeze required the ListBox to own its ScrollViewer (for WPF virtualization), but fixing the featured section "pinning" required both featured and stations inside the same outer ScrollViewer — mutually exclusive in standard WPF. Final fix: merged all items (featured header, featured stations, separator, regular stations) into a single ObservableCollection<object> AllStationItems on DiscoverViewModel. A single virtualized ListBox binds to AllStationItems; DataTemplate DataType matching in ListBox.Resources renders each type; GroupViewItemStyleSelector gives header/separator markers a chrome-free ListBoxItem container. ListBox owns its scroll → VSP virtualization active → Add() for off-screen items is nearly free → no freeze. Featured header and separator scroll naturally with the list because they're items in the same ListBox. See Debugging/scroll-freeze-virtualization-fix.md for full history. (Models/GroupViewItem.cs, Helpers/GroupViewItemStyleSelector.cs, ViewModels/DiscoverViewModel.cs, Views/DiscoverPage.xaml, Views/DiscoverPage.xaml.cs)
 
 *import fav stations parses m3u files and adds
 (check if works)
@@ -95,5 +95,8 @@ FIXED: Root cause — StationsListBox was inside ScrollViewer > StackPanel (unco
 
 *script that has lots of common words and group names and for each group deletes stations that include those words if they dont fit the group they are in
 
+*keyboard keys not working when app minimized
 
+*add donate cofee link
 
+*add option for big digital clock
