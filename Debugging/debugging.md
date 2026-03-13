@@ -82,6 +82,9 @@ FIXED: Two causes —
   Note: BrowsePage already had a correct guard via IsRecentVisible — LoadMoreAsync() is skipped on return visits if recent stations are loaded.
   (MainWindow.xaml, ViewModels/FavouritesViewModel.cs)
 
+*when browsing a station in browse page, it only loads like 100 stations and when scrolling down it doesnt load more. look at all the scrolling explanations in debugging folder and fix
+
+
 *future features:
 
 *when scrolling down and it loads more stations then the scrolling freezes of a brief moment
@@ -96,5 +99,4 @@ FIXED: Root cause — StationsListBox was inside ScrollViewer > StackPanel (unco
 *script that has lots of common words and group names and for each group deletes stations that include those words if they dont fit the group they are in
 
 
-*when start to scroll up a back to top button will appear
 
