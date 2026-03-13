@@ -247,26 +247,27 @@ public partial class App : Application
         if (int.TryParse(await stationService.GetSettingAsync("Volume"), out var volume))
             miniPlayer.Volume = volume;
 
-        // Last played station (restore display — do NOT auto-play)
+        // Last played station — only restore if it is a favourite (display only, no auto-play)
         var lastIdStr = await stationService.GetSettingAsync("LastPlayedStationId");
         if (int.TryParse(lastIdStr, out var lastId) && lastId > 0)
         {
-            var stationsFactory = _host.Services.GetRequiredService<IDbContextFactory<StationsDbContext>>();
-            var userFactory     = _host.Services.GetRequiredService<IDbContextFactory<UserDbContext>>();
+            var userFactory = _host.Services.GetRequiredService<IDbContextFactory<UserDbContext>>();
+            using var userDb = userFactory.CreateDbContext();
 
-            using var stationsDb = stationsFactory.CreateDbContext();
-            var station = await stationsDb.Stations
-                .Include(s => s.Group)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Id == lastId);
-
-            if (station != null)
+            if (await userDb.Favourites.AnyAsync(f => f.StationId == lastId))
             {
-                miniPlayer.StationName    = station.Name;
-                miniPlayer.StationLogoUrl = station.LogoUrl;
+                var stationsFactory = _host.Services.GetRequiredService<IDbContextFactory<StationsDbContext>>();
+                using var stationsDb = stationsFactory.CreateDbContext();
+                var station = await stationsDb.Stations
+                    .Include(s => s.Group)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.Id == lastId);
 
-                using var userDb = userFactory.CreateDbContext();
-                miniPlayer.IsFavourite = await userDb.Favourites.AnyAsync(f => f.StationId == lastId);
+                if (station != null)
+                {
+                    station.IsFavorite = true;
+                    miniPlayer.RestoreStation(station);
+                }
             }
         }
     }

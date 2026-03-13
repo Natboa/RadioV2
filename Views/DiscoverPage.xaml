@@ -42,7 +42,8 @@
                             VerticalAlignment="Center"
                             Text="{Binding DiscoverSearchQuery, UpdateSourceTrigger=PropertyChanged}"
                             PlaceholderText="Search genres &amp; countries..."
-                            Icon="{ui:SymbolIcon Search24}" />
+                            Icon="{ui:SymbolIcon Search24}"
+                            Visibility="{Binding IsGroupView, Converter={StaticResource BoolToInverseVisibilityConverter}}" />
             </Grid>
         </Border>
 

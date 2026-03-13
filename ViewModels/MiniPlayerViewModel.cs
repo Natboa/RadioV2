@@ -124,10 +124,30 @@ public partial class MiniPlayerViewModel : ObservableObject
         StationStarted?.Invoke(this, station);
     }
 
+    /// <summary>Restores a station's display on startup without starting playback.</summary>
+    public void RestoreStation(Station station)
+    {
+        CurrentStation    = station;
+        StationName       = station.Name;
+        StationLogoUrl    = station.LogoUrl;
+        IsFavourite       = station.IsFavorite;
+        NowPlayingArtist  = null;
+        NowPlayingTitle   = null;
+    }
+
     // ── Commands ──────────────────────────────────────────────────────────
 
     [RelayCommand]
-    private void PlayPause() => _playerService.TogglePlayPause();
+    private void PlayPause()
+    {
+        if (_playerService.IsPlaying || _playerService.IsPaused)
+            _playerService.TogglePlayPause();
+        else if (CurrentStation != null)
+        {
+            _playerService.Volume = IsMuted ? 0 : Volume;
+            _playerService.Play(CurrentStation.StreamUrl);
+        }
+    }
 
     [RelayCommand]
     private void Stop() => _playerService.Stop();
