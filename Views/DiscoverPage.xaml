@@ -81,7 +81,8 @@
             </StackPanel>
 
             <!-- Search within group -->
-            <ui:TextBox Grid.Row="1"
+            <ui:TextBox x:Name="GroupSearchBox"
+                        Grid.Row="1"
                         Text="{Binding GroupSearchQuery, UpdateSourceTrigger=PropertyChanged}"
                         PlaceholderText="{Binding SelectedGroup.Name, StringFormat='Filter within {0}...'}"
                         Icon="{ui:SymbolIcon Search24}"

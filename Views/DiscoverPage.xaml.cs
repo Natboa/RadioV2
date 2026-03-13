@@ -61,6 +61,7 @@ public partial class DiscoverPage : Page
         _stationsSv.ScrollChanged += async (_, _) =>
         {
             if (!viewModel.IsGroupView) return;
+
             viewModel.IsAtBottom = _stationsSv.ScrollableHeight == 0 ||
                 _stationsSv.VerticalOffset >= _stationsSv.ScrollableHeight * 0.8;
             if (!viewModel.IsLoading &&
