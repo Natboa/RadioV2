@@ -22,7 +22,7 @@
 
 ## Overview
 
-RadioV2 is a lightweight Windows desktop application for discovering, browsing, and streaming internet radio stations. It ships with a pre-seeded database of tens of thousands of stations organized by genre, and delivers a native Windows 11 experience through the WPF Fluent Design system.
+RadioV2 is a lightweight  Desktop application for discovering, browsing, and streaming internet radio stations. It ships with a pre-seeded database of tens of thousands of stations organized by genre, and delivers a native Windows 11 experience through the WPF Fluent Design system.
 
 ## Features
 
