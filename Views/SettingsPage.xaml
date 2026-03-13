@@ -34,7 +34,7 @@
                                Margin="0,0,0,12"
                                Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
 
-                    <DockPanel LastChildFill="False">
+                    <DockPanel LastChildFill="False" Margin="0,0,0,12">
                         <TextBlock Text="Theme"
                                    VerticalAlignment="Center"
                                    Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
@@ -47,6 +47,14 @@
                                          IsChecked="{Binding SelectedTheme, Converter={StaticResource StringEqualConverter}, ConverterParameter=Dark}"
                                          GroupName="ThemeGroup" />
                         </StackPanel>
+                    </DockPanel>
+
+                    <DockPanel LastChildFill="False">
+                        <TextBlock Text="Clock"
+                                   VerticalAlignment="Center"
+                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                        <ui:ToggleSwitch DockPanel.Dock="Right"
+                                         IsChecked="{Binding IsClockEnabled}" />
                     </DockPanel>
                 </StackPanel>
             </ui:Card>
