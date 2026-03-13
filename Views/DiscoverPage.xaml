@@ -25,16 +25,31 @@
                 BorderThickness="0,0,0,1"
                 Padding="24,14"
                 Panel.ZIndex="1">
-            <TextBlock Text="Discover"
-                       FontSize="28"
-                       FontWeight="SemiBold"
-                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="Discover"
+                           FontSize="28"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                <ui:TextBox Grid.Column="1"
+                            x:Name="DiscoverSearchBox"
+                            Width="260"
+                            VerticalAlignment="Center"
+                            Text="{Binding DiscoverSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                            PlaceholderText="Search genres &amp; countries..."
+                            Icon="{ui:SymbolIcon Search24}" />
+            </Grid>
         </Border>
 
         <!-- ── Carousel view (categories → groups) ───────────────────────── -->
         <ScrollViewer x:Name="CarouselScrollViewer"
                       Grid.Row="1"
-                      Visibility="{Binding IsGroupView, Converter={StaticResource BoolToInverseVisibilityConverter}}"
+                      Visibility="{Binding IsCarouselVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="24,16,24,0">
@@ -54,6 +69,142 @@
                                  Visibility="{Binding ShowLoadingSpinner,
                                      Converter={StaticResource BoolToVisibilityConverter}}" />
             </StackPanel>
+        </ScrollViewer>
+
+        <!-- ── Search results view (flat group cards matching query) ────────── -->
+        <ScrollViewer Grid.Row="1"
+                      Visibility="{Binding IsSearchResultsVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="24,16,24,0">
+            <ItemsControl ItemsSource="{Binding SearchResultGroups}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border x:Name="CardBorder"
+                                Width="160"
+                                Margin="0,0,12,12"
+                                CornerRadius="8"
+                                ClipToBounds="True"
+                                Cursor="Hand"
+                                Background="{ui:ThemeResource ControlFillColorDefaultBrush}">
+                            <Border.InputBindings>
+                                <MouseBinding MouseAction="LeftClick"
+                                              Command="{Binding DataContext.SelectGroupCommand,
+                                                            RelativeSource={RelativeSource AncestorType=Page}}"
+                                              CommandParameter="{Binding}" />
+                            </Border.InputBindings>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="160" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0" ClipToBounds="True">
+                                    <Grid>
+                                        <Border Background="{ui:ThemeResource ControlFillColorSecondaryBrush}">
+                                            <ui:SymbolIcon Symbol="Play24"
+                                                           FontSize="40"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                                        </Border>
+                                        <Image x:Name="GroupImage"
+                                               Stretch="UniformToFill"
+                                               RenderTransformOrigin="0.5,0.5"
+                                               Source="{Binding Name, Converter={StaticResource GroupNameToImageConverter}}">
+                                            <Image.RenderTransform>
+                                                <ScaleTransform x:Name="ImageScale" />
+                                            </Image.RenderTransform>
+                                        </Image>
+                                        <ui:Button x:Name="PlayButton"
+                                                   Appearance="Primary"
+                                                   Width="36" Height="36"
+                                                   CornerRadius="18"
+                                                   Padding="0"
+                                                   Margin="0,0,8,8"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Bottom"
+                                                   Visibility="Collapsed"
+                                                   Command="{Binding DataContext.SelectGroupCommand,
+                                                                 RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   CommandParameter="{Binding}">
+                                            <ui:SymbolIcon Symbol="Play24" FontSize="14" />
+                                        </ui:Button>
+                                    </Grid>
+                                </Border>
+                                <StackPanel Grid.Row="1" Margin="10,8,10,10">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                                    <TextBlock FontSize="11"
+                                               Margin="0,2,0,0"
+                                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}">
+                                        <Run Text="{Binding StationCount, Mode=OneWay}" /><Run Text=" stations" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
+                            <Border.Triggers>
+                                <EventTrigger RoutedEvent="Border.MouseEnter">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.06" Duration="0:0:0.2" />
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.06" Duration="0:0:0.2" />
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
+                                                                           Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0"
+                                                                        Value="{x:Static Visibility.Visible}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="CardBorder"
+                                                                           Storyboard.TargetProperty="Background">
+                                                <DiscreteObjectKeyFrame KeyTime="0">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <SolidColorBrush Color="{DynamicResource ControlFillColorSecondary}" />
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                                <EventTrigger RoutedEvent="Border.MouseLeave">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.0" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.0" Duration="0:0:0.15" />
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
+                                                                           Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0"
+                                                                        Value="{x:Static Visibility.Collapsed}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="CardBorder"
+                                                                           Storyboard.TargetProperty="Background">
+                                                <DiscreteObjectKeyFrame KeyTime="0">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <SolidColorBrush Color="{DynamicResource ControlFillColorDefault}" />
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Border.Triggers>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </ScrollViewer>
 
         <!-- ── Station list view (drill-down into a group) ───────────────── -->
