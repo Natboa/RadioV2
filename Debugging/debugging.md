@@ -100,3 +100,5 @@ FIXED (v3 — final): Root cause was a recurring conflict: fixing the freeze req
 *add donate cofee link
 
 *add option for big digital clock
+
+*genre / country search

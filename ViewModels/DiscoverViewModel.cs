@@ -140,6 +140,7 @@ public partial class DiscoverViewModel : ObservableObject
         FeaturedStations.Clear();
         AllStationItems.Clear();
         _featuredSectionSize = 0;
+        DiscoverSearchQuery = string.Empty;
         GroupSearchQuery = string.Empty;
         _groupSkip = 0;
         HasMoreItems = true;
