@@ -32,6 +32,27 @@ public partial class DiscoverViewModel : ObservableObject
     [ObservableProperty] private ObservableCollection<CarouselRowViewModel> _categoryRows = [];
     [ObservableProperty] private bool _categoriesLoaded;
 
+    private List<GroupWithCount> _allGroups = [];
+
+    // ── Discover search (genres / countries) ─────────────────────────────────
+    [ObservableProperty] private string _discoverSearchQuery = string.Empty;
+    [ObservableProperty] private ObservableCollection<GroupWithCount> _searchResultGroups = [];
+
+    public bool IsSearching => DiscoverSearchQuery.Length > 0;
+    public bool IsCarouselVisible => !IsGroupView && !IsSearching;
+    public bool IsSearchResultsVisible => !IsGroupView && IsSearching;
+
+    partial void OnDiscoverSearchQueryChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsSearching));
+        OnPropertyChanged(nameof(IsCarouselVisible));
+        OnPropertyChanged(nameof(IsSearchResultsVisible));
+        SearchResultGroups.Clear();
+        if (value.Length == 0) return;
+        foreach (var g in _allGroups.Where(g => g.Name.Contains(value, StringComparison.OrdinalIgnoreCase)))
+            SearchResultGroups.Add(g);
+    }
+
     public async Task LoadCategoriesAsync(CancellationToken ct = default)
     {
         if (CategoriesLoaded) return;
@@ -51,6 +72,7 @@ public partial class DiscoverViewModel : ObservableObject
                     SelectGroupCommand = SelectGroupCommand
                 });
             }
+            _allGroups = categories.SelectMany(c => c.Groups).ToList();
             CategoriesLoaded = true;
         }
         catch (OperationCanceledException) { }
@@ -72,7 +94,10 @@ public partial class DiscoverViewModel : ObservableObject
 
     public bool HasFeaturedStations => FeaturedStations.Count > 0;
     [ObservableProperty] private string _groupSearchQuery = string.Empty;
-    [ObservableProperty] private bool _isGroupView;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCarouselVisible))]
+    [NotifyPropertyChangedFor(nameof(IsSearchResultsVisible))]
+    private bool _isGroupView;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadingSpinner))]
     private bool _isLoading;
