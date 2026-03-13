@@ -3,6 +3,8 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:RadioV2.Controls"
+      xmlns:models="clr-namespace:RadioV2.Models"
+      xmlns:helpers="clr-namespace:RadioV2.Helpers"
       xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -61,7 +63,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />   <!-- back + title -->
                 <RowDefinition Height="Auto" />   <!-- search box -->
-                <RowDefinition Height="*" />      <!-- scrollable area: featured + stations -->
+                <RowDefinition Height="*" />      <!-- virtualized station list (featured + stations together) -->
                 <RowDefinition Height="48" />     <!-- spinner — fixed height prevents layout reflow -->
             </Grid.RowDefinitions>
 
@@ -87,66 +89,81 @@
                         Icon="{ui:SymbolIcon Search24}"
                         Margin="0,0,0,12" />
 
-            <!-- Scrollable area: featured section + full station list scroll together -->
-            <ScrollViewer x:Name="StationsScrollViewer"
-                          Grid.Row="2"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled">
-                <StackPanel>
-                    <!-- Featured stations section (auto-height, collapses when no featured) -->
-                    <Border Visibility="{Binding HasFeaturedStations, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <StackPanel>
-                            <TextBlock Text="Featured"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Margin="0,8,0,4"
-                                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                            <ListBox ItemsSource="{Binding FeaturedStations}"
-                                     BorderThickness="0"
-                                     Background="Transparent"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                        <Setter Property="Padding" Value="0" />
-                                        <Setter Property="Margin" Value="0,0,16,0" />
-                                        <Setter Property="Background" Value="Transparent" />
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <controls:StationListItem />
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                            <Separator Margin="0,4,16,4" />
-                        </StackPanel>
-                    </Border>
+            <!--
+                Single virtualized ListBox for featured + regular stations.
+                Featured header, featured station items, separator, and regular station items
+                are all objects in AllStationItems — a mixed ObservableCollection<object>.
 
-                    <!-- Station list — inside the shared ScrollViewer so it scrolls with featured -->
-                    <ListBox x:Name="StationsListBox"
-                             ItemsSource="{Binding GroupStations}"
-                             BorderThickness="0"
-                             Background="Transparent"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                        <ListBox.ItemContainerStyle>
+                By letting the ListBox own its ScrollViewer (no outer SV wrapper), WPF's
+                VirtualizingStackPanel can measure against the finite Height="*" viewport and
+                only create containers for visible items.  Adding off-screen items is nearly
+                free: no container is created until the item scrolls into view.
+
+                DataTemplate DataType matching (in ListBox.Resources) picks the correct
+                template per item type.  GroupViewItemStyleSelector gives header/separator
+                markers a chrome-free container (no hover, no focus ring) while station
+                items get the normal ListBoxItem style.
+            -->
+            <ListBox x:Name="StationsListBox"
+                     Grid.Row="2"
+                     ItemsSource="{Binding AllStationItems}"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Standard"
+                     VirtualizingPanel.ScrollUnit="Pixel"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemContainerStyleSelector>
+                    <helpers:GroupViewItemStyleSelector>
+                        <!-- Normal station row: hover highlight, standard padding -->
+                        <helpers:GroupViewItemStyleSelector.StationStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 <Setter Property="Padding" Value="0" />
                                 <Setter Property="Margin" Value="0,0,16,0" />
                                 <Setter Property="Background" Value="Transparent" />
                             </Style>
-                        </ListBox.ItemContainerStyle>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <controls:StationListItem />
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </StackPanel>
-            </ScrollViewer>
+                        </helpers:GroupViewItemStyleSelector.StationStyle>
+                        <!-- Header / separator marker: no chrome, not focusable, no margins -->
+                        <helpers:GroupViewItemStyleSelector.MarkerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="IsHitTestVisible" Value="False" />
+                                <Setter Property="Focusable" Value="False" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <ContentPresenter />
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </helpers:GroupViewItemStyleSelector.MarkerStyle>
+                    </helpers:GroupViewItemStyleSelector>
+                </ListBox.ItemContainerStyleSelector>
+                <ListBox.Resources>
+                    <DataTemplate DataType="{x:Type models:FeaturedHeaderItem}">
+                        <TextBlock Text="Featured"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Margin="0,8,0,4"
+                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type models:SectionSeparatorItem}">
+                        <Separator Margin="0,4,16,4" />
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type models:StationGroupViewItem}">
+                        <!-- Set DataContext to the inner Station so StationListItem bindings
+                             (Name, LogoUrl, IsFavorite, etc.) resolve correctly.
+                             RelativeSource AncestorType=Page commands still resolve to
+                             DiscoverPage.DataContext (DiscoverViewModel) via visual tree. -->
+                        <controls:StationListItem DataContext="{Binding Station}" />
+                    </DataTemplate>
+                </ListBox.Resources>
+            </ListBox>
 
             <!-- Loading spinner — fixed 48px row so show/hide never causes layout reflow -->
             <ui:ProgressRing Grid.Row="3"
