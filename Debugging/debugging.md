@@ -59,8 +59,6 @@ FIXED: Hid the default WPF-UI hamburger (IsPaneToggleVisible="False") and added 
 
 *add search bar to groups
 
-*browse doesnt work, doesnt search all the stations
-
 *first time entering a group, scrolling to the bottom did not load more stations; leaving and re-entering the group fixed it
 FIXED: StationsListBox lives inside a Collapsed Grid on startup, so its visual tree (including the internal ScrollViewer) is never realized before the first group is opened. TrySetupStationsScrollViewer was called synchronously on the PropertyChanged event for IsGroupView — before WPF's layout pass ran — so FindChildScrollViewer returned null and the ScrollChanged listener was never attached. On the second visit WPF keeps the realized visual tree even when collapsed, so it worked. Fix: wrapped TrySetupStationsScrollViewer + ScrollToTop in Dispatcher.InvokeAsync at DispatcherPriority.Loaded so the layout pass (which realizes the ListBox template) completes first. (Views/DiscoverPage.xaml.cs)
 
@@ -82,8 +80,7 @@ FIXED: Two causes —
   Note: BrowsePage already had a correct guard via IsRecentVisible — LoadMoreAsync() is skipped on return visits if recent stations are loaded.
   (MainWindow.xaml, ViewModels/FavouritesViewModel.cs)
 
-*when browsing a station in browse page, it only loads like 100 stations and when scrolling down it doesnt load more. look at all the scrolling explanations in debugging folder and fix
-
+*
 
 *future features:
 
