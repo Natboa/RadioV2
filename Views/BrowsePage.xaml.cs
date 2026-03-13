@@ -2,12 +2,16 @@ using RadioV2.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace RadioV2.Views;
 
 public partial class BrowsePage : Page
 {
     private readonly BrowseViewModel _viewModel;
+    private ScrollViewer? _stationSv;
+    private bool _stationSvSetup;
+    private bool _pageSetup;
 
     public BrowsePage(BrowseViewModel viewModel)
     {
@@ -16,16 +20,41 @@ public partial class BrowsePage : Page
         InitializeComponent();
         Loaded += async (_, _) =>
         {
-            var sv = FindChildScrollViewer(StationListBox);
-            if (sv != null)
+            if (!_pageSetup)
             {
-                sv.ScrollChanged += (_, _) =>
+                _pageSetup = true;
+                viewModel.PropertyChanged += (_, e) =>
                 {
-                    viewModel.IsAtBottom = sv.ScrollableHeight == 0 ||
-                        sv.VerticalOffset >= sv.ScrollableHeight - 200;
+                    if (e.PropertyName == nameof(viewModel.IsRecentVisible) && !viewModel.IsRecentVisible)
+                    {
+                        Dispatcher.InvokeAsync(() => TrySetupStationsScrollViewer(viewModel), DispatcherPriority.Loaded);
+                    }
                 };
+                TrySetupStationsScrollViewer(viewModel);
             }
+
             if (!viewModel.IsRecentVisible)
+                await viewModel.LoadMoreAsync();
+        };
+    }
+
+    private void TrySetupStationsScrollViewer(BrowseViewModel viewModel)
+    {
+        if (_stationSvSetup) return;
+        _stationSv = FindChildScrollViewer(StationListBox);
+        if (_stationSv is null) return;
+
+        _stationSvSetup = true;
+
+        _stationSv.ScrollChanged += async (_, _) =>
+        {
+            if (viewModel.IsRecentVisible) return;
+            viewModel.IsAtBottom = _stationSv.ScrollableHeight == 0 ||
+                _stationSv.VerticalOffset >= _stationSv.ScrollableHeight * 0.8;
+            if (!viewModel.IsLoading && viewModel.HasMoreItems &&
+                _stationSv.ScrollableHeight > 0 &&
+                _stationSv.VerticalOffset > 0 &&
+                _stationSv.VerticalOffset >= _stationSv.ScrollableHeight * 0.8)
                 await viewModel.LoadMoreAsync();
         };
     }
@@ -46,7 +75,7 @@ public partial class BrowsePage : Page
         => _viewModel.ShowHistory();
 
     private void SearchBox_LostFocus(object sender, RoutedEventArgs e)
-        => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+        => Dispatcher.BeginInvoke(DispatcherPriority.Background,
             () => _viewModel.HideHistory());
 
     private void SearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)

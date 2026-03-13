@@ -3,78 +3,69 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:RadioV2.Controls"
-      xmlns:helpers="clr-namespace:RadioV2.Helpers"
-      xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       mc:Ignorable="d"
       d:DesignHeight="600" d:DesignWidth="800"
       Title="Browse">
 
-    <Grid Margin="24,16">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="48" />
+            <RowDefinition Height="Auto" />  <!-- sticky header: title + search + history -->
+            <RowDefinition Height="*" />     <!-- content: recent or stations+spinner -->
         </Grid.RowDefinitions>
 
-        <!-- Title -->
-        <TextBlock Grid.Row="0"
-                   Text="Browse"
-                   FontSize="28"
-                   FontWeight="SemiBold"
-                   Margin="0,0,0,16"
-                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+        <!-- Sticky header -->
+        <StackPanel Grid.Row="0" Margin="24,16,24,0">
+            <TextBlock Text="Browse"
+                       FontSize="28"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,16"
+                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
 
-        <!-- Search box -->
-        <ui:TextBox Grid.Row="1"
-                    x:Name="SearchBox"
-                    Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                    PlaceholderText="Search stations..."
-                    Icon="{ui:SymbolIcon Search24}"
-                    Margin="0,0,0,0"
-                    GotFocus="SearchBox_GotFocus"
-                    LostFocus="SearchBox_LostFocus"
-                    KeyDown="SearchBox_KeyDown" />
+            <ui:TextBox x:Name="SearchBox"
+                        Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="Search stations..."
+                        Icon="{ui:SymbolIcon Search24}"
+                        GotFocus="SearchBox_GotFocus"
+                        LostFocus="SearchBox_LostFocus"
+                        KeyDown="SearchBox_KeyDown" />
 
-        <!-- Search history (in-layout, no Popup/overlay) -->
-        <Border x:Name="HistoryBorder"
-                Grid.Row="2"
-                Margin="0,2,0,10"
-                Background="{ui:ThemeResource ApplicationBackgroundBrush}"
-                BorderBrush="{ui:ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="6"
-                Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-            <ListBox x:Name="HistoryList"
-                     ItemsSource="{Binding HistoryItems}"
-                     BorderThickness="0"
-                     Background="Transparent"
-                     SelectionChanged="HistoryList_SelectionChanged">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Padding" Value="0" />
-                    </Style>
-                </ListBox.ItemContainerStyle>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding}"
-                                   Padding="12,8"
-                                   FontSize="13"
-                                   Cursor="Hand"
-                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </Border>
+            <!-- Search history dropdown -->
+            <Border x:Name="HistoryBorder"
+                    Margin="0,2,0,0"
+                    Background="{ui:ThemeResource ApplicationBackgroundBrush}"
+                    BorderBrush="{ui:ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ListBox x:Name="HistoryList"
+                         ItemsSource="{Binding HistoryItems}"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         SelectionChanged="HistoryList_SelectionChanged">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       Padding="12,8"
+                                       FontSize="13"
+                                       Cursor="Hand"
+                                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </StackPanel>
 
-        <!-- Recent Stations -->
-        <StackPanel Grid.Row="3"
-                    Margin="0,8,0,0"
+        <!-- Recent stations (shown when IsRecentVisible) -->
+        <StackPanel Grid.Row="1"
+                    Margin="24,8,24,0"
                     Visibility="{Binding IsRecentVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <TextBlock Text="Recent Stations"
                        FontSize="16"
@@ -110,46 +101,51 @@
             </ListBox>
         </StackPanel>
 
-        <!-- Station list -->
-        <ListBox x:Name="StationListBox"
-                 Grid.Row="4"
-                 ItemsSource="{Binding Stations}"
-                 BorderThickness="0"
-                 Background="Transparent"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                 VirtualizingStackPanel.IsVirtualizing="True"
-                 VirtualizingStackPanel.VirtualizationMode="Recycling"
-                 VirtualizingStackPanel.ScrollUnit="Pixel"
-                 Visibility="{Binding IsRecentVisible, Converter={StaticResource BoolToInverseVisibilityConverter}}">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Padding" Value="0" />
-                    <Setter Property="Margin" Value="0,0,16,0" />
-                    <Setter Property="Background" Value="Transparent" />
-                </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <controls:StationListItem />
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-            <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-            <i:Interaction.Behaviors>
-                <helpers:InfiniteScrollBehavior LoadMoreCommand="{Binding DataContext.LoadMoreCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
-            </i:Interaction.Behaviors>
-        </ListBox>
+        <!-- Station list + spinner — Height="*" constrains the ListBox so virtualization works -->
+        <Grid Grid.Row="1"
+              Margin="24,0,24,0"
+              Visibility="{Binding IsRecentVisible, Converter={StaticResource BoolToInverseVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />   <!-- station list — fixed height enables virtualization -->
+                <RowDefinition Height="48" />  <!-- spinner — fixed height prevents layout reflow -->
+            </Grid.RowDefinitions>
 
-        <!-- Loading spinner -->
-        <ui:ProgressRing Grid.Row="5"
-                         IsIndeterminate="True"
-                         Width="32" Height="32"
-                         Margin="0,8"
-                         HorizontalAlignment="Center"
-                         Visibility="{Binding ShowLoadingSpinner, Converter={StaticResource BoolToVisibilityConverter}}" />
+            <ListBox x:Name="StationListBox"
+                     Grid.Row="0"
+                     ItemsSource="{Binding Stations}"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                     VirtualizingStackPanel.ScrollUnit="Pixel">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,0,16,0" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <controls:StationListItem />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+
+            <ui:ProgressRing Grid.Row="1"
+                             IsIndeterminate="True"
+                             Width="32" Height="32"
+                             Margin="0,8"
+                             HorizontalAlignment="Center"
+                             Visibility="{Binding ShowLoadingSpinner, Converter={StaticResource BoolToVisibilityConverter}}" />
+        </Grid>
     </Grid>
 </Page>
