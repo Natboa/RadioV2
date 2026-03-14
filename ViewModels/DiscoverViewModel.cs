@@ -124,9 +124,24 @@ public partial class DiscoverViewModel : ObservableObject
             GroupStations.Clear();
             _groupSkip = 0;
             HasMoreItems = true;
-            // Keep only the featured section; clear all regular station items
-            while (AllStationItems.Count > _featuredSectionSize)
-                AllStationItems.RemoveAt(AllStationItems.Count - 1);
+
+            bool isSearching = GroupSearchQuery.Length >= 2;
+
+            // Rebuild AllStationItems: hide featured section while searching
+            AllStationItems.Clear();
+            if (!isSearching && FeaturedStations.Count > 0)
+            {
+                AllStationItems.Add(new FeaturedHeaderItem());
+                foreach (var s in FeaturedStations)
+                    AllStationItems.Add(new StationGroupViewItem(s));
+                AllStationItems.Add(new SectionSeparatorItem());
+                _featuredSectionSize = FeaturedStations.Count + 2;
+            }
+            else
+            {
+                _featuredSectionSize = 0;
+            }
+
             await LoadMoreGroupStationsAsync(ct);
         }
         catch (OperationCanceledException) { }
@@ -241,22 +256,27 @@ public partial class DiscoverViewModel : ObservableObject
         if (groupCopy != null && !ReferenceEquals(groupCopy, station))
             groupCopy.IsFeatured = newValue;
 
+        bool searchActive = GroupSearchQuery.Length >= 2;
+
         if (newValue)
         {
             FeaturedStations.Add(station);
-            if (_featuredSectionSize == 0)
+            if (!searchActive)
             {
-                // First featured item — insert header, item, separator at the top
-                AllStationItems.Insert(0, new SectionSeparatorItem());
-                AllStationItems.Insert(0, new StationGroupViewItem(station));
-                AllStationItems.Insert(0, new FeaturedHeaderItem());
-                _featuredSectionSize = 3;
-            }
-            else
-            {
-                // Insert before the separator (last item of featured section)
-                AllStationItems.Insert(_featuredSectionSize - 1, new StationGroupViewItem(station));
-                _featuredSectionSize++;
+                if (_featuredSectionSize == 0)
+                {
+                    // First featured item — insert header, item, separator at the top
+                    AllStationItems.Insert(0, new SectionSeparatorItem());
+                    AllStationItems.Insert(0, new StationGroupViewItem(station));
+                    AllStationItems.Insert(0, new FeaturedHeaderItem());
+                    _featuredSectionSize = 3;
+                }
+                else
+                {
+                    // Insert before the separator (last item of featured section)
+                    AllStationItems.Insert(_featuredSectionSize - 1, new StationGroupViewItem(station));
+                    _featuredSectionSize++;
+                }
             }
         }
         else
@@ -264,22 +284,25 @@ public partial class DiscoverViewModel : ObservableObject
             var toRemove = FeaturedStations.FirstOrDefault(s => s.Id == station.Id);
             if (toRemove != null) FeaturedStations.Remove(toRemove);
 
-            // Remove from the featured section in AllStationItems
-            for (int i = 0; i < _featuredSectionSize; i++)
+            if (!searchActive)
             {
-                if (AllStationItems[i] is StationGroupViewItem svi && svi.Station.Id == station.Id)
+                // Remove from the featured section in AllStationItems
+                for (int i = 0; i < _featuredSectionSize; i++)
                 {
-                    AllStationItems.RemoveAt(i);
-                    _featuredSectionSize--;
-                    break;
+                    if (AllStationItems[i] is StationGroupViewItem svi && svi.Station.Id == station.Id)
+                    {
+                        AllStationItems.RemoveAt(i);
+                        _featuredSectionSize--;
+                        break;
+                    }
                 }
-            }
-            // If only header + separator remain (no featured stations), remove them too
-            if (_featuredSectionSize == 2)
-            {
-                AllStationItems.RemoveAt(1); // separator
-                AllStationItems.RemoveAt(0); // header
-                _featuredSectionSize = 0;
+                // If only header + separator remain (no featured stations), remove them too
+                if (_featuredSectionSize == 2)
+                {
+                    AllStationItems.RemoveAt(1); // separator
+                    AllStationItems.RemoveAt(0); // header
+                    _featuredSectionSize = 0;
+                }
             }
         }
     }
