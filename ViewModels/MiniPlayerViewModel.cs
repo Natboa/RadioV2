@@ -4,6 +4,7 @@ using RadioV2.Helpers;
 using RadioV2.Models;
 using RadioV2.Services;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace RadioV2.ViewModels;
 
@@ -14,10 +15,20 @@ public partial class MiniPlayerViewModel : ObservableObject
     private int _previousVolume = 50;
     private List<Station> _currentPlaylist = [];
 
-    public MiniPlayerViewModel(IRadioPlayerService playerService, IStationService stationService)
+    public MiniPlayerViewModel(IRadioPlayerService playerService, IStationService stationService, NetworkMonitor networkMonitor)
     {
         _playerService = playerService;
         _stationService = stationService;
+        networkMonitor.ConnectivityChanged += (_, isOnline) =>
+        {
+            if (!isOnline || StationLogoUrl is null) return;
+            var url = StationLogoUrl;
+            Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                StationLogoUrl = null;
+                StationLogoUrl = url;
+            }, DispatcherPriority.Background);
+        };
 
         _playerService.PlaybackStarted += (s, e) =>
             Application.Current.Dispatcher.Invoke(() => IsPlaying = true);

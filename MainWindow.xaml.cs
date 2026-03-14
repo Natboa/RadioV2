@@ -29,7 +29,7 @@ public partial class MainWindow : FluentWindow
     private readonly UpdateCheckerService _updateChecker;
     private string? _latestVersion;
 
-    public MainWindow(MainWindowViewModel viewModel, IServiceProvider serviceProvider, ISnackbarService snackbarService, UpdateCheckerService updateChecker)
+    public MainWindow(MainWindowViewModel viewModel, IServiceProvider serviceProvider, ISnackbarService snackbarService, UpdateCheckerService updateChecker, NetworkMonitor networkMonitor)
     {
         _snackbarService = snackbarService;
         _updateChecker = updateChecker;
@@ -58,7 +58,7 @@ public partial class MainWindow : FluentWindow
             quitAction: Quit);
 
         // Network monitor
-        _networkMonitor = new NetworkMonitor();
+        _networkMonitor = networkMonitor;
         _networkMonitor.ConnectivityChanged += OnConnectivityChanged;
 
         // Playback error → snackbar
@@ -256,7 +256,6 @@ public partial class MainWindow : FluentWindow
         SaveWindowPlacement();
         _mediaKeyHook.Dispose();
         _trayIcon.Dispose();
-        _networkMonitor.Dispose();
         base.OnClosing(e);
         Application.Current.Shutdown();
     }

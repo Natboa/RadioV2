@@ -79,6 +79,9 @@ public partial class App : Application
                 services.AddDbContextFactory<UserDbContext>(options =>
                     options.UseSqlite($"Data Source={userDbPath}"));
 
+                // Helpers
+                services.AddSingleton<NetworkMonitor>();
+
                 // Services
                 services.AddSingleton<IStationService, StationService>();
                 services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
