@@ -4,61 +4,65 @@
 
 ### 1. All databases (SQLite)
 
-The database exists in multiple locations — the source, build outputs, and AppData. Delete from all of them.
+The database exists in multiple locations — the source, build outputs, and AppData. Delete from **each one individually** using separate sqlite3 calls. Do NOT use a bash loop with variables — variable expansion inside sqlite3 string arguments is unreliable and will silently do nothing.
+
+**Run each command separately, one at a time:**
 
 ```bash
-# Source + build outputs
-for db in \
-  "Data/radioapp_large_groups.db" \
-  "bin/Debug/net8.0-windows/Data/stations.db" \
-  "bin/Release/net8.0-windows/win-x64/Data/radioapp_large_groups.db" \
-  "bin/Release/net8.0-windows/win-x64/publish/Data/radioapp_large_groups.db" \
-  "publish/Data/radioapp_large_groups.db"; do
-  [ -f "$db" ] && sqlite3 "$db" "
-    DELETE FROM Stations WHERE GroupId = (SELECT Id FROM Groups WHERE Name = 'GROUP_NAME');
-    DELETE FROM Groups WHERE Name = 'GROUP_NAME';
-  "
-done
+# 1. Source DB
+sqlite3 "c:/VS Code repos/radioV2/Data/radioapp_large_groups.db" "DELETE FROM Stations WHERE GroupId IN (SELECT Id FROM Groups WHERE Name IN ('GROUP_NAME')); DELETE FROM Groups WHERE Name IN ('GROUP_NAME');"
 
-# AppData (live copy the app actually reads)
-APPDATA_DB="$LOCALAPPDATA/RadioV2/Data/stations.db"
-sqlite3 "$APPDATA_DB" "
-  DELETE FROM Stations WHERE GroupId = (SELECT Id FROM Groups WHERE Name = 'GROUP_NAME');
-  DELETE FROM Groups WHERE Name = 'GROUP_NAME';
-"
+# 2. Debug build DB (if it exists)
+sqlite3 "c:/VS Code repos/radioV2/bin/Debug/net8.0-windows/Data/stations.db" "DELETE FROM Stations WHERE GroupId IN (SELECT Id FROM Groups WHERE Name IN ('GROUP_NAME')); DELETE FROM Groups WHERE Name IN ('GROUP_NAME');"
 
-# Legacy AppData DB (used as fallback seed if stations.db is missing — must also be clean)
-LEGACY_DB="$LOCALAPPDATA/RadioV2/radioapp_large_groups.db"
-[ -f "$LEGACY_DB" ] && sqlite3 "$LEGACY_DB" "
-  DELETE FROM Stations WHERE GroupId = (SELECT Id FROM Groups WHERE Name = 'GROUP_NAME');
-  DELETE FROM Groups WHERE Name = 'GROUP_NAME';
-"
+# 3. Publish DB (if it exists)
+sqlite3 "c:/VS Code repos/radioV2/publish/Data/radioapp_large_groups.db" "DELETE FROM Stations WHERE GroupId IN (SELECT Id FROM Groups WHERE Name IN ('GROUP_NAME')); DELETE FROM Groups WHERE Name IN ('GROUP_NAME');"
+
+# 4. AppData — the live DB the running app reads
+sqlite3 "$LOCALAPPDATA/RadioV2/Data/stations.db" "DELETE FROM Stations WHERE GroupId IN (SELECT Id FROM Groups WHERE Name IN ('GROUP_NAME')); DELETE FROM Groups WHERE Name IN ('GROUP_NAME');"
+
+# 5. Legacy AppData DB (only exists if app was never launched after the 2026-03-12 fix)
+[ -f "$LOCALAPPDATA/RadioV2/radioapp_large_groups.db" ] && sqlite3 "$LOCALAPPDATA/RadioV2/radioapp_large_groups.db" "DELETE FROM Stations WHERE GroupId IN (SELECT Id FROM Groups WHERE Name IN ('GROUP_NAME')); DELETE FROM Groups WHERE Name IN ('GROUP_NAME');"
 ```
 
-Replace `GROUP_NAME` with the exact group name as stored in the DB (e.g. `north_america`).
+To delete **multiple groups at once**, list them comma-separated in the `IN` clause:
+```bash
+sqlite3 "c:/VS Code repos/radioV2/Data/radioapp_large_groups.db" "DELETE FROM Stations WHERE GroupId IN (SELECT Id FROM Groups WHERE Name IN ('Pop Rock','Reggaeton','Instrumental')); DELETE FROM Groups WHERE Name IN ('Pop Rock','Reggaeton','Instrumental');"
+```
 
 **Important:** Always delete Stations first, then the Group — stations reference the group by ID.
 
-### 2. `Services/CategorySeeder.cs`
+### 2. Verify each DB immediately after deleting
+
+**Always verify — silent failures happen.** Run this after each delete:
+
+```bash
+sqlite3 "c:/VS Code repos/radioV2/Data/radioapp_large_groups.db" "SELECT Name FROM Groups WHERE Name IN ('GROUP_NAME');"
+# Must return nothing. If it returns rows, the delete failed — run it again directly.
+```
+
+Do the same check for the AppData DB:
+```bash
+sqlite3 "$LOCALAPPDATA/RadioV2/Data/stations.db" "SELECT Name FROM Groups WHERE Name IN ('GROUP_NAME');"
+```
+
+### 3. `Services/CategorySeeder.cs`
 
 Remove the group key from the relevant category array so it won't be re-added on next seed.
 
-### 3. `Assets/Groups/` (optional)
+### 4. `Assets/Groups/`
 
-If there is a matching `.png` image (e.g. `north_america.png`), delete it too.
+Delete the matching `.png` file (e.g. `Pop Rock.png`, `instrumental.png`). Check both capitalizations — filenames are inconsistent in this folder.
 
-## Verify the deletion
-
-```bash
-sqlite3 Data/radioapp_large_groups.db "SELECT name FROM Groups WHERE name = 'GROUP_NAME';"
-# Should return nothing
-```
+---
 
 ## Notes
 
 - The source DB is `Data/radioapp_large_groups.db`. **Never run migrations against it.**
-- Build outputs are copies made at compile time — they must be updated manually or by rebuilding.
-- If the app is running, restart it after editing the DB.
+- Build outputs are copies made at compile time — they must be updated manually.
+- If the app is running, restart it after editing the AppData DB.
+
+---
 
 ## Known Bug: Deleted Groups Reappear After Resetting AppData
 
