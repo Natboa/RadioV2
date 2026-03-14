@@ -33,7 +33,7 @@
     </None>
   </ItemGroup>
 
-  <Target Name="CopyStationsDb" AfterTargets="Build;Publish">
+<Target Name="CopyStationsDb" AfterTargets="Build;Publish">
     <Copy SourceFiles="$(ProjectDir)Data\radioapp_large_groups.db"
           DestinationFiles="$(OutDir)Data\stations.db"
           Condition="Exists('$(ProjectDir)Data\radioapp_large_groups.db')"
