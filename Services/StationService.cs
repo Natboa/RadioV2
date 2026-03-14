@@ -115,7 +115,8 @@ public class StationService : IStationService
         var stations = await db.Stations
             .AsNoTracking()
             .Where(s => s.GroupId == groupId && s.IsFeatured)
-            .OrderBy(s => s.Name)
+            .OrderByDescending(s => s.LogoUrl != null && s.LogoUrl != "")
+            .ThenBy(s => s.Name)
             .ToListAsync(ct);
         await EnrichWithFavouritesAsync(stations, ct);
         return stations;

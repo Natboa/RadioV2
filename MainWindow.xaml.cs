@@ -4,6 +4,8 @@ using RadioV2.Services;
 using RadioV2.ViewModels;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
@@ -14,6 +16,12 @@ namespace RadioV2;
 
 public partial class MainWindow : FluentWindow
 {
+    private static readonly string _placementFile = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "RadioV2", "window-placement.json");
+
+    private record WindowPlacement(double Left, double Top, double Width, double Height, WindowState State);
+
     private readonly MediaKeyHook _mediaKeyHook = new();
     private readonly TrayIconManager _trayIcon;
     private readonly NetworkMonitor _networkMonitor;
@@ -67,7 +75,64 @@ public partial class MainWindow : FluentWindow
             });
         };
 
+        SourceInitialized += (_, _) => RestoreWindowPlacement();
         Loaded += OnWindowLoaded;
+    }
+
+    private void RestoreWindowPlacement()
+    {
+        try
+        {
+            if (File.Exists(_placementFile))
+            {
+                var json = File.ReadAllText(_placementFile);
+                var p = JsonSerializer.Deserialize<WindowPlacement>(json);
+                if (p is not null && IsPlacementOnScreen(p))
+                {
+                    Left = p.Left;
+                    Top = p.Top;
+                    Width = p.Width;
+                    Height = p.Height;
+                    WindowState = p.State;
+                    return;
+                }
+            }
+        }
+        catch { /* fall through to center */ }
+
+        CenterOnScreen();
+    }
+
+    private void SaveWindowPlacement()
+    {
+        try
+        {
+            var bounds = WindowState == WindowState.Normal ? new Rect(Left, Top, Width, Height) : RestoreBounds;
+            var p = new WindowPlacement(bounds.Left, bounds.Top, bounds.Width, bounds.Height, WindowState);
+            Directory.CreateDirectory(Path.GetDirectoryName(_placementFile)!);
+            File.WriteAllText(_placementFile, JsonSerializer.Serialize(p));
+        }
+        catch { }
+    }
+
+    private void CenterOnScreen()
+    {
+        var screen = SystemParameters.WorkArea;
+        Left = screen.Left + (screen.Width - Width) / 2;
+        Top = screen.Top + (screen.Height - Height) / 2;
+    }
+
+    private static bool IsPlacementOnScreen(WindowPlacement p)
+    {
+        var vLeft = SystemParameters.VirtualScreenLeft;
+        var vTop = SystemParameters.VirtualScreenTop;
+        var vRight = vLeft + SystemParameters.VirtualScreenWidth;
+        var vBottom = vTop + SystemParameters.VirtualScreenHeight;
+        // Ensure at least the title bar area is reachable
+        return p.Left + p.Width > vLeft + 50
+            && p.Left < vRight - 50
+            && p.Top >= vTop
+            && p.Top < vBottom - 50;
     }
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -188,6 +253,7 @@ public partial class MainWindow : FluentWindow
 
     protected override void OnClosing(CancelEventArgs e)
     {
+        SaveWindowPlacement();
         _mediaKeyHook.Dispose();
         _trayIcon.Dispose();
         _networkMonitor.Dispose();

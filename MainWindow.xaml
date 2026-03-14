@@ -10,6 +10,7 @@
         Title="RadioV2"
         Icon="Assets/RadioV2_Logo.ico"
         Width="1100" Height="700"
+        WindowStartupLocation="Manual"
         WindowBackdropType="Mica"
         ExtendsContentIntoTitleBar="True">
 
