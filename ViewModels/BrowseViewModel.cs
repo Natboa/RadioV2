@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using RadioV2.Helpers;
 using RadioV2.Models;
 using RadioV2.Services;
 using System.Collections.ObjectModel;
@@ -25,12 +26,20 @@ public partial class BrowseViewModel : ObservableObject
     private int _skip;
     private CancellationTokenSource _searchCts = new();
 
-    public BrowseViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer)
+    public BrowseViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer, NetworkMonitor networkMonitor)
     {
         _stationService = stationService;
         _miniPlayer = miniPlayer;
         _miniPlayer.StationStarted += OnStationStarted;
         LoadRecentStations();
+        networkMonitor.ConnectivityChanged += OnConnectivityChanged;
+    }
+
+    private void OnConnectivityChanged(object? sender, bool isOnline)
+    {
+        if (!isOnline) return;
+        foreach (var s in Stations) s.NotifyLogoChanged();
+        foreach (var s in RecentStations) s.NotifyLogoChanged();
     }
 
     [ObservableProperty] private ObservableCollection<Station> _stations = [];

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using RadioV2.Helpers;
 using RadioV2.Models;
 using RadioV2.Services;
 using System.Collections.ObjectModel;
@@ -11,10 +12,15 @@ public partial class FavouritesViewModel : ObservableObject
     private readonly IStationService _stationService;
     private readonly MiniPlayerViewModel _miniPlayer;
 
-    public FavouritesViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer)
+    public FavouritesViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer, NetworkMonitor networkMonitor)
     {
         _stationService = stationService;
         _miniPlayer = miniPlayer;
+        networkMonitor.ConnectivityChanged += (_, isOnline) =>
+        {
+            if (isOnline)
+                foreach (var s in Favourites) s.NotifyLogoChanged();
+        };
     }
 
     [ObservableProperty]

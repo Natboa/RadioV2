@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using RadioV2.Helpers;
 using RadioV2.Models;
 using RadioV2.Services;
 using System.Collections.ObjectModel;
@@ -21,11 +22,17 @@ public partial class DiscoverViewModel : ObservableObject
     // (0 when no featured; otherwise: 1 header + N stations + 1 separator = N+2)
     private int _featuredSectionSize;
 
-    public DiscoverViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer)
+    public DiscoverViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer, NetworkMonitor networkMonitor)
     {
         _stationService = stationService;
         _miniPlayer = miniPlayer;
         FeaturedStations.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasFeaturedStations));
+        networkMonitor.ConnectivityChanged += (_, isOnline) =>
+        {
+            if (!isOnline) return;
+            foreach (var s in GroupStations) s.NotifyLogoChanged();
+            foreach (var s in FeaturedStations) s.NotifyLogoChanged();
+        };
     }
 
     // ── Carousel (category rows) ─────────────────────────────────────────────

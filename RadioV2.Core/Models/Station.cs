@@ -36,5 +36,8 @@ public class Station : INotifyPropertyChanged
 
     public Group Group { get; set; } = null!;
 
+    public void NotifyLogoChanged() =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LogoUrl)));
+
     public event PropertyChangedEventHandler? PropertyChanged;
 }
