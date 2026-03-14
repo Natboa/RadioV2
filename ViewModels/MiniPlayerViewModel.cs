@@ -31,7 +31,11 @@ public partial class MiniPlayerViewModel : ObservableObject
         };
 
         _playerService.PlaybackStarted += (s, e) =>
-            Application.Current.Dispatcher.Invoke(() => IsPlaying = true);
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                IsPlaying = true;
+                if (CurrentStation is not null) CurrentStation.IsNowPlaying = true;
+            });
 
         _playerService.PlaybackStopped += (s, e) =>
             Application.Current.Dispatcher.Invoke(() =>
@@ -39,6 +43,7 @@ public partial class MiniPlayerViewModel : ObservableObject
                 IsPlaying = false;
                 NowPlayingArtist = null;
                 NowPlayingTitle = null;
+                if (CurrentStation is not null) CurrentStation.IsNowPlaying = false;
             });
 
         _playerService.BufferingChanged += (s, e) =>
@@ -50,6 +55,7 @@ public partial class MiniPlayerViewModel : ObservableObject
                 IsPlaying = false;
                 NowPlayingArtist = null;
                 NowPlayingTitle = null;
+                if (CurrentStation is not null) CurrentStation.IsNowPlaying = false;
             });
 
         _playerService.MetadataChanged += OnMetadataChanged;
@@ -124,6 +130,7 @@ public partial class MiniPlayerViewModel : ObservableObject
 
     private void SetStationCore(Station station)
     {
+        if (CurrentStation is not null) CurrentStation.IsNowPlaying = false;
         CurrentStation = station;
         StationName = station.Name;
         StationLogoUrl = station.LogoUrl;

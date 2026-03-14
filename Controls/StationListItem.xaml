@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:helpers="clr-namespace:RadioV2.Helpers"
+             xmlns:controls="clr-namespace:RadioV2.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -30,11 +31,22 @@
 
         <!-- Station name + group -->
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-            <TextBlock Text="{Binding Name}"
-                       FontSize="14"
-                       FontWeight="SemiBold"
-                       TextTrimming="CharacterEllipsis"
-                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Name}"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                <controls:SoundbarAnimation Grid.Column="1"
+                                            IsAnimating="{Binding IsNowPlaying}"
+                                            Margin="6,0,0,0"
+                                            VerticalAlignment="Center" />
+            </Grid>
             <TextBlock Text="{Binding Group.Name}"
                        FontSize="12"
                        TextTrimming="CharacterEllipsis"

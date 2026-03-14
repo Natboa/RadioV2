@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RadioV2.Models;
 
@@ -31,6 +32,19 @@ public class Station : INotifyPropertyChanged
             if (_isFeatured == value) return;
             _isFeatured = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFeatured)));
+        }
+    }
+
+    private bool _isNowPlaying;
+    [NotMapped]
+    public bool IsNowPlaying
+    {
+        get => _isNowPlaying;
+        set
+        {
+            if (_isNowPlaying == value) return;
+            _isNowPlaying = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsNowPlaying)));
         }
     }
 
