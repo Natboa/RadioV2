@@ -24,25 +24,25 @@ public static class CategorySeeder
         ("Pop, Charts & Decades",
         [
             "00s","10s","50s","60s","70s","80s","90s","oldies",
-            "adult_contemporary","charts","hits","pop","pop_rock","top_40"
+            "adult_contemporary","charts","hits","pop","top_40"
         ]),
         ("Urban & Latin",
         [
             "disco","funk","hip_hop","rap","reggae","r_b","soul","urban",
-            "espanol","latin","reggaeton","salsa","sertaneja","tropical"
+            "espanol","latin","salsa","sertaneja","tropical"
         ]),
         ("Jazz, Chill & Instrumental",
         [
-            "ballads","blues","chillout","classical","easy_listening","instrumental",
-            "jazz","jazz_funk","smooth_jazz","swing","trip_hop","vocal"
+            "ballads","blues","chillout","classical","easy_listening",
+            "jazz","jazz_funk","smooth_jazz","swing"
         ]),
         ("News, Talk & Sports",
         [
-            "comedy","entertainment","news","news_talk","sports","talk"
+            "comedy","news","sports","talk"
         ]),
         ("Specialty & Mood",
         [
-            "christmas","eclectic","holidays","kids","party","religious","romantic","soundtrack"
+            "christmas","holidays","kids","party","religious","romantic","soundtrack"
         ]),
         ("Global & Cultural",
         [
