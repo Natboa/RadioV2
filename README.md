@@ -2,7 +2,10 @@
   <img src="Assets/radiov2_Logo_full.png" alt="RadioV2 Logo" width="320"/>
 </p>
 
-<h3 align="center">A modern Windows desktop internet radio player built with Fluent Design.</h3>
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version"/>
+  <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4?style=flat-square&logo=windows" alt="Platform"/>
+</p>
 
 <table align="center">
   <tr>
@@ -14,10 +17,7 @@
 
 ---
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version"/>
-  <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4?style=flat-square&logo=windows" alt="Platform"/>
-</p>
+<h3 align="center">A modern Windows desktop internet radio player built with Fluent Design.</h3>
 
 ---
 
