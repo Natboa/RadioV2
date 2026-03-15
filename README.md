@@ -1,20 +1,21 @@
-[README](README.md) | [Code of Conduct](CODE_OF_CONDUCT.md) | [Contributing](CONTRIBUTING.md) | [License](LICENSE)
-
----
-
 <p align="center">
   <img src="Assets/radiov2_Logo_full.png" alt="RadioV2 Logo" width="320"/>
 </p>
 
 <h3 align="center">A modern Windows desktop internet radio player built with Fluent Design.</h3>
 
+<table align="center">
+  <tr>
+    <td><img src="Assets/screenshots/screenshot1.png" alt="Screenshot 1" width="280"/></td>
+    <td><img src="Assets/screenshots/screenshot2.png" alt="Screenshot 2" width="280"/></td>
+    <td><img src="Assets/screenshots/screenshot3.png" alt="Screenshot 3" width="280"/></td>
+  </tr>
+</table>
+
 ---
 
 <p align="center">
-  <img src="https://img.shields.io/github/actions/workflow/status/Natboa/radioV2/build.yml?style=flat-square&label=build" alt="Build Status"/>
   <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version"/>
-  <img src="https://img.shields.io/github/license/Natboa/radioV2?style=flat-square" alt="License"/>
-  <img src="https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet" alt=".NET 8"/>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4?style=flat-square&logo=windows" alt="Platform"/>
 </p>
 
@@ -22,7 +23,7 @@
 
 ## Overview
 
-RadioV2 is a lightweight  Desktop application for discovering, browsing, and streaming internet radio stations. It ships with a pre-seeded database of tens of thousands of stations organized by genre, and delivers a native Windows 11 experience through the WPF Fluent Design system.
+RadioV2 is a lightweight desktop application for discovering, browsing, and streaming internet radio stations. It ships with a pre-seeded database of tens of thousands of stations organized by genre.
 
 ## Features
 
