@@ -65,15 +65,18 @@ dotnet publish -c Release -r win-x64 --self-contained true \
 
 ```
 RadioV2/
-├── Assets/             # Icons, logos, genre images
-├── Data/               # SQLite database
-├── Docs/               # PRD, tech stack, implementation plan
-├── Helpers/            # NowPlayingParser, ThemeHelper, MediaKeyHook
-├── Models/             # EF Core entities: Station, Group, Setting
-├── Services/           # Playback, data access, favourites, M3U import
+├── Assets/             # Icons, logos, genre images, screenshots
+├── Controls/           # StationListItem, MiniPlayer, SoundbarAnimation
+├── Converters/         # WPF value converters (bool → icon, visibility, etc.)
+├── Data/               # SQLite seed database (stations.db, gitignored)
+├── Helpers/            # NowPlayingParser, ThemeHelper, MediaKeyHook, TrayIconManager
+├── Installer/          # Inno Setup script (RadioV2Setup.iss)
+├── Legal/              # LICENSE, DMCA policy
+├── Models/             # Shared view models and UI-layer types
+├── RadioV2.Core/       # Core library: EF Core entities, DbContexts (stations + user data)
+├── Services/           # Playback, station data, favourites I/O, M3U import, logo cache
 ├── ViewModels/         # One ViewModel per page + MiniPlayer + MainWindow
-├── Views/              # Browse, Discover, Favourites, Settings pages
-└── Controls/           # Reusable controls: StationListItem, MiniPlayer
+└── Views/              # Browse, Discover, Favourites, Settings pages
 ```
 
 ## License
