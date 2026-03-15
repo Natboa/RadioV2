@@ -9,12 +9,14 @@ public class StationService : IStationService
 {
     private readonly IDbContextFactory<StationsDbContext> _stationsFactory;
     private readonly IDbContextFactory<UserDbContext> _userFactory;
+    private readonly IStationLogoCache _logoCache;
     private volatile List<CategoryWithGroups>? _categoriesCache;
 
-    public StationService(IDbContextFactory<StationsDbContext> stationsFactory, IDbContextFactory<UserDbContext> userFactory)
+    public StationService(IDbContextFactory<StationsDbContext> stationsFactory, IDbContextFactory<UserDbContext> userFactory, IStationLogoCache logoCache)
     {
         _stationsFactory = stationsFactory;
         _userFactory = userFactory;
+        _logoCache = logoCache;
     }
 
     public bool CategoriesAreCached => _categoriesCache is not null;
@@ -145,11 +147,31 @@ public class StationService : IStationService
     {
         using var db = _userFactory.CreateDbContext();
         var existing = await db.Favourites.FirstOrDefaultAsync(f => f.StationId == stationId, ct);
-        if (existing is null)
+        bool adding = existing is null;
+
+        if (adding)
             db.Favourites.Add(new Favourite { StationId = stationId });
         else
-            db.Favourites.Remove(existing);
+            db.Favourites.Remove(existing!);
         await db.SaveChangesAsync(ct);
+
+        if (adding)
+        {
+            _ = Task.Run(async () =>
+            {
+                using var stDb = _stationsFactory.CreateDbContext();
+                var logoUrl = await stDb.Stations.AsNoTracking()
+                    .Where(s => s.Id == stationId)
+                    .Select(s => s.LogoUrl)
+                    .FirstOrDefaultAsync();
+                if (!string.IsNullOrEmpty(logoUrl))
+                    await _logoCache.DownloadAsync(stationId, logoUrl);
+            });
+        }
+        else
+        {
+            _logoCache.Delete(stationId);
+        }
     }
 
     // ── Settings ──────────────────────────────────────────────────────────────

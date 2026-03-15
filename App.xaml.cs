@@ -83,6 +83,7 @@ public partial class App : Application
                 services.AddSingleton<NetworkMonitor>();
 
                 // Services
+                services.AddSingleton<IStationLogoCache, StationLogoCache>();
                 services.AddSingleton<IStationService, StationService>();
                 services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
                 services.AddSingleton<IFavouritesIOService, FavouritesIOService>();
