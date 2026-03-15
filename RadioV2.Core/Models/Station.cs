@@ -48,10 +48,34 @@ public class Station : INotifyPropertyChanged
         }
     }
 
+    [NotMapped]
+    private string? _cachedLogoPath;
+
+    [NotMapped]
+    public string? CachedLogoPath
+    {
+        get => _cachedLogoPath;
+        set
+        {
+            if (_cachedLogoPath == value) return;
+            _cachedLogoPath = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CachedLogoPath)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DisplayLogoSource)));
+        }
+    }
+
+    /// <summary>Local cache path when available, otherwise the remote URL.</summary>
+    [NotMapped]
+    public string? DisplayLogoSource =>
+        _cachedLogoPath != null ? new Uri(_cachedLogoPath).AbsoluteUri : LogoUrl;
+
     public Group Group { get; set; } = null!;
 
-    public void NotifyLogoChanged() =>
+    public void NotifyLogoChanged()
+    {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LogoUrl)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DisplayLogoSource)));
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 }

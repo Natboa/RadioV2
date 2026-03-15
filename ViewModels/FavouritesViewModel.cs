@@ -4,17 +4,20 @@ using RadioV2.Helpers;
 using RadioV2.Models;
 using RadioV2.Services;
 using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace RadioV2.ViewModels;
 
 public partial class FavouritesViewModel : ObservableObject
 {
     private readonly IStationService _stationService;
+    private readonly IStationLogoCache _logoCache;
     private readonly MiniPlayerViewModel _miniPlayer;
 
-    public FavouritesViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer, NetworkMonitor networkMonitor)
+    public FavouritesViewModel(IStationService stationService, IStationLogoCache logoCache, MiniPlayerViewModel miniPlayer, NetworkMonitor networkMonitor)
     {
         _stationService = stationService;
+        _logoCache = logoCache;
         _miniPlayer = miniPlayer;
         networkMonitor.ConnectivityChanged += (_, isOnline) =>
         {
@@ -46,7 +49,24 @@ public partial class FavouritesViewModel : ObservableObject
         IsLoading = true;
         var list = await Task.Run(() => _stationService.GetFavouritesAsync());
         Favourites.Clear();
-        foreach (var s in list) Favourites.Add(s);
+        foreach (var s in list)
+        {
+            s.CachedLogoPath = _logoCache.GetCachedPath(s.Id);
+            Favourites.Add(s);
+
+            // Backfill cache for stations favourited before this feature existed
+            if (s.CachedLogoPath is null && !string.IsNullOrEmpty(s.LogoUrl))
+            {
+                var station = s;
+                _ = Task.Run(async () =>
+                {
+                    await _logoCache.DownloadAsync(station.Id, station.LogoUrl!);
+                    var path = _logoCache.GetCachedPath(station.Id);
+                    if (path is not null)
+                        await Application.Current.Dispatcher.InvokeAsync(() => station.CachedLogoPath = path);
+                });
+            }
+        }
         FavouriteCount = Favourites.Count;
         IsLoading = false;
     }
