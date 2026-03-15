@@ -179,7 +179,15 @@
                     <TextBlock Text="A Windows desktop radio streaming app with Fluent Design."
                                FontSize="13"
                                TextWrapping="Wrap"
+                               Margin="0,0,0,12"
                                Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                    <ui:Button Appearance="Secondary"
+                               Click="CopyrightButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Info24" Margin="0,0,6,0" />
+                            <TextBlock Text="Copyright / DMCA Policy" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ui:Button>
                 </StackPanel>
             </ui:Card>
 

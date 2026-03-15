@@ -47,6 +47,9 @@ Scripts and Helpers/stream_check_results.db
 # Files staged for moving to private repo
 files to move/
 
+# Private internal docs
+Docs/
+
 # Build artifacts
 build.binlog
 

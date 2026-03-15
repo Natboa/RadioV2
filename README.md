@@ -17,10 +17,6 @@
   </tr>
 </table>
 
----
-
----
-
 ## Overview
 
 RadioV2 is a lightweight desktop application for discovering, browsing, and streaming internet radio stations. It ships with a pre-seeded database of tens of thousands of stations organized by genre.
@@ -82,4 +78,10 @@ RadioV2/
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+Distributed under the MIT License. See [LICENSE](Legal/LICENSE) for details.
+
+## Legal
+
+RadioV2 is an internet radio aggregator and does not host or rebroadcast audio content. All streams are provided by third-party radio stations and accessed directly by users.
+
+For copyright concerns or DMCA takedown requests, see [DMCA.txt](Legal/DMCA.txt).
