@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version"/>
+  <a href="https://github.com/Natboa/radioV2/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version"/></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4?style=flat-square&logo=windows" alt="Platform"/>
 </p>
 
@@ -32,17 +32,15 @@ RadioV2 is a lightweight desktop application for discovering, browsing, and stre
 - System tray integration — minimize to tray, restore on double-click
 - Light and Dark theme support with Mica backdrop
 
-## Tech Stack
+## Installation
 
-| Layer | Technology |
-|---|---|
-| UI Framework | WPF + [WPF-UI](https://github.com/lepoco/wpfui) (Fluent Design 2) |
-| Architecture | MVVM via `CommunityToolkit.Mvvm` |
-| Audio Playback | LibVLCSharp + VideoLAN.LibVLC.Windows |
-| Database | SQLite 3 via Entity Framework Core 8 |
-| Target Framework | .NET 8 (Windows) |
+**Option 1 — Installer (recommended)**
 
-## Getting Started
+Download and run the setup wizard:
+
+👉 [RadioV2Setup.exe](https://github.com/Natboa/radioV2/releases/download/v1.0.0/RadioV2Setup.exe)
+
+**Option 2 — Build from source**
 
 **Prerequisites:** .NET 8 SDK, Windows 10 or 11.
 
@@ -53,13 +51,15 @@ dotnet build
 dotnet run
 ```
 
-**Publish as a self-contained single-file executable:**
+## Tech Stack
 
-```bash
-dotnet publish -c Release -r win-x64 --self-contained true \
-  -p:PublishSingleFile=true \
-  -p:EnableCompressionInSingleFile=true
-```
+| Layer | Technology |
+|---|---|
+| UI Framework | WPF + [WPF-UI](https://github.com/lepoco/wpfui) (Fluent Design 2) |
+| Architecture | MVVM via `CommunityToolkit.Mvvm` |
+| Audio Playback | LibVLCSharp + VideoLAN.LibVLC.Windows |
+| Database | SQLite 3 via Entity Framework Core 8 |
+| Target Framework | .NET 8 (Windows) |
 
 ## Project Structure
 
