@@ -5,6 +5,7 @@
 <p align="center">
   <a href="https://github.com/Natboa/radioV2/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version"/></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4?style=flat-square&logo=windows" alt="Platform"/>
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"/>
 </p>
 
 <h3 align="center">A modern Windows desktop internet radio player built with Fluent Design.</h3>
