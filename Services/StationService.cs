@@ -258,7 +258,7 @@ public class StationService : IStationService
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            var candidate = Path.Combine(dir.FullName, "Data", "radioapp_large_groups.db");
+            var candidate = Path.Combine(dir.FullName, "Data", "stations.db");
             if (File.Exists(candidate)) return candidate;
             dir = dir.Parent;
         }
