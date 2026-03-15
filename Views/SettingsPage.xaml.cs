@@ -17,4 +17,9 @@ public partial class SettingsPage : Page
     {
         Process.Start(new ProcessStartInfo("https://ko-fi.com/natboa") { UseShellExecute = true });
     }
+
+    private void CopyrightButton_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo("https://github.com/Natboa/radioV2/blob/main/Legal/DMCA.txt") { UseShellExecute = true });
+    }
 }
