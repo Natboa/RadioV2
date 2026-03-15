@@ -134,7 +134,7 @@ public partial class BrowseViewModel : ObservableObject
         var existing = RecentStations.FirstOrDefault(s => s.Id == station.Id);
         if (existing is not null) RecentStations.Remove(existing);
         RecentStations.Insert(0, station);
-        while (RecentStations.Count > 15) RecentStations.RemoveAt(RecentStations.Count - 1);
+        while (RecentStations.Count > 8) RecentStations.RemoveAt(RecentStations.Count - 1);
         IsRecentVisible = SearchQuery.Length < 2;
         SaveRecentStations();
     }
@@ -145,7 +145,7 @@ public partial class BrowseViewModel : ObservableObject
         try
         {
             var entries = JsonSerializer.Deserialize<List<RecentEntry>>(File.ReadAllText(RecentPath)) ?? [];
-            foreach (var e in entries)
+            foreach (var e in entries.Take(8))
                 RecentStations.Add(new Station { Id = e.Id, Name = e.Name, StreamUrl = e.StreamUrl, LogoUrl = e.LogoUrl, GroupId = e.GroupId });
             IsRecentVisible = RecentStations.Count > 0 && SearchQuery.Length < 2;
         }
