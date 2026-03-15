@@ -44,7 +44,7 @@
                            Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
                 <controls:SoundbarAnimation Grid.Column="1"
                                             IsAnimating="{Binding IsNowPlaying}"
-                                            Margin="6,0,0,0"
+                                            Margin="6,0,10,0"
                                             VerticalAlignment="Center" />
             </Grid>
             <TextBlock Text="{Binding Group.Name}"

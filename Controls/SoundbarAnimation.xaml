@@ -4,25 +4,25 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="16" d:DesignWidth="13"
+             d:DesignHeight="20" d:DesignWidth="17"
              Visibility="Collapsed">
 
-    <Grid Width="13" Height="16">
+    <Grid Width="17" Height="20">
         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
-            <Rectangle x:Name="Bar1" Width="3" Height="14" RadiusX="1.5" RadiusY="1.5"
+            <Rectangle x:Name="Bar1" Width="4" Height="17" RadiusX="2" RadiusY="2"
                        RenderTransformOrigin="0.5,1">
                 <Rectangle.RenderTransform>
                     <ScaleTransform ScaleY="0.2" />
                 </Rectangle.RenderTransform>
             </Rectangle>
-            <Rectangle x:Name="Bar2" Width="3" Height="14" RadiusX="1.5" RadiusY="1.5"
-                       Margin="2,0,0,0" RenderTransformOrigin="0.5,1">
+            <Rectangle x:Name="Bar2" Width="4" Height="17" RadiusX="2" RadiusY="2"
+                       Margin="2.5,0,0,0" RenderTransformOrigin="0.5,1">
                 <Rectangle.RenderTransform>
                     <ScaleTransform ScaleY="0.2" />
                 </Rectangle.RenderTransform>
             </Rectangle>
-            <Rectangle x:Name="Bar3" Width="3" Height="14" RadiusX="1.5" RadiusY="1.5"
-                       Margin="2,0,0,0" RenderTransformOrigin="0.5,1">
+            <Rectangle x:Name="Bar3" Width="4" Height="17" RadiusX="2" RadiusY="2"
+                       Margin="2.5,0,0,0" RenderTransformOrigin="0.5,1">
                 <Rectangle.RenderTransform>
                     <ScaleTransform ScaleY="0.2" />
                 </Rectangle.RenderTransform>
