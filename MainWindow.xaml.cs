@@ -174,7 +174,7 @@ public partial class MainWindow : FluentWindow
 
     private void OnDownloadUpdateClick(object sender, RoutedEventArgs e)
     {
-        Process.Start(new ProcessStartInfo("https://github.com/Natboa/radioV2/releases/latest") { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo("https://github.com/Natboa/RadioV2/releases/latest") { UseShellExecute = true });
     }
 
     private void OnDismissUpdateBannerClick(object sender, RoutedEventArgs e)

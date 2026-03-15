@@ -15,6 +15,6 @@ public partial class SettingsPage : Page
 
     private void CopyrightButton_Click(object sender, System.Windows.RoutedEventArgs e)
     {
-        Process.Start(new ProcessStartInfo("https://github.com/Natboa/radioV2/blob/main/Legal/DMCA.txt") { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo("https://github.com/Natboa/RadioV2/blob/main/Legal/DMCA.txt") { UseShellExecute = true });
     }
 }

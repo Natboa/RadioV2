@@ -11,7 +11,7 @@ namespace RadioV2.Services;
 public class UpdateCheckerService
 {
     private static readonly HttpClient _http = new();
-    private const string ApiUrl = "https://api.github.com/repos/Natboa/radioV2/releases/latest";
+    private const string ApiUrl = "https://api.github.com/repos/Natboa/RadioV2/releases/latest";
 
     static UpdateCheckerService()
     {

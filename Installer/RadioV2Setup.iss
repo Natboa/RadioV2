@@ -12,7 +12,7 @@
 #define MyAppName    "RadioV2"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Natboa"
-#define MyAppURL     "https://github.com/Natboa/radioV2"
+#define MyAppURL     "https://github.com/Natboa/RadioV2"
 #define MyAppExeName "RadioV2.exe"
 #define PublishDir   "..\publish"
 #define DataDir      "..\Data"
