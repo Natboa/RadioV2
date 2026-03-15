@@ -135,6 +135,31 @@
                 </StackPanel>
             </ui:Card>
 
+            <!-- Donate card -->
+            <ui:Card Margin="0,0,0,16">
+                <DockPanel LastChildFill="False">
+                    <StackPanel>
+                        <TextBlock Text="Support RadioV2"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,4"
+                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                        <TextBlock Text="If you enjoy the app, consider buying me a coffee!"
+                                   FontSize="13"
+                                   Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <ui:Button DockPanel.Dock="Right"
+                               Appearance="Primary"
+                               VerticalAlignment="Center"
+                               Click="DonateButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Heart24" Margin="0,0,6,0" />
+                            <TextBlock Text="Donate" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ui:Button>
+                </DockPanel>
+            </ui:Card>
+
             <!-- About card -->
             <ui:Card>
                 <StackPanel>
