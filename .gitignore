@@ -42,7 +42,6 @@ Commands_for_Me.txt
 # Temp/local files
 __pycache__/
 *_wpftmp.csproj
-Scripts and Helpers/stream_check_results.db
 
 # Files staged for moving to private repo
 files to move/
