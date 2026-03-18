@@ -70,3 +70,12 @@ Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: no
 ; Remove the entire install folder on uninstall (including userdata.db)
 Type: filesandordirs; Name: "{app}"
 
+[Code]
+function InitializeSetup(): Boolean;
+begin
+  // Kill any running instance of RadioV2 before files are copied,
+  // otherwise locked DLLs (clrjit.dll etc.) cause "Access denied" errors.
+  Exec('taskkill.exe', '/f /im RadioV2.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Result := True;
+end;
+
