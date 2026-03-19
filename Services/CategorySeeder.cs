@@ -12,13 +12,13 @@ public static class CategorySeeder
     [
         ("Rock & Metal",
         [
-            "alternative_rock","classic","classic_rock","gothic",
+            "alternative_rock","classic_rock","gothic",
             "hard_rock","heavy_metal","metal","new_wave","progressive_rock","punk",
             "rock","soft_rock"
         ]),
         ("Electronic & Dance",
         [
-            "ambient","club","dance","deep_house","drum_and_bass","electronic",
+            "ambient","club","dance","drum_and_bass","electronic",
             "house","techno","trance","trap","underground"
         ]),
         ("Pop, Charts & Decades",
@@ -28,7 +28,7 @@ public static class CategorySeeder
         ]),
         ("Urban & Latin",
         [
-            "disco","funk","hip_hop","rap","reggae","r_b","soul","urban",
+            "disco","funk","hip_hop","rap","reggae","r_b","soul",
             "espanol","latin","salsa","sertaneja","tropical"
         ]),
         ("Jazz, Chill & Instrumental",
@@ -42,7 +42,7 @@ public static class CategorySeeder
         ]),
         ("Specialty & Mood",
         [
-            "christmas","holidays","kids","party","religious","romantic","soundtrack"
+            "holidays","kids","party","religious","romantic","soundtrack"
         ]),
         ("Global & Cultural",
         [
@@ -57,7 +57,6 @@ public static class CategorySeeder
         [
             "argentina","brazil","canada","chile","colombia","ecuador","guatemala",
             "mexico","paraguay","peru","puerto_rico","uruguay","usa","venezuela",
-            "north_america","south_america",
         ]),
         ("Europe",
         [
