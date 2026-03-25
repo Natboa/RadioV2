@@ -10,7 +10,7 @@
 ; No administrator rights required (PrivilegesRequired=lowest).
 
 #define MyAppName    "RadioV2"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Natboa"
 #define MyAppURL     "https://github.com/Natboa/RadioV2"
 #define MyAppExeName "RadioV2.exe"
@@ -72,6 +72,8 @@ Type: filesandordirs; Name: "{app}"
 
 [Code]
 function InitializeSetup(): Boolean;
+var
+  ResultCode: Integer;
 begin
   // Kill any running instance of RadioV2 before files are copied,
   // otherwise locked DLLs (clrjit.dll etc.) cause "Access denied" errors.
