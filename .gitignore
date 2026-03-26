@@ -39,6 +39,9 @@ Data/*.db
 # Personal notes
 Commands_for_Me.txt
 
+# URL resolver cache
+url_resolver_results.db
+
 # Temp/local files
 __pycache__/
 *_wpftmp.csproj
