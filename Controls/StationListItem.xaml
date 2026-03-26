@@ -40,8 +40,18 @@
                            Text="{Binding Name}"
                            FontSize="14"
                            FontWeight="SemiBold"
-                           TextTrimming="CharacterEllipsis"
-                           Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                           TextTrimming="CharacterEllipsis">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsNowPlaying}" Value="True">
+                                    <Setter Property="Foreground" Value="{ui:ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
                 <controls:SoundbarAnimation Grid.Column="1"
                                             IsAnimating="{Binding IsNowPlaying}"
                                             Margin="6,0,10,0"

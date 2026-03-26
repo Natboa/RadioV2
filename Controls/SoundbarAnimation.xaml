@@ -4,10 +4,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="20" d:DesignWidth="17"
+             d:DesignHeight="20" d:DesignWidth="30"
              Visibility="Collapsed">
 
-    <Grid Width="17" Height="20">
+    <Grid Width="30" Height="20">
         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
             <Rectangle x:Name="Bar1" Width="4" Height="17" RadiusX="2" RadiusY="2"
                        RenderTransformOrigin="0.5,1">
@@ -22,6 +22,18 @@
                 </Rectangle.RenderTransform>
             </Rectangle>
             <Rectangle x:Name="Bar3" Width="4" Height="17" RadiusX="2" RadiusY="2"
+                       Margin="2.5,0,0,0" RenderTransformOrigin="0.5,1">
+                <Rectangle.RenderTransform>
+                    <ScaleTransform ScaleY="0.2" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Rectangle x:Name="Bar4" Width="4" Height="17" RadiusX="2" RadiusY="2"
+                       Margin="2.5,0,0,0" RenderTransformOrigin="0.5,1">
+                <Rectangle.RenderTransform>
+                    <ScaleTransform ScaleY="0.2" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Rectangle x:Name="Bar5" Width="4" Height="17" RadiusX="2" RadiusY="2"
                        Margin="2.5,0,0,0" RenderTransformOrigin="0.5,1">
                 <Rectangle.RenderTransform>
                     <ScaleTransform ScaleY="0.2" />

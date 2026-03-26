@@ -36,6 +36,8 @@ public partial class SoundbarAnimation : System.Windows.Controls.UserControl
         Bar1.Fill = brush;
         Bar2.Fill = brush;
         Bar3.Fill = brush;
+        Bar4.Fill = brush;
+        Bar5.Fill = brush;
 
         // Guard: binding may have resolved before the control was loaded
         if (IsAnimating)
@@ -69,6 +71,8 @@ public partial class SoundbarAnimation : System.Windows.Controls.UserControl
         if (Bar1.RenderTransform is ScaleTransform st1) st1.ScaleY = 0.2;
         if (Bar2.RenderTransform is ScaleTransform st2) st2.ScaleY = 0.2;
         if (Bar3.RenderTransform is ScaleTransform st3) st3.ScaleY = 0.2;
+        if (Bar4.RenderTransform is ScaleTransform st4) st4.ScaleY = 0.2;
+        if (Bar5.RenderTransform is ScaleTransform st5) st5.ScaleY = 0.2;
     }
 
     private Storyboard BuildStoryboard()
@@ -78,6 +82,8 @@ public partial class SoundbarAnimation : System.Windows.Controls.UserControl
         AddBarAnimation(sb, Bar1, TimeSpan.Zero);
         AddBarAnimation(sb, Bar2, TimeSpan.FromMilliseconds(130));
         AddBarAnimation(sb, Bar3, TimeSpan.FromMilliseconds(70));
+        AddBarAnimation(sb, Bar4, TimeSpan.FromMilliseconds(200));
+        AddBarAnimation(sb, Bar5, TimeSpan.FromMilliseconds(100));
 
         return sb;
     }
