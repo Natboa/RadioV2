@@ -4,6 +4,7 @@ namespace RadioV2.Services;
 
 public interface IStationService
 {
+    event EventHandler<FavouriteToggledEventArgs>? FavouriteToggled;
     Task<List<Station>> GetStationsAsync(int skip, int take, string? searchQuery = null, CancellationToken ct = default);
     Task<List<GroupWithCount>> GetGroupsWithCountsAsync(int skip, int take, CancellationToken ct = default);
     Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default);

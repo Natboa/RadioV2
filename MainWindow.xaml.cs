@@ -22,11 +22,17 @@ public partial class MainWindow : FluentWindow
 
     private record WindowPlacement(double Left, double Top, double Width, double Height, WindowState State);
 
+    private const int WM_POWERBROADCAST = 0x0218;
+    private const int PBT_APMSUSPEND = 0x0004;
+    private const int PBT_APMRESUMEAUTOMATIC = 0x0012;
+    private const int PBT_APMRESUMESUSPEND = 0x0007;
+
     private readonly MediaKeyHook _mediaKeyHook = new();
     private readonly TrayIconManager _trayIcon;
     private readonly NetworkMonitor _networkMonitor;
     private readonly ISnackbarService _snackbarService;
     private readonly UpdateCheckerService _updateChecker;
+    private readonly MiniPlayerViewModel _miniPlayer;
     private string? _latestVersion;
 
     public MainWindow(MainWindowViewModel viewModel, IServiceProvider serviceProvider, ISnackbarService snackbarService, UpdateCheckerService updateChecker, NetworkMonitor networkMonitor)
@@ -42,18 +48,18 @@ public partial class MainWindow : FluentWindow
 
         RootNavigation.SetServiceProvider(serviceProvider);
 
-        var miniPlayer = serviceProvider.GetRequiredService<MiniPlayerViewModel>();
-        MiniPlayerControl.DataContext = miniPlayer;
+        _miniPlayer = serviceProvider.GetRequiredService<MiniPlayerViewModel>();
+        MiniPlayerControl.DataContext = _miniPlayer;
 
         // Media keys
-        _mediaKeyHook.PlayPauseCommand = miniPlayer.PlayPauseCommand;
-        _mediaKeyHook.StopCommand = miniPlayer.StopCommand;
-        _mediaKeyHook.NextStationCommand = miniPlayer.NextStationCommand;
-        _mediaKeyHook.PreviousStationCommand = miniPlayer.PreviousStationCommand;
+        _mediaKeyHook.PlayPauseCommand = _miniPlayer.PlayPauseCommand;
+        _mediaKeyHook.StopCommand = _miniPlayer.StopCommand;
+        _mediaKeyHook.NextStationCommand = _miniPlayer.NextStationCommand;
+        _mediaKeyHook.PreviousStationCommand = _miniPlayer.PreviousStationCommand;
 
         // System tray
         _trayIcon = new TrayIconManager(
-            miniPlayer,
+            _miniPlayer,
             showWindowAction: ShowWindow,
             quitAction: Quit);
 
@@ -65,8 +71,8 @@ public partial class MainWindow : FluentWindow
         var playerService = serviceProvider.GetRequiredService<IRadioPlayerService>();
         playerService.PlaybackError += (s, msg) =>
         {
-            var stationName = miniPlayer.StationName;
-            Dispatcher.Invoke(() =>
+            var stationName = _miniPlayer.StationName;
+            Dispatcher.BeginInvoke(() =>
             {
                 var message = string.IsNullOrEmpty(stationName)
                     ? "Stream error. The station may be offline."
@@ -140,6 +146,7 @@ public partial class MainWindow : FluentWindow
         var hwnd = new WindowInteropHelper(this).Handle;
         var source = HwndSource.FromHwnd(hwnd);
         source?.AddHook(_mediaKeyHook.WndProc);
+        source?.AddHook(PowerWndProc);
         _mediaKeyHook.Register(hwnd);
         RootNavigation.Navigate(typeof(Views.FavouritesPage));
 
@@ -277,6 +284,19 @@ public partial class MainWindow : FluentWindow
     private void Quit()
     {
         Close();
+    }
+
+    private IntPtr PowerWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WM_POWERBROADCAST)
+        {
+            int evt = wParam.ToInt32();
+            if (evt == PBT_APMSUSPEND)
+                _miniPlayer.OnSleeping();
+            else if (evt == PBT_APMRESUMEAUTOMATIC || evt == PBT_APMRESUMESUSPEND)
+                _miniPlayer.OnWaking();
+        }
+        return IntPtr.Zero;
     }
 
     private void OnConnectivityChanged(object? sender, bool isOnline)

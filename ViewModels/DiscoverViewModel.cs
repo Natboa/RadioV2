@@ -247,8 +247,8 @@ public partial class DiscoverViewModel : ObservableObject
     [RelayCommand]
     private async Task ToggleFavourite(Station station)
     {
-        await _stationService.ToggleFavouriteAsync(station.Id);
         station.IsFavorite = !station.IsFavorite;
+        await _stationService.ToggleFavouriteAsync(station.Id);
     }
 
     [RelayCommand]

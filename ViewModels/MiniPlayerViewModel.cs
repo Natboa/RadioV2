@@ -12,33 +12,54 @@ public partial class MiniPlayerViewModel : ObservableObject
 {
     private readonly IRadioPlayerService _playerService;
     private readonly IStationService _stationService;
+    private readonly NetworkMonitor _networkMonitor;
     private int _previousVolume = 50;
     private List<Station> _currentPlaylist = [];
+    private bool _shouldReconnect;
 
     public MiniPlayerViewModel(IRadioPlayerService playerService, IStationService stationService, NetworkMonitor networkMonitor)
     {
         _playerService = playerService;
         _stationService = stationService;
+        _networkMonitor = networkMonitor;
+
         networkMonitor.ConnectivityChanged += (_, isOnline) =>
         {
-            if (!isOnline || StationLogoUrl is null) return;
-            var url = StationLogoUrl;
-            Application.Current.Dispatcher.BeginInvoke(() =>
+            if (isOnline)
             {
-                StationLogoUrl = null;
-                StationLogoUrl = url;
-            }, DispatcherPriority.Background);
+                // Refresh station logo
+                if (StationLogoUrl is not null)
+                {
+                    var url = StationLogoUrl;
+                    Application.Current.Dispatcher.BeginInvoke(() =>
+                    {
+                        StationLogoUrl = null;
+                        StationLogoUrl = url;
+                    }, DispatcherPriority.Background);
+                }
+
+                // Auto-reconnect if playback was interrupted by the network drop
+                if (_shouldReconnect && CurrentStation is not null && !IsPlaying)
+                    Application.Current.Dispatcher.BeginInvoke(() =>
+                        _playerService.Play(CurrentStation.StreamUrl));
+            }
+            else
+            {
+                // Stop cleanly on internet loss; _shouldReconnect stays true so we resume when back
+                if (_playerService.IsPlaying || _playerService.IsPaused)
+                    Application.Current.Dispatcher.BeginInvoke(() => _playerService.Stop());
+            }
         };
 
         _playerService.PlaybackStarted += (s, e) =>
-            Application.Current.Dispatcher.Invoke(() =>
+            Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 IsPlaying = true;
                 if (CurrentStation is not null) CurrentStation.IsNowPlaying = true;
             });
 
         _playerService.PlaybackStopped += (s, e) =>
-            Application.Current.Dispatcher.Invoke(() =>
+            Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 IsPlaying = false;
                 NowPlayingArtist = null;
@@ -47,10 +68,10 @@ public partial class MiniPlayerViewModel : ObservableObject
             });
 
         _playerService.BufferingChanged += (s, e) =>
-            Application.Current.Dispatcher.Invoke(() => IsBuffering = e < 100f);
+            Application.Current.Dispatcher.BeginInvoke(() => IsBuffering = e < 100f);
 
         _playerService.PlaybackError += (s, e) =>
-            Application.Current.Dispatcher.Invoke(() =>
+            Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 IsPlaying = false;
                 NowPlayingArtist = null;
@@ -130,13 +151,19 @@ public partial class MiniPlayerViewModel : ObservableObject
 
     private void SetStationCore(Station station)
     {
-        if (CurrentStation is not null) CurrentStation.IsNowPlaying = false;
+        if (CurrentStation is not null)
+        {
+            CurrentStation.IsNowPlaying = false;
+            CurrentStation.PropertyChanged -= OnCurrentStationPropertyChanged;
+        }
         CurrentStation = station;
+        CurrentStation.PropertyChanged += OnCurrentStationPropertyChanged;
         StationName = station.Name;
         StationLogoUrl = station.LogoUrl;
         IsFavourite = station.IsFavorite;
         NowPlayingArtist = null;
         NowPlayingTitle = null;
+        _shouldReconnect = true;
         _playerService.Volume = IsMuted ? 0 : Volume;
         _playerService.Play(station.StreamUrl);
         StationStarted?.Invoke(this, station);
@@ -145,7 +172,10 @@ public partial class MiniPlayerViewModel : ObservableObject
     /// <summary>Restores a station's display on startup without starting playback.</summary>
     public void RestoreStation(Station station)
     {
+        if (CurrentStation is not null)
+            CurrentStation.PropertyChanged -= OnCurrentStationPropertyChanged;
         CurrentStation    = station;
+        CurrentStation.PropertyChanged += OnCurrentStationPropertyChanged;
         StationName       = station.Name;
         StationLogoUrl    = station.LogoUrl;
         IsFavourite       = station.IsFavorite;
@@ -159,24 +189,33 @@ public partial class MiniPlayerViewModel : ObservableObject
     private void PlayPause()
     {
         if (_playerService.IsPlaying || _playerService.IsPaused)
+        {
+            _shouldReconnect = false; // user deliberately pausing/stopping
             _playerService.TogglePlayPause();
+        }
         else if (CurrentStation != null)
         {
+            _shouldReconnect = true; // user manually resuming
             _playerService.Volume = IsMuted ? 0 : Volume;
             _playerService.Play(CurrentStation.StreamUrl);
         }
     }
 
     [RelayCommand]
-    private void Stop() => _playerService.Stop();
+    private void Stop()
+    {
+        _shouldReconnect = false;
+        _playerService.Stop();
+    }
 
     [RelayCommand]
     private async Task ToggleFavourite()
     {
         if (CurrentStation is null) return;
-        await _stationService.ToggleFavouriteAsync(CurrentStation.Id);
+        // Update UI immediately before the DB round-trip
         CurrentStation.IsFavorite = !CurrentStation.IsFavorite;
         IsFavourite = CurrentStation.IsFavorite;
+        await _stationService.ToggleFavouriteAsync(CurrentStation.Id);
     }
 
     [RelayCommand]
@@ -218,6 +257,32 @@ public partial class MiniPlayerViewModel : ObservableObject
         SetStationCore(playlist[idx]);
     }
 
+    // ── Sleep / wake ──────────────────────────────────────────────────────
+
+    /// <summary>Called when the system is about to sleep. Stops playback cleanly but
+    /// preserves <c>_shouldReconnect</c> so we can resume on wake.</summary>
+    public void OnSleeping()
+    {
+        if (_playerService.IsPlaying || _playerService.IsPaused)
+            _playerService.Stop();
+        // _shouldReconnect intentionally NOT cleared — OnWaking will use it
+    }
+
+    /// <summary>Called when the system resumes from sleep. Reconnects if we were
+    /// playing before sleep; waits for network if it isn't up yet.</summary>
+    public async void OnWaking()
+    {
+        if (!_shouldReconnect || CurrentStation is null) return;
+
+        // Give Windows a moment to re-establish the network after wake
+        await Task.Delay(3000);
+
+        if (_networkMonitor.IsOnline && _shouldReconnect && CurrentStation is not null && !IsPlaying)
+            _ = Application.Current.Dispatcher.BeginInvoke(() =>
+                _playerService.Play(CurrentStation.StreamUrl));
+        // If still offline, the ConnectivityChanged handler will reconnect when network is back
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────
 
     private async Task<List<Station>> GetEffectivePlaylistAsync()
@@ -232,10 +297,16 @@ public partial class MiniPlayerViewModel : ObservableObject
     private void OnMetadataChanged(object? sender, string rawNowPlaying)
     {
         var (artist, title) = NowPlayingParser.Parse(rawNowPlaying);
-        Application.Current.Dispatcher.Invoke(() =>
+        Application.Current.Dispatcher.BeginInvoke(() =>
         {
             NowPlayingArtist = artist;
             NowPlayingTitle = title;
         });
+    }
+
+    private void OnCurrentStationPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Station.IsFavorite))
+            Application.Current.Dispatcher.BeginInvoke(() => IsFavourite = CurrentStation!.IsFavorite);
     }
 }

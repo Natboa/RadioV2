@@ -108,6 +108,22 @@
                 <ui:SymbolIcon Symbol="{Binding IsMuted, Converter={StaticResource BoolToSpeakerIconConverter}}" />
             </ui:Button>
 
+            <ui:Button x:Name="FavouriteBtn"
+                       Appearance="Transparent"
+                       ToolTip="Favourite / Unfavourite"
+                       Margin="0,0,4,0"
+                       Click="FavouriteBtn_Click">
+                <Grid>
+                    <ui:SymbolIcon Symbol="Heart24"
+                                   Filled="False"
+                                   Visibility="{Binding IsFavourite, Converter={StaticResource BoolToInverseVisibilityConverter}}" />
+                    <ui:SymbolIcon Symbol="Heart24"
+                                   Filled="True"
+                                   Foreground="Red"
+                                   Visibility="{Binding IsFavourite, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </Grid>
+            </ui:Button>
+
             <Slider Value="{Binding Volume}"
                     Minimum="0" Maximum="100"
                     Width="120"

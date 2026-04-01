@@ -26,4 +26,10 @@ public partial class MiniPlayer : System.Windows.Controls.UserControl
         if (e.PropertyName == nameof(MiniPlayerViewModel.IsPlaying))
             Dispatcher.Invoke(() => ((Storyboard)Resources["PlayPulse"]).Begin(PlayPauseBtn, true));
     }
+
+    private void FavouriteBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MiniPlayerViewModel vm)
+            vm.ToggleFavouriteCommand.Execute(null);
+    }
 }

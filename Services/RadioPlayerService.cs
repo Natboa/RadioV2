@@ -47,7 +47,7 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
         var old = _currentMedia;
         _currentMedia = new Media(_libVLC, streamUrl, FromType.FromLocation);
         _mediaPlayer.Play(_currentMedia);
-        old?.Dispose();
+        Task.Run(() => old?.Dispose());
     }
 
     public void Pause() => _mediaPlayer.Pause();

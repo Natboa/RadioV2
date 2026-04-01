@@ -5,8 +5,11 @@ using RadioV2.Models;
 
 namespace RadioV2.Services;
 
+public record FavouriteToggledEventArgs(int StationId, bool IsFavorite);
+
 public class StationService : IStationService
 {
+    public event EventHandler<FavouriteToggledEventArgs>? FavouriteToggled;
     private readonly IDbContextFactory<StationsDbContext> _stationsFactory;
     private readonly IDbContextFactory<UserDbContext> _userFactory;
     private readonly IStationLogoCache _logoCache;
@@ -154,6 +157,8 @@ public class StationService : IStationService
         else
             db.Favourites.Remove(existing!);
         await db.SaveChangesAsync(ct);
+
+        FavouriteToggled?.Invoke(this, new FavouriteToggledEventArgs(stationId, adding));
 
         if (adding)
         {
