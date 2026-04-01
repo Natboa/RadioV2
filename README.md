@@ -18,6 +18,10 @@
   </tr>
 </table>
 
+<p align="center">
+  <img src="Assets/screenshots/demo.gif" alt="RadioV2 Demo" width="860"/>
+</p>
+
 ## Overview
 
 RadioV2 is a lightweight desktop application for discovering, browsing, and streaming internet radio stations. It ships with a pre-seeded database of tens of thousands of stations organized by genre.
