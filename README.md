@@ -17,6 +17,7 @@
     <td><img src="Assets/screenshots/screenshot3.png" alt="Screenshot 3" width="280"/></td>
   </tr>
 </table>
+
 ## Overview
 
 RadioV2 is a lightweight desktop application for discovering, browsing, and streaming internet radio stations. It ships with a pre-seeded database of tens of thousands of stations organized by genre.
