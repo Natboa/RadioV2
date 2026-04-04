@@ -10,6 +10,12 @@
 
 <h3 align="center">A modern Windows desktop internet radio player built with Fluent Design.</h3>
 
+<p align="center">
+  <a href="https://github.com/Natboa/RadioV2-Android/releases">
+    <img src="https://img.shields.io/badge/Also%20available%20on-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Available on Android"/>
+  </a>
+</p>
+
 <table align="center">
   <tr>
     <td><img src="Assets/screenshots/screenshot1.png" alt="Screenshot 1" width="280"/></td>
