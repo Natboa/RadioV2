@@ -59,36 +59,6 @@
                 </StackPanel>
             </ui:Card>
 
-            <!-- Import Stations card -->
-            <ui:Card Margin="0,0,0,16">
-                <StackPanel>
-                    <TextBlock Text="Import Stations"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,4"
-                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                    <TextBlock Text="Add new stations to the database from an M3U or M3U8 playlist file."
-                               FontSize="13"
-                               TextWrapping="Wrap"
-                               Margin="0,0,0,12"
-                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
-
-                    <ui:Button Content="Browse for M3U file..."
-                               Appearance="Primary"
-                               Command="{Binding ImportStationsCommand}" />
-
-                    <Border CornerRadius="6"
-                            Background="{ui:ThemeResource SystemFillColorSuccessBackgroundBrush}"
-                            Padding="12,8"
-                            Margin="0,12,0,0"
-                            Visibility="{Binding HasImportStatus, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{Binding ImportStatusMessage}"
-                                   FontSize="13"
-                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                    </Border>
-                </StackPanel>
-            </ui:Card>
-
             <!-- Favourites card -->
             <ui:Card Margin="0,0,0,16">
                 <StackPanel>
@@ -97,7 +67,7 @@
                                FontWeight="SemiBold"
                                Margin="0,0,0,4"
                                Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                    <TextBlock Text="Import or export your saved stations as an M3U playlist or JSON file."
+                    <TextBlock Text="Import or export your saved stations as an M3U playlist."
                                FontSize="13"
                                TextWrapping="Wrap"
                                Margin="0,0,0,12"
@@ -107,7 +77,7 @@
                         <ui:Button Command="{Binding ImportFavouritesCommand}"
                                    Appearance="Secondary"
                                    Margin="0,0,8,0"
-                                   ToolTip="Import favourites from M3U or JSON">
+                                   ToolTip="Import favourites from M3U playlist">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="ArrowDownload24" Margin="0,0,6,0" />
                                 <TextBlock Text="Import" VerticalAlignment="Center" />
@@ -115,7 +85,7 @@
                         </ui:Button>
                         <ui:Button Command="{Binding ExportFavouritesCommand}"
                                    Appearance="Secondary"
-                                   ToolTip="Export favourites to M3U or JSON">
+                                   ToolTip="Export favourites as M3U playlist">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="ArrowUpload24" Margin="0,0,6,0" />
                                 <TextBlock Text="Export" VerticalAlignment="Center" />

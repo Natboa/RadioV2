@@ -3,8 +3,6 @@ using RadioV2.Data;
 using RadioV2.Models;
 using System.IO;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace RadioV2.Services;
 
@@ -13,12 +11,6 @@ public class FavouritesIOService : IFavouritesIOService
     private readonly IDbContextFactory<StationsDbContext> _stationsFactory;
     private readonly IDbContextFactory<UserDbContext> _userFactory;
     private readonly M3UParserService _m3uParser;
-
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
 
     public FavouritesIOService(
         IDbContextFactory<StationsDbContext> stationsFactory,
@@ -32,32 +24,8 @@ public class FavouritesIOService : IFavouritesIOService
 
     // ── Export ────────────────────────────────────────────────────────────
 
-    public async Task ExportAsync(string filePath, string format, List<Station> favourites)
-    {
-        if (format == "json")
-            await ExportJsonAsync(filePath, favourites);
-        else
-            await ExportM3UAsync(filePath, favourites);
-    }
-
-    private static async Task ExportJsonAsync(string filePath, List<Station> favourites)
-    {
-        var payload = new FavouritesExport
-        {
-            Version = 1,
-            Exported = DateTime.UtcNow,
-            Favourites = favourites.Select(s => new FavouriteEntry
-            {
-                Name = s.Name,
-                StreamUrl = s.StreamUrl,
-                LogoUrl = s.LogoUrl,
-                Group = s.Group?.Name ?? string.Empty
-            }).ToList()
-        };
-
-        var json = JsonSerializer.Serialize(payload, JsonOptions);
-        await File.WriteAllTextAsync(filePath, json, Encoding.UTF8);
-    }
+    public Task ExportAsync(string filePath, List<Station> favourites)
+        => ExportM3UAsync(filePath, favourites);
 
     private static async Task ExportM3UAsync(string filePath, List<Station> favourites)
     {
@@ -77,24 +45,8 @@ public class FavouritesIOService : IFavouritesIOService
 
     // ── Import ────────────────────────────────────────────────────────────
 
-    public async Task<int> ImportAsync(string filePath, string format)
-    {
-        if (format == "json")
-            return await ImportJsonAsync(filePath);
-        return await ImportM3UAsync(filePath);
-    }
-
-    private async Task<int> ImportJsonAsync(string filePath)
-    {
-        var json = await File.ReadAllTextAsync(filePath);
-        var payload = JsonSerializer.Deserialize<FavouritesExport>(json, JsonOptions);
-        if (payload?.Favourites is null) return 0;
-
-        var urlMap = payload.Favourites
-            .GroupBy(f => f.StreamUrl)
-            .ToDictionary(g => g.Key, g => g.First());
-        return await AddFavouritesByUrls(urlMap);
-    }
+    public Task<int> ImportAsync(string filePath)
+        => ImportM3UAsync(filePath);
 
     private async Task<int> ImportM3UAsync(string filePath)
     {
@@ -177,21 +129,4 @@ public class FavouritesIOService : IFavouritesIOService
         return added;
     }
 
-    // ── DTOs ──────────────────────────────────────────────────────────────
-
-    private class FavouritesExport
-    {
-        public int Version { get; set; }
-        public DateTime Exported { get; set; }
-        public List<FavouriteEntry> Favourites { get; set; } = [];
-    }
-
-    private class FavouriteEntry
-    {
-        public string Name { get; set; } = string.Empty;
-        public string StreamUrl { get; set; } = string.Empty;
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? LogoUrl { get; set; }
-        public string Group { get; set; } = string.Empty;
-    }
 }
