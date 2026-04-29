@@ -34,8 +34,8 @@ public class UpdateCheckerService
             var tagName = tagProp.GetString();
             if (string.IsNullOrEmpty(tagName)) return null;
 
-            // Strip leading 'v' from tag (e.g. "v1.1.0" → "1.1.0")
-            var latestStr = tagName.TrimStart('v');
+            // Strip leading 'v' and '.' from tag (handles both "v1.1.0" and "v.1.1.0")
+            var latestStr = tagName.TrimStart('v', '.');
             if (!Version.TryParse(latestStr, out var latest)) return null;
 
             var current = Assembly.GetExecutingAssembly().GetName().Version;
