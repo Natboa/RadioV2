@@ -10,7 +10,7 @@
 ; No administrator rights required (PrivilegesRequired=lowest).
 
 #define MyAppName    "RadioV2"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.4"
 #define MyAppPublisher "Natboa"
 #define MyAppURL     "https://github.com/Natboa/RadioV2"
 #define MyAppExeName "RadioV2.exe"

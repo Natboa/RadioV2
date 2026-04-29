@@ -53,17 +53,11 @@ public class FavouritesIOService : IFavouritesIOService
         var parsed = _m3uParser.Parse(filePath);
         var urlMap = parsed
             .GroupBy(p => p.StreamUrl)
-            .ToDictionary(g => g.Key, g => new FavouriteEntry
-            {
-                Name = g.First().Name,
-                StreamUrl = g.Key,
-                LogoUrl = g.First().LogoUrl,
-                Group = g.First().GroupName
-            });
+            .ToDictionary(g => g.Key, g => g.First());
         return await AddFavouritesByUrls(urlMap);
     }
 
-    private async Task<int> AddFavouritesByUrls(Dictionary<string, FavouriteEntry> urlMap)
+    private async Task<int> AddFavouritesByUrls(Dictionary<string, ParsedStation> urlMap)
     {
         var urls = urlMap.Keys.ToHashSet();
 
@@ -84,7 +78,7 @@ public class FavouritesIOService : IFavouritesIOService
         {
             if (!urlMap.TryGetValue(url, out var entry)) continue;
 
-            var groupName = string.IsNullOrWhiteSpace(entry.Group) ? "Imported" : entry.Group;
+            var groupName = string.IsNullOrWhiteSpace(entry.GroupName) ? "Imported" : entry.GroupName;
             var group = await stationsDb.Groups.FirstOrDefaultAsync(g => g.Name == groupName);
             if (group is null)
             {

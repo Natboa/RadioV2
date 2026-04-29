@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Natboa/RadioV2/releases/tag/v.1.0.3"><img src="https://img.shields.io/badge/version-1.0.3-blue?style=flat-square" alt="Version"/></a>
+  <a href="https://github.com/Natboa/RadioV2/releases/tag/v.1.0.4"><img src="https://img.shields.io/badge/version-1.0.4-blue?style=flat-square" alt="Version"/></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4?style=flat-square&logo=windows" alt="Platform"/>
   <a href="Legal/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"/></a>
 </p>
@@ -33,7 +33,7 @@ RadioV2 is a lightweight desktop application for discovering, browsing, and stre
 - Browse and search stations across dozens of genre groups
 - Discover stations by category with infinite-scroll lists
 - Save and manage favourite stations
-- Import and export favourites in M3U/M3U8 and JSON formats
+- Import and export favourites in M3U/M3U8 format
 - Persistent mini-player bar with live now-playing metadata
 - Global media key support (Play/Pause, Next, Previous, Stop)
 - System tray integration — minimize to tray, restore on double-click
@@ -45,7 +45,7 @@ RadioV2 is a lightweight desktop application for discovering, browsing, and stre
 
 Download and run the setup wizard:
 
-👉 [RadioV2Setup.exe](https://github.com/Natboa/RadioV2/releases/download/v.1.0.3/RadioV2Setup.exe)
+👉 [RadioV2Setup.exe](https://github.com/Natboa/RadioV2/releases/download/v.1.0.4/RadioV2Setup.exe)
 
 **Option 2 — Build from source**
 

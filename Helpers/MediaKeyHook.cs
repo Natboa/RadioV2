@@ -8,7 +8,8 @@ public class MediaKeyHook : IDisposable
     [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
     [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-    private const int WM_HOTKEY = 0x0312;
+    private const int WM_HOTKEY    = 0x0312;
+    private const int WM_APPCOMMAND = 0x0319;
 
     private const int ID_PLAY_PAUSE = 9001;
     private const int ID_STOP       = 9002;
@@ -21,6 +22,12 @@ public class MediaKeyHook : IDisposable
     private const uint VK_MEDIA_PREV_TRACK  = 0xB1;
 
     private const uint MOD_NOREPEAT = 0x4000;
+
+    // WM_APPCOMMAND command IDs (high word of lParam, mask 0xFFF)
+    private const int APPCOMMAND_MEDIA_PLAY_PAUSE    = 14;
+    private const int APPCOMMAND_MEDIA_STOP          = 13;
+    private const int APPCOMMAND_MEDIA_NEXTTRACK     = 11;
+    private const int APPCOMMAND_MEDIA_PREVIOUSTRACK = 12;
 
     public ICommand? PlayPauseCommand    { get; set; }
     public ICommand? StopCommand         { get; set; }
@@ -42,27 +49,54 @@ public class MediaKeyHook : IDisposable
 
     public IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg != WM_HOTKEY) return IntPtr.Zero;
-
-        switch (wParam.ToInt32())
+        if (msg == WM_HOTKEY)
         {
-            case ID_PLAY_PAUSE:
-                if (PlayPauseCommand?.CanExecute(null) == true) PlayPauseCommand.Execute(null);
-                handled = true;
-                break;
-            case ID_STOP:
-                if (StopCommand?.CanExecute(null) == true) StopCommand.Execute(null);
-                handled = true;
-                break;
-            case ID_NEXT:
-                if (NextStationCommand?.CanExecute(null) == true) NextStationCommand.Execute(null);
-                handled = true;
-                break;
-            case ID_PREV:
-                if (PreviousStationCommand?.CanExecute(null) == true) PreviousStationCommand.Execute(null);
-                handled = true;
-                break;
+            switch (wParam.ToInt32())
+            {
+                case ID_PLAY_PAUSE:
+                    if (PlayPauseCommand?.CanExecute(null) == true) PlayPauseCommand.Execute(null);
+                    handled = true;
+                    break;
+                case ID_STOP:
+                    if (StopCommand?.CanExecute(null) == true) StopCommand.Execute(null);
+                    handled = true;
+                    break;
+                case ID_NEXT:
+                    if (NextStationCommand?.CanExecute(null) == true) NextStationCommand.Execute(null);
+                    handled = true;
+                    break;
+                case ID_PREV:
+                    if (PreviousStationCommand?.CanExecute(null) == true) PreviousStationCommand.Execute(null);
+                    handled = true;
+                    break;
+            }
         }
+        else if (msg == WM_APPCOMMAND)
+        {
+            // Bluetooth/HID headphones and remote controls send WM_APPCOMMAND instead of VK hotkeys.
+            // Command is in the high word of lParam (bits 16–27, masked to 0xFFF).
+            int cmd = (lParam.ToInt32() >> 16) & 0xFFF;
+            switch (cmd)
+            {
+                case APPCOMMAND_MEDIA_PLAY_PAUSE:
+                    if (PlayPauseCommand?.CanExecute(null) == true) PlayPauseCommand.Execute(null);
+                    handled = true;
+                    break;
+                case APPCOMMAND_MEDIA_STOP:
+                    if (StopCommand?.CanExecute(null) == true) StopCommand.Execute(null);
+                    handled = true;
+                    break;
+                case APPCOMMAND_MEDIA_NEXTTRACK:
+                    if (NextStationCommand?.CanExecute(null) == true) NextStationCommand.Execute(null);
+                    handled = true;
+                    break;
+                case APPCOMMAND_MEDIA_PREVIOUSTRACK:
+                    if (PreviousStationCommand?.CanExecute(null) == true) PreviousStationCommand.Execute(null);
+                    handled = true;
+                    break;
+            }
+        }
+
         return IntPtr.Zero;
     }
 
