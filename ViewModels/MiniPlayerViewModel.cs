@@ -16,6 +16,7 @@ public partial class MiniPlayerViewModel : ObservableObject
     private int _previousVolume = 50;
     private List<Station> _currentPlaylist = [];
     private bool _shouldReconnect;
+    private bool _isStartingPlayback;
 
     public MiniPlayerViewModel(IRadioPlayerService playerService, IStationService stationService, NetworkMonitor networkMonitor)
     {
@@ -41,12 +42,18 @@ public partial class MiniPlayerViewModel : ObservableObject
                 // Auto-reconnect if playback was interrupted by the network drop
                 if (_shouldReconnect && CurrentStation is not null && !IsPlaying)
                     Application.Current.Dispatcher.BeginInvoke(() =>
-                        _playerService.Play(CurrentStation.StreamUrl));
+                    {
+                        if (_shouldReconnect && CurrentStation is not null && !IsPlaying && !_isStartingPlayback)
+                        {
+                            _isStartingPlayback = true;
+                            _playerService.Play(CurrentStation.StreamUrl);
+                        }
+                    });
             }
             else
             {
                 // Stop cleanly on internet loss; _shouldReconnect stays true so we resume when back
-                if (_playerService.IsPlaying || _playerService.IsPaused)
+                if (_playerService.IsPlaying)
                     Application.Current.Dispatcher.BeginInvoke(() => _playerService.Stop());
             }
         };
@@ -54,13 +61,17 @@ public partial class MiniPlayerViewModel : ObservableObject
         _playerService.PlaybackStarted += (s, e) =>
             Application.Current.Dispatcher.BeginInvoke(() =>
             {
+                _isStartingPlayback = false;
                 IsPlaying = true;
+                NowPlayingArtist = null;
+                NowPlayingTitle = null;
                 if (CurrentStation is not null) CurrentStation.IsNowPlaying = true;
             });
 
         _playerService.PlaybackStopped += (s, e) =>
             Application.Current.Dispatcher.BeginInvoke(() =>
             {
+                _isStartingPlayback = false;
                 IsPlaying = false;
                 NowPlayingArtist = null;
                 NowPlayingTitle = null;
@@ -73,6 +84,7 @@ public partial class MiniPlayerViewModel : ObservableObject
         _playerService.PlaybackError += (s, e) =>
             Application.Current.Dispatcher.BeginInvoke(() =>
             {
+                _isStartingPlayback = false;
                 IsPlaying = false;
                 NowPlayingArtist = null;
                 NowPlayingTitle = null;
@@ -164,6 +176,7 @@ public partial class MiniPlayerViewModel : ObservableObject
         NowPlayingArtist = null;
         NowPlayingTitle = null;
         _shouldReconnect = true;
+        _isStartingPlayback = true;
         _playerService.Volume = IsMuted ? 0 : Volume;
         _playerService.Play(station.StreamUrl);
         StationStarted?.Invoke(this, station);
@@ -188,7 +201,7 @@ public partial class MiniPlayerViewModel : ObservableObject
     [RelayCommand]
     private void PlayPause()
     {
-        if (_playerService.IsPlaying || _playerService.IsPaused)
+        if (_playerService.IsPlaying)
         {
             _shouldReconnect = false; // user deliberately pausing/stopping
             _playerService.TogglePlayPause();
@@ -196,6 +209,7 @@ public partial class MiniPlayerViewModel : ObservableObject
         else if (CurrentStation != null)
         {
             _shouldReconnect = true; // user manually resuming
+            _isStartingPlayback = true;
             _playerService.Volume = IsMuted ? 0 : Volume;
             _playerService.Play(CurrentStation.StreamUrl);
         }
@@ -263,7 +277,7 @@ public partial class MiniPlayerViewModel : ObservableObject
     /// preserves <c>_shouldReconnect</c> so we can resume on wake.</summary>
     public void OnSleeping()
     {
-        if (_playerService.IsPlaying || _playerService.IsPaused)
+        if (_playerService.IsPlaying)
             _playerService.Stop();
         // _shouldReconnect intentionally NOT cleared — OnWaking will use it
     }
@@ -279,7 +293,13 @@ public partial class MiniPlayerViewModel : ObservableObject
 
         if (_networkMonitor.IsOnline && _shouldReconnect && CurrentStation is not null && !IsPlaying)
             _ = Application.Current.Dispatcher.BeginInvoke(() =>
-                _playerService.Play(CurrentStation.StreamUrl));
+            {
+                if (_shouldReconnect && CurrentStation is not null && !IsPlaying && !_isStartingPlayback)
+                {
+                    _isStartingPlayback = true;
+                    _playerService.Play(CurrentStation.StreamUrl);
+                }
+            });
         // If still offline, the ConnectivityChanged handler will reconnect when network is back
     }
 

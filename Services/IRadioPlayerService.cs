@@ -9,7 +9,6 @@ public interface IRadioPlayerService
 
     int Volume { get; set; }
     bool IsPlaying { get; }
-    bool IsPaused { get; }
 
     event EventHandler<string>? MetadataChanged;    // ICY StreamTitle
     event EventHandler<float>? BufferingChanged;     // 0-100%

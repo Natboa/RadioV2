@@ -15,7 +15,6 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
         _mediaPlayer = new MediaPlayer(_libVLC);
 
         _mediaPlayer.Playing += (s, e) => PlaybackStarted?.Invoke(this, EventArgs.Empty);
-        _mediaPlayer.Paused  += (s, e) => PlaybackStopped?.Invoke(this, EventArgs.Empty);
         _mediaPlayer.Stopped += (s, e) => PlaybackStopped?.Invoke(this, EventArgs.Empty);
         _mediaPlayer.Buffering += (s, e) => BufferingChanged?.Invoke(this, e.Cache);
         _mediaPlayer.EncounteredError += (s, e) => PlaybackError?.Invoke(this, "Stream error");
@@ -26,7 +25,7 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
         // from the correct station, even if the user switches mid-stream.
         _mediaPlayer.MediaChanged += (s, e) =>
         {
-            var media = _mediaPlayer.Media;
+            var media = e.Media;
             if (media != null)
             {
                 media.MetaChanged += (ms, me) =>
@@ -50,13 +49,12 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
         Task.Run(() => old?.Dispose());
     }
 
-    public void Pause() => _mediaPlayer.Pause();
+    public void Pause() => _mediaPlayer.Stop();
     public void Stop() => _mediaPlayer.Stop();
 
     public void TogglePlayPause()
     {
         if (IsPlaying) Pause();
-        else if (IsPaused) _mediaPlayer.Play();
     }
 
     public int Volume
@@ -66,7 +64,6 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
     }
 
     public bool IsPlaying => _mediaPlayer.IsPlaying;
-    public bool IsPaused => _mediaPlayer.State == VLCState.Paused;
 
     public event EventHandler<string>? MetadataChanged;
     public event EventHandler<float>? BufferingChanged;
