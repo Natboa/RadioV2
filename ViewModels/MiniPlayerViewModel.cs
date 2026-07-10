@@ -63,8 +63,9 @@ public partial class MiniPlayerViewModel : ObservableObject
             {
                 _isStartingPlayback = false;
                 IsPlaying = true;
-                NowPlayingArtist = null;
-                NowPlayingTitle = null;
+                // Do NOT clear NowPlayingArtist/NowPlayingTitle here — VLC delivers ICY
+                // metadata during the buffering phase (before the Playing event), so
+                // clearing it here would wipe the current track info until the next song.
                 if (CurrentStation is not null) CurrentStation.IsNowPlaying = true;
             });
 
