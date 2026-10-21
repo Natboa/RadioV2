@@ -134,7 +134,7 @@ public partial class App : Application
 
         await _host.StartAsync();
 
-        // Initialise userdata.db (creates tables on first run)
+        // userdata.db must be ready before we read settings (fast — creates empty schema)
         var userDbFactory = _host.Services.GetRequiredService<IDbContextFactory<UserDbContext>>();
         using (var userDb = userDbFactory.CreateDbContext())
         {
@@ -142,32 +142,50 @@ public partial class App : Application
             await MigrateLegacyFavouritesAsync(userDb);
         }
 
-        // Initialise stations.db schema (safe on every launch)
-        var stationsDbFactory = _host.Services.GetRequiredService<IDbContextFactory<StationsDbContext>>();
-        using (var stationsDb = stationsDbFactory.CreateDbContext())
-            await DatabaseInitService.InitialiseAsync(stationsDb);
-
-        await RestoreSessionAsync();
+        // Apply theme before showing the window to avoid a flash
+        var stationService = _host.Services.GetRequiredService<IStationService>();
+        var theme = await stationService.GetSettingAsync("Theme") ?? "Dark";
+        ThemeHelper.ApplyTheme(theme);
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
-        // Pre-warm DiscoverViewModel and image cache
-        _ = _host.Services.GetRequiredService<DiscoverViewModel>().LoadCategoriesAsync();
-
-        var svcForImages = _host.Services.GetRequiredService<IStationService>();
+        // Heavy stations.db init, session restore, and pre-warm run in the background
+        // so the window appears immediately instead of waiting on the 80 MB database.
         _ = Task.Run(async () =>
         {
-            var categories = await svcForImages.GetCategoriesWithGroupsAsync();
-            foreach (var cat in categories)
-                foreach (var g in cat.Groups)
-                    GroupImageHelper.GetImage(g.Name);
-        });
+            try
+            {
+                // Initialise stations.db schema (safe on every launch)
+                var stationsDbFactory = _host.Services.GetRequiredService<IDbContextFactory<StationsDbContext>>();
+                using (var stationsDb = stationsDbFactory.CreateDbContext())
+                    await DatabaseInitService.InitialiseAsync(stationsDb);
 
-        // Pre-compile EF query shapes
-        var svc = _host.Services.GetRequiredService<IStationService>();
-        _ = Task.Run(() => svc.GetStationsByGroupAsync(0, 0, 1));
-        _ = Task.Run(() => svc.GetFeaturedStationsByGroupAsync(0));
+                await RestoreSessionAsync(skipTheme: true);
+
+                // Pre-warm DiscoverViewModel and image cache (must run after schema init)
+                await Current.Dispatcher.InvokeAsync(() =>
+                    _ = _host.Services.GetRequiredService<DiscoverViewModel>().LoadCategoriesAsync());
+
+                var svcForImages = _host.Services.GetRequiredService<IStationService>();
+                var categories = await svcForImages.GetCategoriesWithGroupsAsync();
+                foreach (var cat in categories)
+                    foreach (var g in cat.Groups)
+                        GroupImageHelper.GetImage(g.Name);
+
+                // Pre-compile EF query shapes
+                var svc = _host.Services.GetRequiredService<IStationService>();
+                await Task.WhenAll(
+                    svc.GetStationsByGroupAsync(0, 0, 1),
+                    svc.GetFeaturedStationsByGroupAsync(0));
+            }
+            catch (Exception ex)
+            {
+                // Nothing here is fatal on its own, but a silent failure leaves the app
+                // with no categories and no restored session and no way to find out why.
+                Log.Error(ex, "Background startup initialisation failed");
+            }
+        });
 
         base.OnStartup(e);
     }
@@ -234,24 +252,27 @@ public partial class App : Application
         }
     }
 
-    private async Task RestoreSessionAsync()
+    private async Task RestoreSessionAsync(bool skipTheme = false)
     {
         var stationService = _host.Services.GetRequiredService<IStationService>();
         var miniPlayer = _host.Services.GetRequiredService<MiniPlayerViewModel>();
 
-        // Theme
-        var theme = await stationService.GetSettingAsync("Theme") ?? "Dark";
-        ThemeHelper.ApplyTheme(theme);
+        // Theme (already applied before Show() when skipTheme is true)
+        if (!skipTheme)
+        {
+            var theme = await stationService.GetSettingAsync("Theme") ?? "Dark";
+            ThemeHelper.ApplyTheme(theme);
+        }
 
         // Clock
         var mainVm = _host.Services.GetRequiredService<MainWindowViewModel>();
-        mainVm.IsClockEnabled = (await stationService.GetSettingAsync("ClockEnabled")) == "true";
+        bool clockEnabled = (await stationService.GetSettingAsync("ClockEnabled")) == "true";
 
         // Volume
-        if (int.TryParse(await stationService.GetSettingAsync("Volume"), out var volume))
-            miniPlayer.Volume = volume;
+        int.TryParse(await stationService.GetSettingAsync("Volume"), out var volume);
 
         // Last played station — only restore if it is a favourite (display only, no auto-play)
+        Models.Station? stationToRestore = null;
         var lastIdStr = await stationService.GetSettingAsync("LastPlayedStationId");
         if (int.TryParse(lastIdStr, out var lastId) && lastId > 0)
         {
@@ -270,10 +291,18 @@ public partial class App : Application
                 if (station != null)
                 {
                     station.IsFavorite = true;
-                    miniPlayer.RestoreStation(station);
+                    stationToRestore = station;
                 }
             }
         }
+
+        // Apply UI state on the dispatcher thread
+        await Current.Dispatcher.InvokeAsync(() =>
+        {
+            mainVm.IsClockEnabled = clockEnabled;
+            if (volume > 0) miniPlayer.Volume = volume;
+            if (stationToRestore != null) miniPlayer.RestoreStation(stationToRestore);
+        });
     }
 
     private async Task SaveSessionAsync()
