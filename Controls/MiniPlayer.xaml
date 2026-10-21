@@ -61,6 +61,12 @@
                            MaxWidth="320"
                            ToolTip="{Binding NowPlayingDisplay}"
                            Visibility="{Binding HasNowPlaying, Converter={StaticResource BoolToVisibilityConverter}}" />
+                <TextBlock Text="{Binding ErrorMessage}"
+                           FontSize="11"
+                           Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="320"
+                           Visibility="{Binding HasErrorMessage, Converter={StaticResource BoolToVisibilityConverter}}" />
             </StackPanel>
         </StackPanel>
 

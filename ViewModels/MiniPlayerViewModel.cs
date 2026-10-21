@@ -63,6 +63,7 @@ public partial class MiniPlayerViewModel : ObservableObject
             {
                 _isStartingPlayback = false;
                 IsPlaying = true;
+                ErrorMessage = null;
                 NowPlayingArtist = null;
                 NowPlayingTitle = null;
                 if (CurrentStation is not null) CurrentStation.IsNowPlaying = true;
@@ -89,6 +90,7 @@ public partial class MiniPlayerViewModel : ObservableObject
                 NowPlayingArtist = null;
                 NowPlayingTitle = null;
                 if (CurrentStation is not null) CurrentStation.IsNowPlaying = false;
+                ErrorMessage = $"{CurrentStation?.Name ?? "Station"} is offline or unavailable";
             });
 
         _playerService.MetadataChanged += OnMetadataChanged;
@@ -119,6 +121,12 @@ public partial class MiniPlayerViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isBuffering;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasErrorMessage))]
+    private string? _errorMessage;
+
+    public bool HasErrorMessage => ErrorMessage is not null;
 
     [ObservableProperty]
     private bool _isMuted;
@@ -173,6 +181,7 @@ public partial class MiniPlayerViewModel : ObservableObject
         StationName = station.Name;
         StationLogoUrl = station.LogoUrl;
         IsFavourite = station.IsFavorite;
+        ErrorMessage = null;
         NowPlayingArtist = null;
         NowPlayingTitle = null;
         _shouldReconnect = true;
