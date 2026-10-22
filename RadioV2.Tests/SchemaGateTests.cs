@@ -83,7 +83,7 @@ public class SchemaGateTests : IDisposable
     public async Task GetFavouritesAsync_WaitsForMigration_AndSucceeds()
     {
         var gate = new SchemaGate();
-        var service = new StationService(_stationsFactory, _userFactory, new NullLogoCache(), gate);
+        var service = new StationService(_stationsFactory, _userFactory, gate);
 
         // Query first, migration second — the order the app now starts in.
         var query = service.GetFavouritesAsync();
@@ -107,7 +107,7 @@ public class SchemaGateTests : IDisposable
         // The gate is an ordering primitive, not an error channel: never completing
         // would turn one bad migration step into a permanently hung app.
         var gate = new SchemaGate();
-        var service = new StationService(_stationsFactory, _userFactory, new NullLogoCache(), gate);
+        var service = new StationService(_stationsFactory, _userFactory, gate);
 
         var query = service.GetFavouritesAsync();
         gate.MarkReady(); // as App's finally block does, migration failure or not
@@ -127,10 +127,4 @@ public class SchemaGateTests : IDisposable
         public TContext CreateDbContext() => (TContext)Activator.CreateInstance(typeof(TContext), options)!;
     }
 
-    private sealed class NullLogoCache : IStationLogoCache
-    {
-        public string? GetCachedPath(int stationId) => null;
-        public Task DownloadAsync(int stationId, string logoUrl, CancellationToken ct = default) => Task.CompletedTask;
-        public void Delete(int stationId) { }
-    }
 }

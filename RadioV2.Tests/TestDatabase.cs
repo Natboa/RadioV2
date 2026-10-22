@@ -60,7 +60,7 @@ internal sealed class TestDatabase : IDisposable
 
         if (openSchemaGate) Gate.MarkReady();
 
-        Service = new StationService(StationsFactory, UserFactory, new NullLogoCache(), Gate);
+        Service = new StationService(StationsFactory, UserFactory, Gate);
         Sql.Clear(); // drop the setup statements so tests see only their own
     }
 
@@ -100,10 +100,4 @@ internal sealed class TestDatabase : IDisposable
         public TContext CreateDbContext() => (TContext)Activator.CreateInstance(typeof(TContext), options)!;
     }
 
-    private sealed class NullLogoCache : IStationLogoCache
-    {
-        public string? GetCachedPath(int stationId) => null;
-        public Task DownloadAsync(int stationId, string logoUrl, CancellationToken ct = default) => Task.CompletedTask;
-        public void Delete(int stationId) { }
-    }
 }

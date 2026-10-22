@@ -96,7 +96,6 @@ public partial class App : Application
 
                 // Services
                 services.AddSingleton<SchemaGate>();
-                services.AddSingleton<IStationLogoCache, StationLogoCache>();
                 services.AddSingleton<IStationService, StationService>();
                 services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
                 services.AddSingleton<IFavouritesIOService, FavouritesIOService>();

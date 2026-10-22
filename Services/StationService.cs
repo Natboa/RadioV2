@@ -12,15 +12,13 @@ public class StationService : IStationService
     public event EventHandler<FavouriteToggledEventArgs>? FavouriteToggled;
     private readonly IDbContextFactory<StationsDbContext> _stationsFactory;
     private readonly IDbContextFactory<UserDbContext> _userFactory;
-    private readonly IStationLogoCache _logoCache;
     private readonly SchemaGate _schema;
     private volatile List<CategoryWithGroups>? _categoriesCache;
 
-    public StationService(IDbContextFactory<StationsDbContext> stationsFactory, IDbContextFactory<UserDbContext> userFactory, IStationLogoCache logoCache, SchemaGate schema)
+    public StationService(IDbContextFactory<StationsDbContext> stationsFactory, IDbContextFactory<UserDbContext> userFactory, SchemaGate schema)
     {
         _stationsFactory = stationsFactory;
         _userFactory = userFactory;
-        _logoCache = logoCache;
         _schema = schema;
     }
 
@@ -181,23 +179,11 @@ public class StationService : IStationService
 
         FavouriteToggled?.Invoke(this, new FavouriteToggledEventArgs(stationId, adding));
 
-        if (adding)
-        {
-            _ = Task.Run(async () =>
-            {
-                using var stDb = await OpenStationsAsync();
-                var logoUrl = await stDb.Stations.AsNoTracking()
-                    .Where(s => s.Id == stationId)
-                    .Select(s => s.LogoUrl)
-                    .FirstOrDefaultAsync();
-                if (!string.IsNullOrEmpty(logoUrl))
-                    await _logoCache.DownloadAsync(stationId, logoUrl);
-            });
-        }
-        else
-        {
-            _logoCache.Delete(stationId);
-        }
+        // Artwork used to be fetched into a second, station-id-keyed cache here.
+        // AsyncImageLoader caches every logo it displays, keyed by URL, so a station
+        // you can see well enough to favourite is already cached — the extra
+        // download, the extra copy on disk and the delete-on-unfavourite were all
+        // duplicating it.
     }
 
     // ── Settings ──────────────────────────────────────────────────────────────

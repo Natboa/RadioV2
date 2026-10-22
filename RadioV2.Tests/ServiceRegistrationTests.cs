@@ -105,7 +105,6 @@ public class ServiceRegistrationTests
         var services = new ServiceCollection();
         services.AddSingleton<IRadioPlayerService, FakePlayerService>();
         services.AddSingleton<IStationService, FakeStationService>();
-        services.AddSingleton<IStationLogoCache, FakeLogoCache>();
         services.AddSingleton<NetworkMonitor>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MiniPlayerViewModel>();
@@ -115,10 +114,4 @@ public class ServiceRegistrationTests
         return services.BuildServiceProvider();
     }
 
-    private sealed class FakeLogoCache : IStationLogoCache
-    {
-        public string? GetCachedPath(int stationId) => null;
-        public Task DownloadAsync(int stationId, string logoUrl, CancellationToken ct = default) => Task.CompletedTask;
-        public void Delete(int stationId) { }
-    }
 }
