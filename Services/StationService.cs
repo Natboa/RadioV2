@@ -46,7 +46,14 @@ public class StationService : IStationService
     public async Task<List<Station>> GetStationsAsync(int skip, int take, string? searchQuery = null, CancellationToken ct = default)
     {
         using var db = _stationsFactory.CreateDbContext();
-        var query = db.Stations.AsNoTracking().Where(s => !s.IsFeatured);
+        // Do NOT simplify this to !s.IsFeatured or s.IsFeatured == false. EF Core 8
+        // folds both into NOT ("s"."IsFeatured"), which SQLite cannot use as an
+        // equality constraint — the plan degrades to a scan plus a temp b-tree sort
+        // (17 ms per page against 0.1 ms). Comparing against a variable emits
+        // "IsFeatured" = @p, which SEARCHes idx_stations_feat_name.
+        // Verified with EXPLAIN QUERY PLAN; pinned by StationServiceQueryTests.
+        var notFeatured = false;
+        var query = db.Stations.AsNoTracking().Where(s => s.IsFeatured == notFeatured);
         if (!string.IsNullOrWhiteSpace(searchQuery))
             query = query.Where(s => EF.Functions.Like(s.Name, $"%{searchQuery}%"));
         var stations = await query.OrderBy(s => s.Name).Skip(skip).Take(take).ToListAsync(ct);
@@ -107,7 +114,9 @@ public class StationService : IStationService
     {
         using var db = _stationsFactory.CreateDbContext();
         bool hasQuery = !string.IsNullOrWhiteSpace(searchQuery);
-        var query = db.Stations.AsNoTracking().Where(s => s.GroupId == groupId && (hasQuery || !s.IsFeatured));
+        // See GetStationsAsync — the variable is what makes this an indexable equality.
+        var notFeatured = false;
+        var query = db.Stations.AsNoTracking().Where(s => s.GroupId == groupId && (hasQuery || s.IsFeatured == notFeatured));
         if (hasQuery)
             query = query.Where(s => EF.Functions.Like(s.Name, $"%{searchQuery}%"));
         var stations = await query.OrderByDescending(s => s.LogoUrl != null && s.LogoUrl != "").ThenBy(s => s.Name).Skip(skip).Take(take).ToListAsync(ct);

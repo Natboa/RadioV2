@@ -39,7 +39,13 @@ public static class DatabaseInitService
         await db.Database.ExecuteSqlRawAsync(
             "CREATE INDEX IF NOT EXISTS idx_stations_groupid ON Stations(GroupId);");
 
-        // 5. If the old single "Countries & Regions" category exists, wipe all categories
+        // 5. Covering index for the Browse page. Without it, listing stations was a
+        //    full scan of 138,925 rows plus a temp b-tree sort on every page:
+        //    43 ms for page 1 and 72 ms for page 100, versus ~0.1 ms with it.
+        await db.Database.ExecuteSqlRawAsync(
+            "CREATE INDEX IF NOT EXISTS idx_stations_feat_name ON Stations(IsFeatured, Name);");
+
+        // 6. If the old single "Countries & Regions" category exists, wipe all categories
         //    so SeedAsync re-runs with the new Europe / Americas / Asia split.
         bool hasOldCountries = await db.Categories.AnyAsync(c => c.Name == "Countries & Regions");
         if (hasOldCountries)
@@ -48,10 +54,10 @@ public static class DatabaseInitService
             await db.Database.ExecuteSqlRawAsync("DELETE FROM Categories");
         }
 
-        // 6. Seed the 11 categories and link groups to them (skips if already done)
+        // 7. Seed the 11 categories and link groups to them (skips if already done)
         await CategorySeeder.SeedAsync(db);
 
-        // 7. Re-apply DisplayOrder in case the category order was changed after initial seeding
+        // 8. Re-apply DisplayOrder in case the category order was changed after initial seeding
         var orderMap = new (string Name, int Order)[]
         {
             ("Rock & Metal",               0),
