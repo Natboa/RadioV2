@@ -39,9 +39,10 @@ public static class AsyncImageLoader
     private static readonly SemaphoreSlim _gate = new(MaxConcurrentDownloads, MaxConcurrentDownloads);
     private static readonly ConditionalWeakTable<Image, CancellationTokenSource> _inFlight = new();
 
-    private static readonly string _cacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RadioV2", "ImageCache");
+    private static readonly string _appDataRoot = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RadioV2");
+
+    private static readonly string _cacheDir = Path.Combine(_appDataRoot, "ImageCache");
 
     // ── Attached property ─────────────────────────────────────────────────────
 
@@ -104,11 +105,27 @@ public static class AsyncImageLoader
 
     private static async Task<BitmapImage?> LoadAsync(string url, CancellationToken ct)
     {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return null;
+
         // Already a local file (a favourite whose logo was cached previously).
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.IsFile)
-            return File.Exists(uri.LocalPath)
-                ? await Task.Run(() => Decode(File.ReadAllBytes(uri.LocalPath)), ct)
-                : null;
+        if (uri.IsFile)
+        {
+            if (!IsAllowedLocalFile(uri, out var localPath))
+            {
+                Log.Warning("image: refusing local path from station data {Url}", LogRedaction.Url(url));
+                return null;
+            }
+
+            return await Task.Run(() => DecodeLocalFile(localPath), ct);
+        }
+
+        // Station artwork URLs come from the database, and M3U import lets anyone put
+        // anything in there. Anything but http(s) is refused.
+        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+        {
+            Log.Warning("image: refusing scheme {Scheme}", uri.Scheme);
+            return null;
+        }
 
         var cachePath = CachePathFor(url);
         if (File.Exists(cachePath))
@@ -169,6 +186,50 @@ public static class AsyncImageLoader
         {
             Log.Debug(ex, "image: could not cache to {Path}", path);
         }
+    }
+
+    /// <summary>
+    /// A <c>file:</c> URL is only honoured when it resolves inside the app's own data
+    /// folder.
+    ///
+    /// <para>
+    /// This matters because the URL is not ours: <c>Station.DisplayLogoSource</c>
+    /// falls back to <c>LogoUrl</c>, which comes from the database, and M3U import
+    /// writes whatever <c>tvg-logo</c> the playlist contained. Without this check a
+    /// crafted playlist could read an arbitrary local file, or — far worse on
+    /// Windows — point at a UNC path and make the machine authenticate to the
+    /// attacker's SMB server, handing over an NTLM hash.
+    /// </para>
+    /// </summary>
+    internal static bool IsAllowedLocalFile(Uri uri, out string fullPath)
+    {
+        fullPath = string.Empty;
+
+        // \\host\share authenticates to host before any path check matters.
+        if (uri.IsUnc) return false;
+
+        try
+        {
+            fullPath = Path.GetFullPath(uri.LocalPath);
+        }
+        catch
+        {
+            return false;
+        }
+
+        var root = Path.GetFullPath(_appDataRoot);
+        if (!root.EndsWith(Path.DirectorySeparatorChar))
+            root += Path.DirectorySeparatorChar;
+
+        // GetFullPath has already collapsed any ".." segments.
+        return fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static BitmapImage? DecodeLocalFile(string path)
+    {
+        var info = new FileInfo(path);
+        if (!info.Exists || info.Length > MaxBytes) return null;
+        return Decode(File.ReadAllBytes(path));
     }
 
     /// <summary>Decodes at display size and freezes so the bitmap can cross threads.</summary>
