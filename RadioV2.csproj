@@ -40,12 +40,15 @@
   <ItemGroup>
     <Compile Remove="RadioV2.Core\**\*" />
     <Compile Remove="RadioV2.DevTool\**\*" />
+    <Compile Remove="RadioV2.Tests\**\*" />
     <Compile Remove="files to move\**\*" />
     <Page Remove="RadioV2.Core\**\*" />
     <Page Remove="RadioV2.DevTool\**\*" />
+    <Page Remove="RadioV2.Tests\**\*" />
     <Page Remove="files to move\**\*" />
     <None Remove="RadioV2.Core\**\*" />
     <None Remove="RadioV2.DevTool\**\*" />
+    <None Remove="RadioV2.Tests\**\*" />
     <None Remove="files to move\**\*" />
   </ItemGroup>
 
