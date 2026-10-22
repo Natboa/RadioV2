@@ -347,6 +347,35 @@ public partial class App : Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         Log.Error(e.Exception, "Unhandled dispatcher exception");
+        TryShowErrorSnackbar(e.Exception);
+
+#if DEBUG
+        // Deliberately not handled in DEBUG: let the debugger break. Carrying on with
+        // corrupted state is how a small bug becomes an unexplained crash later.
+#else
         e.Handled = true;
+#endif
+    }
+
+    /// <summary>
+    /// Best-effort user-visible report. A swallowed exception the user never sees is
+    /// how this app came to have no diagnostics at all.
+    /// </summary>
+    private void TryShowErrorSnackbar(Exception ex)
+    {
+        try
+        {
+            _host.Services.GetService<ISnackbarService>()?.Show(
+                "Something went wrong",
+                ex.Message,
+                Wpf.Ui.Controls.ControlAppearance.Danger,
+                null,
+                TimeSpan.FromSeconds(6));
+        }
+        catch
+        {
+            // The presenter may not be wired yet if this fired during startup.
+            // Error reporting must never throw from inside the error handler.
+        }
     }
 }
