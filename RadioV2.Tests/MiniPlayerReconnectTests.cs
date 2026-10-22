@@ -128,6 +128,40 @@ public class MiniPlayerReconnectTests
     }
 
     [Fact]
+    public void MetadataArrivingBeforePlaying_SurvivesThePlayingEvent()
+    {
+        // VLC delivers ICY metadata during buffering, so it lands before Playing.
+        // Clearing the track info in the PlaybackStarted handler wiped it, and on a
+        // station that holds a track for minutes nothing was shown until the next
+        // song change.
+        var (vm, player) = Create();
+
+        vm.SetStation(Station(1, "A"));
+        player.RaiseMetadata("Pink Floyd - Time");
+        player.RaiseStarted();
+
+        Assert.Equal("Pink Floyd", vm.NowPlayingArtist);
+        Assert.Equal("Time", vm.NowPlayingTitle);
+    }
+
+    [Fact]
+    public void SwitchingStation_ClearsThePreviousTrack()
+    {
+        // The other half: removing the clear from PlaybackStarted must not let one
+        // station's track linger on the next.
+        var (vm, player) = Create();
+
+        vm.SetStation(Station(1, "A"));
+        player.RaiseMetadata("Pink Floyd - Time");
+        player.RaiseStarted();
+
+        vm.SetStation(Station(2, "B"));
+
+        Assert.Null(vm.NowPlayingArtist);
+        Assert.Null(vm.NowPlayingTitle);
+    }
+
+    [Fact]
     public void Metadata_IsParsedIntoArtistAndTitle()
     {
         var (vm, player) = Create();

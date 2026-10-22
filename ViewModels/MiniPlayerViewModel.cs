@@ -64,8 +64,15 @@ public partial class MiniPlayerViewModel : ObservableObject
                 Interlocked.Exchange(ref _autoReconnecting, 0);
                 IsPlaying = true;
                 ErrorMessage = null;
-                NowPlayingArtist = null;
-                NowPlayingTitle = null;
+
+                // Deliberately NOT clearing NowPlayingArtist/Title here. VLC delivers
+                // ICY metadata during the HTTP buffering phase, which is before the
+                // Playing event — clearing on Playing wipes the track that has
+                // already arrived, and on a station that holds a track for several
+                // minutes nothing is shown until the next song change.
+                // They are reset by SetStationCore, RestoreStation, PlaybackStopped
+                // and PlaybackError, so stale metadata cannot survive a switch.
+
                 if (CurrentStation is not null) CurrentStation.IsNowPlaying = true;
             });
 
