@@ -1,4 +1,5 @@
 using LibVLCSharp.Shared;
+using RadioV2.Helpers;
 using Serilog;
 
 namespace RadioV2.Services;
@@ -67,20 +68,20 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
         switch (e.Level)
         {
             case LogLevel.Error:
-                Log.Error("vlc[{Module}] {Message}", e.Module, e.Message);
+                Log.Error("vlc[{Module}] {Message}", e.Module, LogRedaction.Scrub(e.Message));
                 break;
             case LogLevel.Warning:
-                Log.Warning("vlc[{Module}] {Message}", e.Module, e.Message);
+                Log.Warning("vlc[{Module}] {Message}", e.Module, LogRedaction.Scrub(e.Message));
                 break;
             default:
-                Log.Debug("vlc[{Module}] {Message}", e.Module, e.Message);
+                Log.Debug("vlc[{Module}] {Message}", e.Module, LogRedaction.Scrub(e.Message));
                 break;
         }
     }
 
     public void Play(string streamUrl)
     {
-        Log.Information("player: play {Url}", streamUrl);
+        Log.Information("player: play {Url}", LogRedaction.Url(streamUrl));
         var old = _currentMedia;
         _currentMedia = new Media(_libVLC, streamUrl, FromType.FromLocation);
         _mediaPlayer.Play(_currentMedia);
