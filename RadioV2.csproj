@@ -8,9 +8,12 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\RadioV2_Logo.ico</ApplicationIcon>
-    <Version>1.0.6</Version>
-    <AssemblyVersion>1.0.6.0</AssemblyVersion>
-    <FileVersion>1.0.6.0</FileVersion>
+    <!-- The app is English-only, but WPF-UI and EF ship localised satellite
+         assemblies for 13 languages — 17 MB of the publish output. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +23,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.142" />
     <PackageReference Include="Serilog" Version="4.3.1" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.*" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23" />
     <PackageReference Include="WPF-UI" Version="4.2.0" />
@@ -40,17 +44,26 @@
   <ItemGroup>
     <Compile Remove="RadioV2.Core\**\*" />
     <Compile Remove="RadioV2.DevTool\**\*" />
+    <Compile Remove="RadioV2.Tests\**\*" />
     <Compile Remove="files to move\**\*" />
     <Page Remove="RadioV2.Core\**\*" />
     <Page Remove="RadioV2.DevTool\**\*" />
+    <Page Remove="RadioV2.Tests\**\*" />
     <Page Remove="files to move\**\*" />
     <None Remove="RadioV2.Core\**\*" />
     <None Remove="RadioV2.DevTool\**\*" />
+    <None Remove="RadioV2.Tests\**\*" />
     <None Remove="files to move\**\*" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="RadioV2.Core\RadioV2.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Lets the tests drive the automatic-reconnect path directly, which is
+         otherwise reachable only through a real network state change. -->
+    <InternalsVisibleTo Include="RadioV2.Tests" />
   </ItemGroup>
 
 </Project>

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,14 +15,23 @@ namespace RadioV2.Helpers;
 /// </summary>
 public static class SmoothScrollHelper
 {
+    /// <summary>Frames without the offset moving before we conclude the target is
+    /// unreachable and stop, rather than render forever trying to get there.</summary>
+    private const int StallFrameLimit = 10;
+
     private sealed class ScrollState
     {
         public double TargetOffset;
         public TimeSpan LastRenderTime = TimeSpan.MinValue;
         public EventHandler? RenderHandler;
+        public double LastOffset = double.NaN;
+        public int StalledFrames;
     }
 
-    private static readonly Dictionary<ScrollViewer, ScrollState> _states = [];
+    // ConditionalWeakTable, not Dictionary: the old static dictionary held a strong
+    // reference to every ScrollViewer it had ever animated, so an abandoned one could
+    // not be collected.
+    private static readonly ConditionalWeakTable<ScrollViewer, ScrollState> _states = new();
 
     // ── Attached property ─────────────────────────────────────────────────────
 
@@ -69,11 +79,12 @@ public static class SmoothScrollHelper
         if (!_states.TryGetValue(sv, out var state))
         {
             state = new ScrollState { TargetOffset = sv.VerticalOffset };
-            _states[sv] = state;
+            _states.Add(sv, state);
         }
 
         // Accumulate — new ticks just shift the target, no animation restart
         state.TargetOffset = Math.Clamp(state.TargetOffset - delta, 0, sv.ScrollableHeight);
+        state.StalledFrames = 0;
 
         if (state.RenderHandler != null) return;
 
@@ -86,17 +97,40 @@ public static class SmoothScrollHelper
             if (rt == state.LastRenderTime) return;
             state.LastRenderTime = rt;
 
-            double current   = sv.VerticalOffset;
+            double current = sv.VerticalOffset;
+
+            // Re-clamp every frame, not just on the wheel event. Infinite scroll
+            // changes ScrollableHeight underneath us, and a target left beyond the
+            // new maximum is never reached — which used to leave this handler
+            // running at 60 fps for the rest of the process's life.
+            state.TargetOffset = Math.Clamp(state.TargetOffset, 0, sv.ScrollableHeight);
+
             double remaining = state.TargetOffset - current;
 
             if (Math.Abs(remaining) < 0.5)
             {
                 sv.ScrollToVerticalOffset(state.TargetOffset);
-                CompositionTarget.Rendering -= handler;
-                state.RenderHandler = null;
-                _states.Remove(sv);
+                Detach(sv, state, handler!);
                 return;
             }
+
+            // Backstop for anything the clamp cannot express: if the offset has not
+            // actually moved for several frames, the target is unreachable whatever
+            // the arithmetic says.
+            if (Math.Abs(current - state.LastOffset) < 0.01)
+            {
+                if (++state.StalledFrames >= StallFrameLimit)
+                {
+                    Detach(sv, state, handler!);
+                    return;
+                }
+            }
+            else
+            {
+                state.StalledFrames = 0;
+            }
+
+            state.LastOffset = current;
 
             // Lerp: close 20% of remaining gap each frame → natural exponential deceleration
             sv.ScrollToVerticalOffset(current + remaining * 0.20);
@@ -107,6 +141,13 @@ public static class SmoothScrollHelper
     }
 
     // ── Cleanup ───────────────────────────────────────────────────────────────
+
+    private static void Detach(ScrollViewer sv, ScrollState state, EventHandler handler)
+    {
+        CompositionTarget.Rendering -= handler;
+        state.RenderHandler = null;
+        _states.Remove(sv);
+    }
 
     private static void OnUnloaded(object sender, RoutedEventArgs e) =>
         StopAnimation((ScrollViewer)sender);

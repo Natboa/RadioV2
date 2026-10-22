@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using RadioV2.Helpers;
 using RadioV2.Models;
 using RadioV2.Services;
+using Serilog;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
@@ -57,6 +58,19 @@ public partial class BrowseViewModel : ObservableObject
     [ObservableProperty] private bool _isHistoryVisible;
     [ObservableProperty] private ObservableCollection<Station> _recentStations = [];
     [ObservableProperty] private bool _isRecentVisible;
+
+    /// <summary>
+    /// Drops the loaded stations when the page is navigated away from. This view
+    /// model is a singleton now, so without this it would hold every page of search
+    /// results for the life of the process. RecentStations is kept — it is capped at
+    /// eight and is what the page shows first on return.
+    /// </summary>
+    public void ReleaseContent()
+    {
+        Stations.Clear();
+        _skip = 0;
+        HasMoreItems = true;
+    }
 
     partial void OnSearchQueryChanged(string value)
     {
@@ -126,7 +140,10 @@ public partial class BrowseViewModel : ObservableObject
             Directory.CreateDirectory(Path.GetDirectoryName(HistoryPath)!);
             File.WriteAllText(HistoryPath, JsonSerializer.Serialize(list));
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "search history: could not save {Path}", HistoryPath);
+        }
     }
 
     private void OnStationStarted(object? sender, Station station)
@@ -149,18 +166,50 @@ public partial class BrowseViewModel : ObservableObject
                 RecentStations.Add(new Station { Id = e.Id, Name = e.Name, StreamUrl = e.StreamUrl, LogoUrl = e.LogoUrl, GroupId = e.GroupId });
             IsRecentVisible = RecentStations.Count > 0 && SearchQuery.Length < 2;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "recents: could not load {Path}", RecentPath);
+        }
     }
+
+    /// <summary>Guards the recents file. Static because the file is a process-wide
+    /// resource, whatever happens to the lifetime of this view model.</summary>
+    private static readonly SemaphoreSlim _recentWriteLock = new(1, 1);
 
     private void SaveRecentStations()
     {
+        // Snapshot on the caller's thread — RecentStations is an ObservableCollection
+        // bound to the UI and must not be enumerated from a worker.
+        var entries = RecentStations
+            .Select(s => new RecentEntry(s.Id, s.Name, s.StreamUrl, s.LogoUrl, s.GroupId))
+            .ToList();
+
+        _ = WriteRecentStationsAsync(entries);
+    }
+
+    private static async Task WriteRecentStationsAsync(List<RecentEntry> entries)
+    {
+        await _recentWriteLock.WaitAsync();
         try
         {
-            var entries = RecentStations.Select(s => new RecentEntry(s.Id, s.Name, s.StreamUrl, s.LogoUrl, s.GroupId)).ToList();
             Directory.CreateDirectory(Path.GetDirectoryName(RecentPath)!);
-            File.WriteAllText(RecentPath, JsonSerializer.Serialize(entries));
+
+            // Write-then-rename: a crash mid-write used to be able to leave a
+            // truncated file that the next launch silently failed to parse.
+            var temporary = RecentPath + ".tmp";
+            await File.WriteAllTextAsync(temporary, JsonSerializer.Serialize(entries));
+            File.Move(temporary, RecentPath, overwrite: true);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // Previously a bare catch {}. With several view models racing the same
+            // file this threw routinely and said nothing.
+            Log.Warning(ex, "recents: could not save {Path}", RecentPath);
+        }
+        finally
+        {
+            _recentWriteLock.Release();
+        }
     }
 
     [RelayCommand]

@@ -290,11 +290,14 @@ public partial class MainWindow : FluentWindow
     {
         if (msg == WM_POWERBROADCAST)
         {
+            // Fire and forget, deliberately. A window procedure must not block, least
+            // of all while Windows is trying to suspend the machine — the old code
+            // called straight into VLC's synchronous Stop() from right here.
             int evt = wParam.ToInt32();
             if (evt == PBT_APMSUSPEND)
-                _miniPlayer.OnSleeping();
+                _ = _miniPlayer.OnSleepingAsync();
             else if (evt == PBT_APMRESUMEAUTOMATIC || evt == PBT_APMRESUMESUSPEND)
-                _miniPlayer.OnWaking();
+                _ = _miniPlayer.OnWakingAsync();
         }
         return IntPtr.Zero;
     }

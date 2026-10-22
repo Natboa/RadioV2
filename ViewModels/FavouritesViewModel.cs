@@ -11,13 +11,11 @@ namespace RadioV2.ViewModels;
 public partial class FavouritesViewModel : ObservableObject
 {
     private readonly IStationService _stationService;
-    private readonly IStationLogoCache _logoCache;
     private readonly MiniPlayerViewModel _miniPlayer;
 
-    public FavouritesViewModel(IStationService stationService, IStationLogoCache logoCache, MiniPlayerViewModel miniPlayer, NetworkMonitor networkMonitor)
+    public FavouritesViewModel(IStationService stationService, MiniPlayerViewModel miniPlayer, NetworkMonitor networkMonitor)
     {
         _stationService = stationService;
-        _logoCache = logoCache;
         _miniPlayer = miniPlayer;
         networkMonitor.ConnectivityChanged += (_, isOnline) =>
         {
@@ -41,6 +39,19 @@ public partial class FavouritesViewModel : ObservableObject
 
     private bool _hasLoaded;
 
+    /// <summary>
+    /// Drops the loaded stations when the page is navigated away from. This view
+    /// model is a singleton now, so without this it would hold every loaded Station
+    /// for the life of the process.
+    /// </summary>
+    public void ReleaseContent()
+    {
+        Favourites.Clear();
+        FavouriteCount = 0;
+        IsLoading = true; // keeps IsEmpty false so the empty state does not flash on return
+        _hasLoaded = false;
+    }
+
     [RelayCommand]
     public async Task LoadFavouritesAsync(bool force = false)
     {
@@ -50,23 +61,8 @@ public partial class FavouritesViewModel : ObservableObject
         var list = await Task.Run(() => _stationService.GetFavouritesAsync());
         Favourites.Clear();
         foreach (var s in list)
-        {
-            s.CachedLogoPath = _logoCache.GetCachedPath(s.Id);
             Favourites.Add(s);
 
-            // Backfill cache for stations favourited before this feature existed
-            if (s.CachedLogoPath is null && !string.IsNullOrEmpty(s.LogoUrl))
-            {
-                var station = s;
-                _ = Task.Run(async () =>
-                {
-                    await _logoCache.DownloadAsync(station.Id, station.LogoUrl!);
-                    var path = _logoCache.GetCachedPath(station.Id);
-                    if (path is not null)
-                        await Application.Current.Dispatcher.InvokeAsync(() => station.CachedLogoPath = path);
-                });
-            }
-        }
         FavouriteCount = Favourites.Count;
         IsLoading = false;
     }

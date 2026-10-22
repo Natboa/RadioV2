@@ -26,7 +26,7 @@
                 VerticalAlignment="Center">
             <Image Stretch="UniformToFill"
                    Width="40" Height="40"
-                   Source="{Binding DisplayLogoSource}" />
+                   helpers:AsyncImageLoader.Source="{Binding LogoUrl}" />
         </Border>
 
         <!-- Station name + group -->

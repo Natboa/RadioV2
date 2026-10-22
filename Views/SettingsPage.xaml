@@ -105,6 +105,30 @@
                 </StackPanel>
             </ui:Card>
 
+            <!-- Diagnostics card -->
+            <ui:Card Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="Diagnostics"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,8"
+                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                    <TextBlock Text="RadioV2 keeps seven days of logs. If a station will not play or the app misbehaves, the log says why."
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12"
+                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                    <ui:Button Appearance="Secondary"
+                               Click="OpenLogFolderButton_Click"
+                               ToolTip="Open the folder containing RadioV2's log files">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="DocumentText24" Margin="0,0,6,0" />
+                            <TextBlock Text="Open Log Folder" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ui:Button>
+                </StackPanel>
+            </ui:Card>
+
             <!-- About card -->
             <ui:Card>
                 <StackPanel>

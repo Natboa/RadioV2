@@ -13,5 +13,6 @@ public partial class FavouritesPage : Page
         DataContext = viewModel;
         InitializeComponent();
         Loaded += async (_, _) => await viewModel.LoadFavouritesAsync();
+        Unloaded += (_, _) => viewModel.ReleaseContent();
     }
 }
