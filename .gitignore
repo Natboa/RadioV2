@@ -33,6 +33,11 @@ libvlc/
 # Database (large binary — will be distributed via release artifact)
 Data/*.db
 
+# SQLite side files. Transient, rewritten constantly, and a stale write-ahead log
+# sitting next to a freshly cloned database is worse than no log at all.
+*.db-wal
+*.db-shm
+
 # Claude Code
 .claude/
 
