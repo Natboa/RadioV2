@@ -1,4 +1,5 @@
 using LibVLCSharp.Shared;
+using Serilog;
 
 namespace RadioV2.Services;
 
@@ -14,10 +15,24 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
         _libVLC = new LibVLC("--no-video");
         _mediaPlayer = new MediaPlayer(_libVLC);
 
-        _mediaPlayer.Playing += (s, e) => PlaybackStarted?.Invoke(this, EventArgs.Empty);
-        _mediaPlayer.Stopped += (s, e) => PlaybackStopped?.Invoke(this, EventArgs.Empty);
+        _libVLC.Log += OnLibVlcLog;
+
+        _mediaPlayer.Playing += (s, e) =>
+        {
+            Log.Information("player: playing");
+            PlaybackStarted?.Invoke(this, EventArgs.Empty);
+        };
+        _mediaPlayer.Stopped += (s, e) =>
+        {
+            Log.Information("player: stopped");
+            PlaybackStopped?.Invoke(this, EventArgs.Empty);
+        };
         _mediaPlayer.Buffering += (s, e) => BufferingChanged?.Invoke(this, e.Cache);
-        _mediaPlayer.EncounteredError += (s, e) => PlaybackError?.Invoke(this, "Stream error");
+        _mediaPlayer.EncounteredError += (s, e) =>
+        {
+            Log.Warning("player: encountered error");
+            PlaybackError?.Invoke(this, "Stream error");
+        };
 
         // ICY metadata: MediaChanged fires when a new station is loaded;
         // MetaChanged fires repeatedly as the station updates track info.
@@ -41,8 +56,31 @@ public class RadioPlayerService : IRadioPlayerService, IDisposable
         };
     }
 
+    /// <summary>
+    /// Forwards LibVLC's own log into Serilog. VLC's Debug and Notice levels are
+    /// extremely chatty while streaming — hundreds of lines a second — so both map to
+    /// Serilog Debug, which release builds drop. Release logs therefore carry only
+    /// VLC's warnings and errors, which is exactly what a dead stream produces.
+    /// </summary>
+    private static void OnLibVlcLog(object? sender, LogEventArgs e)
+    {
+        switch (e.Level)
+        {
+            case LogLevel.Error:
+                Log.Error("vlc[{Module}] {Message}", e.Module, e.Message);
+                break;
+            case LogLevel.Warning:
+                Log.Warning("vlc[{Module}] {Message}", e.Module, e.Message);
+                break;
+            default:
+                Log.Debug("vlc[{Module}] {Message}", e.Module, e.Message);
+                break;
+        }
+    }
+
     public void Play(string streamUrl)
     {
+        Log.Information("player: play {Url}", streamUrl);
         var old = _currentMedia;
         _currentMedia = new Media(_libVLC, streamUrl, FromType.FromLocation);
         _mediaPlayer.Play(_currentMedia);

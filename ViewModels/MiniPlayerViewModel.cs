@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using RadioV2.Helpers;
 using RadioV2.Models;
 using RadioV2.Services;
+using Serilog;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -171,6 +172,7 @@ public partial class MiniPlayerViewModel : ObservableObject
 
     private void SetStationCore(Station station)
     {
+        Log.Information("station: selected {Id} {Name}", station.Id, station.Name);
         if (CurrentStation is not null)
         {
             CurrentStation.IsNowPlaying = false;

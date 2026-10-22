@@ -28,10 +28,21 @@ public partial class App : Application
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "RadioV2", "logs", "log-.txt");
 
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
-            .CreateLogger();
+        // ThreadId is in the template deliberately: whether a call ran on the UI thread
+        // or a worker is the single most useful thing to know when playback hangs.
+        var logConfig = new LoggerConfiguration()
+            .Enrich.WithThreadId()
+            .WriteTo.File(
+                logPath,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7,
+                outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] [T{ThreadId,3}] {Message:lj}{NewLine}{Exception}");
+#if DEBUG
+        logConfig = logConfig.MinimumLevel.Debug();
+#else
+        logConfig = logConfig.MinimumLevel.Information();
+#endif
+        Log.Logger = logConfig.CreateLogger();
 
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             Log.Fatal(e.ExceptionObject as Exception, "Unhandled exception");
@@ -130,9 +141,17 @@ public partial class App : Application
             return;
         }
 
-        Log.Information("RadioV2 starting up");
+        // Phase timings are the acceptance measure for the startup work; cold start was
+        // 27.7 s on v1.0.6 and these lines are how we find out where it went.
+        var startupTimer = System.Diagnostics.Stopwatch.StartNew();
+        void Phase(string name) =>
+            Log.Information("startup: {Phase} at {Elapsed} ms", name, startupTimer.ElapsedMilliseconds);
+
+        Log.Information("RadioV2 {Version} starting up",
+            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown");
 
         await _host.StartAsync();
+        Phase("host started");
 
         // userdata.db must be ready before we read settings (fast — creates empty schema)
         var userDbFactory = _host.Services.GetRequiredService<IDbContextFactory<UserDbContext>>();
@@ -141,14 +160,21 @@ public partial class App : Application
             await userDb.Database.EnsureCreatedAsync();
             await MigrateLegacyFavouritesAsync(userDb);
         }
+        Phase("userdata ready");
 
         // Apply theme before showing the window to avoid a flash
         var stationService = _host.Services.GetRequiredService<IStationService>();
         var theme = await stationService.GetSettingAsync("Theme") ?? "Dark";
         ThemeHelper.ApplyTheme(theme);
+        Phase("theme applied");
 
+        // Constructing MainWindow pulls in MiniPlayerViewModel -> RadioPlayerService
+        // (LibVLC native init) and NetworkMonitor, so this phase is where the
+        // remaining UI-thread startup cost hides.
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+        Phase("main window constructed");
         mainWindow.Show();
+        Phase("window shown");
 
         // Heavy stations.db init, session restore, and pre-warm run in the background
         // so the window appears immediately instead of waiting on the 80 MB database.
@@ -160,8 +186,10 @@ public partial class App : Application
                 var stationsDbFactory = _host.Services.GetRequiredService<IDbContextFactory<StationsDbContext>>();
                 using (var stationsDb = stationsDbFactory.CreateDbContext())
                     await DatabaseInitService.InitialiseAsync(stationsDb);
+                Phase("schema init done");
 
                 await RestoreSessionAsync(skipTheme: true);
+                Phase("session restored");
 
                 // Pre-warm DiscoverViewModel and image cache (must run after schema init)
                 await Current.Dispatcher.InvokeAsync(() =>
@@ -178,6 +206,7 @@ public partial class App : Application
                 await Task.WhenAll(
                     svc.GetStationsByGroupAsync(0, 0, 1),
                     svc.GetFeaturedStationsByGroupAsync(0));
+                Phase("pre-warm done");
             }
             catch (Exception ex)
             {
