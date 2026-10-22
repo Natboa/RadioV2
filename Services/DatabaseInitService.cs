@@ -57,7 +57,11 @@ public static class DatabaseInitService
         // 7. Seed the 11 categories and link groups to them (skips if already done)
         await CategorySeeder.SeedAsync(db);
 
-        // 8. Re-apply DisplayOrder in case the category order was changed after initial seeding
+        // 8. Re-apply DisplayOrder in case the category order was changed after initial
+        //    seeding. This used to issue 11 separate UPDATE transactions against the
+        //    database on every single launch, to set values that are almost always
+        //    already correct. Now it reads first and writes once, only if something
+        //    actually differs — which after a normal seed is never.
         var orderMap = new (string Name, int Order)[]
         {
             ("Rock & Metal",               0),
@@ -72,8 +76,19 @@ public static class DatabaseInitService
             ("Americas",                   9),
             ("Europe",                    10),
         };
-        foreach (var (name, order) in orderMap)
-            await db.Database.ExecuteSqlAsync(
-                $"UPDATE Categories SET DisplayOrder = {order} WHERE Name = {name}");
+        var categories = await db.Categories.ToListAsync();
+        var desiredOrder = orderMap.ToDictionary(e => e.Name, e => e.Order, StringComparer.Ordinal);
+
+        bool changed = false;
+        foreach (var category in categories)
+        {
+            if (!desiredOrder.TryGetValue(category.Name, out var order)) continue;
+            if (category.DisplayOrder == order) continue;
+            category.DisplayOrder = order;
+            changed = true;
+        }
+
+        if (changed)
+            await db.SaveChangesAsync();
     }
 }
