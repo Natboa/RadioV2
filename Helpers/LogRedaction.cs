@@ -39,11 +39,19 @@ public static partial class LogRedaction
     [GeneratedRegex(@"(?<![^\s/])[^\s/@]+:[^\s/@]*@", RegexOptions.Compiled)]
     private static partial Regex UserInfoPattern();
 
-    // Fail-closed: redact the VALUE of every query parameter in leftover text, not just
-    // ones whose name looks secret. A denylist misses session_id, api_key_v2 and
-    // whatever the next provider invents; the parameter names are kept because they are
-    // the useful part for diagnosis.
-    [GeneratedRegex(@"([?&][^\s=&""'<>]+)=[^\s&""'<>]*", RegexOptions.Compiled)]
+    // Two complementary patterns, because either alone leaves a gap.
+    //
+    // Name-based, matched anywhere with no delimiter required, so a bare
+    // "password=x" or "http-password=x" in a VLC config dump is caught. The
+    // surrounding [\w.-]* makes it tolerant of prefixes and suffixes, so session_id
+    // and api_key_v2 match too.
+    [GeneratedRegex(@"(?i)([\w.\-]*(?:token|key|auth|sig|signature|password|passwd|pwd|secret|session|sid)[\w.\-]*)=[^\s&""'<>]*", RegexOptions.Compiled)]
+    private static partial Regex SecretNamePattern();
+
+    // Generic and fail-closed: the value of every parameter after a ? & # or ;
+    // delimiter, whatever its name. Names are kept because they are the useful half
+    // for diagnosis.
+    [GeneratedRegex(@"([?&#;][^\s=&""'<>]+)=[^\s&""'<>]*", RegexOptions.Compiled)]
     private static partial Regex QueryValuePattern();
 
     /// <summary>
@@ -86,6 +94,7 @@ public static partial class LogRedaction
         // recognisable URL token. These run after, as a backstop for text the token
         // pattern did not consume.
         scrubbed = UserInfoPattern().Replace(scrubbed, "***@");
+        scrubbed = SecretNamePattern().Replace(scrubbed, "$1=***");
         scrubbed = QueryValuePattern().Replace(scrubbed, "$1=***");
 
         return scrubbed;

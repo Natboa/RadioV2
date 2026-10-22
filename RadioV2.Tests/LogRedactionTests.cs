@@ -127,6 +127,26 @@ public class LogRedactionTests
         Assert.Contains("?bitrate=***", LogRedaction.Scrub("/live?bitrate=128"));
     }
 
+    [Theory]
+    [InlineData("password=hunter2", "hunter2")]
+    [InlineData("http-password=hunter2", "hunter2")]
+    [InlineData("#access_token=tok999", "tok999")]
+    [InlineData(";token=tok999", "tok999")]
+    [InlineData("Authorization=Bearer-abc", "Bearer-abc")]
+    public void Scrub_RedactsSecretsWithoutAQueryDelimiter(string input, string secret)
+    {
+        var result = LogRedaction.Scrub("vlc access: " + input);
+        Assert.DoesNotContain(secret, result);
+    }
+
+    [Fact]
+    public void Scrub_IsIdempotent()
+    {
+        const string raw = "open failed: http://u:p@host/x?token=abc";
+        var once = LogRedaction.Scrub(raw);
+        Assert.Equal(once, LogRedaction.Scrub(once));
+    }
+
     [Fact]
     public void Scrub_RedactsCredentialsInVlcStyleMessage()
     {
