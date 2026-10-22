@@ -211,6 +211,10 @@ public partial class App : Application
                     svc.GetStationsByGroupAsync(0, 0, 1),
                     svc.GetFeaturedStationsByGroupAsync(0));
                 Phase("pre-warm done");
+
+                // Every station's artwork is cached now, not just favourites', so the
+                // directory needs a ceiling.
+                AsyncImageLoader.TrimCache();
             }
             catch (Exception ex)
             {
