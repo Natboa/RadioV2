@@ -20,6 +20,7 @@ public partial class App : Application
 {
     private readonly IHost _host;
     private Mutex? _mutex;
+    private bool _ownsMutex;
 
     public App()
     {
@@ -136,10 +137,13 @@ public partial class App : Application
         }
         if (!isNew)
         {
+            // This instance never acquired the mutex, so OnExit must not release it.
             MessageBox.Show("RadioV2 is already running.", "RadioV2", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
             return;
         }
+
+        _ownsMutex = true;
 
         // Phase timings are the acceptance measure for the startup work; cold start was
         // 27.7 s on v1.0.6 and these lines are how we find out where it went.
@@ -232,7 +236,17 @@ public partial class App : Application
 
         _host.Dispose();
 
-        _mutex?.ReleaseMutex();
+        if (_ownsMutex)
+        {
+            try
+            {
+                _mutex?.ReleaseMutex();
+            }
+            catch (ApplicationException ex)
+            {
+                Log.Warning(ex, "Could not release the single-instance mutex");
+            }
+        }
         _mutex?.Dispose();
 
         base.OnExit(e);
