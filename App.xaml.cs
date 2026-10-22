@@ -219,16 +219,45 @@ public partial class App : Application
         base.OnStartup(e);
     }
 
-    protected override async void OnExit(ExitEventArgs e)
+    protected override void OnExit(ExitEventArgs e)
     {
         Log.Information("RadioV2 shutting down");
-        await SaveSessionAsync();
+
+        // Deliberately synchronous. As `async void` this returned at its first await
+        // and WPF tore the dispatcher down before the continuation ran, so the session
+        // save often never happened — which is why volume and last station only
+        // sometimes came back.
+        RunToCompletion(SaveSessionAsync, "save session");
+        RunToCompletion(() => _host.StopAsync(), "stop host");
+
+        _host.Dispose();
+
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
-        await _host.StopAsync();
-        _host.Dispose();
-        Log.CloseAndFlush();
+
         base.OnExit(e);
+        Log.CloseAndFlush();
+    }
+
+    /// <summary>
+    /// Runs an async shutdown step to completion with a bounded wait.
+    /// </summary>
+    private static void RunToCompletion(Func<Task> work, string step)
+    {
+        try
+        {
+            // Task.Run so the awaits inside resume on the thread pool. Blocking the UI
+            // thread on a continuation that itself needs the UI thread would deadlock
+            // until the timeout — exactly the failure this method exists to remove.
+            if (!Task.Run(work).Wait(TimeSpan.FromSeconds(5)))
+                Log.Warning("shutdown: {Step} did not finish within 5 s", step);
+            else
+                Log.Debug("shutdown: {Step} done", step);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "shutdown: {Step} failed", step);
+        }
     }
 
     /// <summary>
