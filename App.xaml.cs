@@ -152,7 +152,12 @@ public partial class App : Application
         var userDbFactory = _host.Services.GetRequiredService<IDbContextFactory<UserDbContext>>();
         using (var userDb = userDbFactory.CreateDbContext())
         {
+            // Split out because "userdata ready" is the second largest slice of
+            // startup and it was not obvious how much of it is EF building its model
+            // versus actual disk work.
+            Phase("  userdata context created");
             await userDb.Database.EnsureCreatedAsync();
+            Phase("  userdata schema ensured");
             await MigrateLegacyFavouritesAsync(userDb);
         }
         Phase("userdata ready");
@@ -285,12 +290,17 @@ public partial class App : Application
     /// </summary>
     private async Task MigrateLegacyFavouritesAsync(UserDbContext userDb)
     {
-        if (await userDb.Favourites.AnyAsync()) return;
-
+        // File check first. This is a one-time migration, the legacy file is deleted
+        // once it has run, and almost nobody has one — but the old order asked the
+        // database before asking the filesystem, so every launch paid for a query
+        // (139 ms of a 1.4 s startup, measured) to answer a question a File.Exists
+        // settles in microseconds.
         var appDataDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RadioV2");
         var legacyDbPath = Path.Combine(appDataDir, "radioapp_large_groups.db");
         if (!File.Exists(legacyDbPath)) return;
+
+        if (await userDb.Favourites.AnyAsync()) return;
 
         try
         {
