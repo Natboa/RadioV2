@@ -281,7 +281,7 @@ public partial class App : Application
     /// <summary>
     /// One-time migration: if the legacy single-DB had IsFavorite=1 rows and userdata.db
     /// was just created empty, port those StationIds into UserDbContext.Favourites.
-    /// Uses SQLite ATTACH to avoid opening RadioDbContext.
+    /// Uses SQLite ATTACH so the legacy file is read without an EF model for it.
     /// </summary>
     private async Task MigrateLegacyFavouritesAsync(UserDbContext userDb)
     {
