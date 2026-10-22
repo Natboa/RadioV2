@@ -111,6 +111,23 @@ public class LogRedactionTests
     }
 
     [Fact]
+    public void Scrub_RedactsQueryValuesWithUnrecognisedNames()
+    {
+        // Fail-closed: a name denylist would miss session_id and api_key_v2.
+        var result = LogRedaction.Scrub("open failed: /live?session_id=xyz789&api_key_v2=qqq");
+        Assert.DoesNotContain("xyz789", result);
+        Assert.DoesNotContain("qqq", result);
+        Assert.Contains("session_id=***", result);
+        Assert.Contains("api_key_v2=***", result);
+    }
+
+    [Fact]
+    public void Scrub_KeepsParameterNamesForDiagnosis()
+    {
+        Assert.Contains("?bitrate=***", LogRedaction.Scrub("/live?bitrate=128"));
+    }
+
+    [Fact]
     public void Scrub_RedactsCredentialsInVlcStyleMessage()
     {
         var result = LogRedaction.Scrub("http error: failed to open http://bob:hunter2@radio.example.com/x?key=9");

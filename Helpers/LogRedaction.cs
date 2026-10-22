@@ -39,8 +39,12 @@ public static partial class LogRedaction
     [GeneratedRegex(@"(?<![^\s/])[^\s/@]+:[^\s/@]*@", RegexOptions.Compiled)]
     private static partial Regex UserInfoPattern();
 
-    [GeneratedRegex(@"(?i)\b(token|key|auth|authorization|sig|signature|password|passwd|pwd|secret|session)=[^\s&""'<>]*", RegexOptions.Compiled)]
-    private static partial Regex SecretParamPattern();
+    // Fail-closed: redact the VALUE of every query parameter in leftover text, not just
+    // ones whose name looks secret. A denylist misses session_id, api_key_v2 and
+    // whatever the next provider invents; the parameter names are kept because they are
+    // the useful part for diagnosis.
+    [GeneratedRegex(@"([?&][^\s=&""'<>]+)=[^\s&""'<>]*", RegexOptions.Compiled)]
+    private static partial Regex QueryValuePattern();
 
     /// <summary>
     /// Scheme, host, port and path only — no userinfo, query or fragment. Returns
@@ -78,10 +82,11 @@ public static partial class LogRedaction
         // Whole URLs first, through the single redaction path.
         var scrubbed = UrlTokenPattern().Replace(text, m => Url(m.Value));
 
-        // Then credential pairs and secret-looking parameters that were not part of a
-        // recognisable URL token.
+        // Then credential pairs and query values in whatever was not part of a
+        // recognisable URL token. These run after, as a backstop for text the token
+        // pattern did not consume.
         scrubbed = UserInfoPattern().Replace(scrubbed, "***@");
-        scrubbed = SecretParamPattern().Replace(scrubbed, "$1=***");
+        scrubbed = QueryValuePattern().Replace(scrubbed, "$1=***");
 
         return scrubbed;
     }
