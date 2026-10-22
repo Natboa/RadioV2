@@ -46,10 +46,68 @@ public class LogRedactionTests
     }
 
     [Fact]
-    public void Url_Unparseable_FallsBackToScrubbing()
+    public void Url_Unparseable_IsLabelledNotEchoed()
     {
-        var result = LogRedaction.Url("not a url but user:pw@host is in it");
-        Assert.DoesNotContain("pw@host", result);
+        Assert.Equal("(unparseable url)", LogRedaction.Url("not a url but user:pw@host is in it"));
+    }
+
+    [Fact]
+    public void Url_SchemelessCredentials_DoNotSurviveAsAnOpaqueUri()
+    {
+        // Uri.TryCreate accepts this as scheme "user" with an empty host, so a naive
+        // reconstruct-from-parts echoes the password straight back into the log.
+        var result = LogRedaction.Url("user:pass@host/stream");
+        Assert.DoesNotContain("pass", result);
+        Assert.Equal("(unparseable url)", result);
+    }
+
+    [Fact]
+    public void Url_NonStreamingScheme_IsRejected()
+    {
+        Assert.Equal("(unparseable url)", LogRedaction.Url("file:///C:/secrets/keys.txt"));
+        Assert.Equal("(unparseable url)", LogRedaction.Url("javascript:alert(1)"));
+    }
+
+    [Fact]
+    public void Url_PasswordContainingColon_IsDropped()
+    {
+        var result = LogRedaction.Url("http://user:pa:ss@stream.example.com/live");
+        Assert.DoesNotContain("pa:ss", result);
+        Assert.Equal("http://stream.example.com/live", result);
+    }
+
+    [Fact]
+    public void Url_PasswordContainingAtSign_IsDropped()
+    {
+        // An unencoded '@' inside the password makes Uri.TryCreate fail outright, so
+        // this lands on the unparseable path. Either outcome is acceptable; what
+        // matters is that the password never reaches the log.
+        var result = LogRedaction.Url("http://user:p@ssw0rd@stream.example.com/live");
+        Assert.DoesNotContain("ssw0rd", result);
+        Assert.Equal("(unparseable url)", result);
+    }
+
+    [Fact]
+    public void Url_UserInfoWithoutColon_IsDropped()
+    {
+        var result = LogRedaction.Url("http://sometoken@stream.example.com/live");
+        Assert.DoesNotContain("sometoken", result);
+        Assert.Equal("http://stream.example.com/live", result);
+    }
+
+    [Fact]
+    public void Scrub_PasswordContainingColon_IsRedacted()
+    {
+        var result = LogRedaction.Scrub("auth failed for user:pa:ss@host");
+        Assert.DoesNotContain("pa:ss", result);
+    }
+
+    [Fact]
+    public void Scrub_SecretParameterOutsideAUrl_IsRedacted()
+    {
+        var result = LogRedaction.Scrub("open failed: /live/stream?token=abc123");
+        Assert.DoesNotContain("abc123", result);
+        Assert.Contains("token=***", result);
     }
 
     [Fact]

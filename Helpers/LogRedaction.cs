@@ -9,45 +9,79 @@ namespace RadioV2.Helpers;
 /// credentials. Aggregated station lists do contain URLs with embedded userinfo
 /// (<c>http://user:pass@host/stream</c>) and token query strings, and VLC's own error
 /// messages echo the full URL back verbatim.
+///
+/// <para>
+/// <see cref="Scrub"/> rewrites whole URL tokens through <see cref="Url"/> rather than
+/// pattern-matching credentials itself. One redaction path means there is no second
+/// parser to disagree with the first — the class of bug where a string is safe
+/// according to one and leaky according to the other.
+/// </para>
 /// </summary>
 public static partial class LogRedaction
 {
-    // Matches "user:pass@" at the start of a token — after a slash (so it catches
-    // scheme://user:pass@host) or after whitespace (so it catches a bare user:pass@host
-    // in an unparseable string). The lookbehind stops it matching "http:" in "http://".
-    [GeneratedRegex(@"(?<![^\s/])[^\s/@:]+:[^\s/@:]+@", RegexOptions.Compiled)]
+    /// <summary>
+    /// Schemes a radio stream can legitimately use. Anything else is treated as
+    /// unparseable, because <see cref="Uri.TryCreate(string, UriKind, out Uri)"/>
+    /// happily accepts <c>user:pass@host/path</c> as a URI with scheme "user" — which
+    /// would otherwise be echoed back with the password intact.
+    /// </summary>
+    private static readonly HashSet<string> AllowedSchemes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "http", "https", "rtsp", "rtmp", "rtmps", "mms", "mmsh", "mmst", "icyx", "rtp", "udp"
+    };
+
+    [GeneratedRegex(@"[a-zA-Z][a-zA-Z0-9+.\-]*://[^\s""'<>]+", RegexOptions.Compiled)]
+    private static partial Regex UrlTokenPattern();
+
+    // "user:pass@" at the start of a token. The password class allows ':' so that
+    // user:pa:ss@host is caught too; the lookbehind stops it matching "http:" in
+    // "http://" because '/' is excluded from both classes.
+    [GeneratedRegex(@"(?<![^\s/])[^\s/@]+:[^\s/@]*@", RegexOptions.Compiled)]
     private static partial Regex UserInfoPattern();
 
-    [GeneratedRegex(@"\?[^\s""']*", RegexOptions.Compiled)]
-    private static partial Regex QueryPattern();
+    [GeneratedRegex(@"(?i)\b(token|key|auth|authorization|sig|signature|password|passwd|pwd|secret|session)=[^\s&""'<>]*", RegexOptions.Compiled)]
+    private static partial Regex SecretParamPattern();
 
-    /// <summary>Scheme, host, port and path only — no userinfo, query or fragment.</summary>
+    /// <summary>
+    /// Scheme, host, port and path only — no userinfo, query or fragment. Returns
+    /// <c>(unparseable url)</c> rather than guessing when the input is not a URL in a
+    /// scheme we recognise.
+    /// </summary>
     public static string Url(string? url)
     {
         if (string.IsNullOrWhiteSpace(url)) return "(none)";
 
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        if (!Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri)
+            || !AllowedSchemes.Contains(uri.Scheme)
+            || string.IsNullOrEmpty(uri.Host)
+            || uri.HostNameType == UriHostNameType.Unknown)
         {
-            var port = uri.IsDefaultPort ? string.Empty : $":{uri.Port}";
-            return $"{uri.Scheme}://{uri.Host}{port}{uri.AbsolutePath}";
+            return "(unparseable url)";
         }
 
-        // Unparseable — fall back to pattern scrubbing rather than logging it raw.
-        return Scrub(url);
+        var port = uri.IsDefaultPort ? string.Empty : $":{uri.Port}";
+
+        // Defence in depth: a path should never contain '@'. If it does, the input was
+        // shaped oddly enough that we stop trusting our own parse of it.
+        var path = uri.AbsolutePath.Contains('@') ? "/***" : uri.AbsolutePath;
+
+        return $"{uri.Scheme}://{uri.Host}{port}{path}";
     }
 
     /// <summary>
-    /// Scrubs credentials out of free-form text such as a VLC log line. Query strings
-    /// are only removed from text that looks like it contains a URL, so ordinary
-    /// prose containing a question mark is left alone.
+    /// Scrubs credentials out of free-form text such as a VLC log line.
     /// </summary>
     public static string Scrub(string? text)
     {
         if (string.IsNullOrEmpty(text)) return string.Empty;
 
-        var scrubbed = UserInfoPattern().Replace(text, "***@");
-        if (scrubbed.Contains("://", StringComparison.Ordinal))
-            scrubbed = QueryPattern().Replace(scrubbed, "?***");
+        // Whole URLs first, through the single redaction path.
+        var scrubbed = UrlTokenPattern().Replace(text, m => Url(m.Value));
+
+        // Then credential pairs and secret-looking parameters that were not part of a
+        // recognisable URL token.
+        scrubbed = UserInfoPattern().Replace(scrubbed, "***@");
+        scrubbed = SecretParamPattern().Replace(scrubbed, "$1=***");
 
         return scrubbed;
     }
