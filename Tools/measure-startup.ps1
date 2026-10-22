@@ -118,7 +118,13 @@ Write-Host ("  Working set            : {0,8:N0} MB    (baseline 731,  target < 
 Write-Host ("  Private bytes          : {0,8:N0} MB    (baseline 523,  target < 150)" -f $last.PrivMB)
 Write-Host ("  Handles                : {0,8:N0}       (baseline 2591, target < 800)" -f $last.Handles)
 Write-Host ("  Threads                : {0,8:N0}       (baseline 24-34, not a defect)" -f $last.Threads)
-Write-Host ("  Working set growth     : {0,8:N1} MB    (first to last sample; should be ~0)" -f ($last.WsMB - $samples[0].WsMB))
+# Growth is measured from a settled sample, not from sample 0. The first seconds are
+# still startup — schema init, session restore, pre-warm — and diffing against them
+# reports ordinary startup allocation as a leak. A 10 minute soak that was flat to
+# within 1 MB still showed "76 MB growth" when this diffed against sample 0.
+$settleIndex = [Math]::Min(20, $samples.Count - 1)
+$settled = $samples[$settleIndex]
+Write-Host ("  Working set growth     : {0,8:N1} MB    (from {1}s to end; should be ~0)" -f ($last.WsMB - $settled.WsMB), $settleIndex)
 
 if ($KeepRunning) {
     Write-Host ""
