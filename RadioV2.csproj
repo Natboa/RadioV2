@@ -57,4 +57,10 @@
     <ProjectReference Include="RadioV2.Core\RadioV2.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Lets the tests drive the automatic-reconnect path directly, which is
+         otherwise reachable only through a real network state change. -->
+    <InternalsVisibleTo Include="RadioV2.Tests" />
+  </ItemGroup>
+
 </Project>
