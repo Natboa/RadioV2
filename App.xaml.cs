@@ -195,15 +195,14 @@ public partial class App : Application
                 await RestoreSessionAsync(skipTheme: true);
                 Phase("session restored");
 
-                // Pre-warm DiscoverViewModel and image cache (must run after schema init)
+                // Pre-warm DiscoverViewModel (must run after schema init).
+                //
+                // Group art is deliberately NOT pre-warmed. Eagerly decoding all 123
+                // images cost ~79 MB and a large slice of startup for art the user may
+                // never scroll to; GroupNameToImageConverter loads each one on demand
+                // as its carousel row is realised.
                 await Current.Dispatcher.InvokeAsync(() =>
                     _ = _host.Services.GetRequiredService<DiscoverViewModel>().LoadCategoriesAsync());
-
-                var svcForImages = _host.Services.GetRequiredService<IStationService>();
-                var categories = await svcForImages.GetCategoriesWithGroupsAsync();
-                foreach (var cat in categories)
-                    foreach (var g in cat.Groups)
-                        GroupImageHelper.GetImage(g.Name);
 
                 // Pre-compile EF query shapes
                 var svc = _host.Services.GetRequiredService<IStationService>();
