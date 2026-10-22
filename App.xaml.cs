@@ -95,6 +95,7 @@ public partial class App : Application
                 services.AddSingleton<NetworkMonitor>();
 
                 // Services
+                services.AddSingleton<SchemaGate>();
                 services.AddSingleton<IStationLogoCache, StationLogoCache>();
                 services.AddSingleton<IStationService, StationService>();
                 services.AddSingleton<IRadioPlayerService, RadioPlayerService>();
@@ -187,10 +188,20 @@ public partial class App : Application
             try
             {
                 // Initialise stations.db schema (safe on every launch)
-                var stationsDbFactory = _host.Services.GetRequiredService<IDbContextFactory<StationsDbContext>>();
-                using (var stationsDb = stationsDbFactory.CreateDbContext())
+                try
+                {
+                    var stationsDbFactory = _host.Services.GetRequiredService<IDbContextFactory<StationsDbContext>>();
+                    using var stationsDb = stationsDbFactory.CreateDbContext();
                     await DatabaseInitService.InitialiseAsync(stationsDb);
-                Phase("schema init done");
+                    Phase("schema init done");
+                }
+                finally
+                {
+                    // Release queries waiting on the schema whether or not init
+                    // succeeded — a failure is logged and surfaced by the normal error
+                    // path, but never completing would hang every page forever.
+                    _host.Services.GetRequiredService<SchemaGate>().MarkReady();
+                }
 
                 await RestoreSessionAsync(skipTheme: true);
                 Phase("session restored");

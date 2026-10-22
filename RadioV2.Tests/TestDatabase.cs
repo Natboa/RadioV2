@@ -19,11 +19,17 @@ internal sealed class TestDatabase : IDisposable
 
     public List<string> Sql { get; } = [];
     public StationService Service { get; }
+
+    /// <summary>
+    /// Left open so a test can decide when stations.db reads are allowed to proceed.
+    /// The constructor marks it ready unless <c>openSchemaGate: false</c> is passed.
+    /// </summary>
+    public SchemaGate Gate { get; } = new();
     public IDbContextFactory<StationsDbContext> StationsFactory { get; }
     public IDbContextFactory<UserDbContext> UserFactory { get; }
     public string StationsDbPath { get; }
 
-    public TestDatabase(int stationCount = 2000, int featuredEvery = 50)
+    public TestDatabase(int stationCount = 2000, int featuredEvery = 50, bool openSchemaGate = true)
     {
         _dir = Path.Combine(Path.GetTempPath(), "RadioV2Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_dir);
@@ -52,7 +58,9 @@ internal sealed class TestDatabase : IDisposable
         using (var userDb = UserFactory.CreateDbContext())
             userDb.Database.EnsureCreated();
 
-        Service = new StationService(StationsFactory, UserFactory, new NullLogoCache());
+        if (openSchemaGate) Gate.MarkReady();
+
+        Service = new StationService(StationsFactory, UserFactory, new NullLogoCache(), Gate);
         Sql.Clear(); // drop the setup statements so tests see only their own
     }
 

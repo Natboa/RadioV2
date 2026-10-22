@@ -13,13 +13,25 @@ public class StationService : IStationService
     private readonly IDbContextFactory<StationsDbContext> _stationsFactory;
     private readonly IDbContextFactory<UserDbContext> _userFactory;
     private readonly IStationLogoCache _logoCache;
+    private readonly SchemaGate _schema;
     private volatile List<CategoryWithGroups>? _categoriesCache;
 
-    public StationService(IDbContextFactory<StationsDbContext> stationsFactory, IDbContextFactory<UserDbContext> userFactory, IStationLogoCache logoCache)
+    public StationService(IDbContextFactory<StationsDbContext> stationsFactory, IDbContextFactory<UserDbContext> userFactory, IStationLogoCache logoCache, SchemaGate schema)
     {
         _stationsFactory = stationsFactory;
         _userFactory = userFactory;
         _logoCache = logoCache;
+        _schema = schema;
+    }
+
+    /// <summary>
+    /// Opens a stations.db context, waiting for the schema migration first.
+    /// Every read of stations.db goes through here — see <see cref="SchemaGate"/>.
+    /// </summary>
+    private async Task<StationsDbContext> OpenStationsAsync(CancellationToken ct = default)
+    {
+        await _schema.Ready.WaitAsync(ct);
+        return _stationsFactory.CreateDbContext();
     }
 
     public bool CategoriesAreCached => _categoriesCache is not null;
@@ -45,7 +57,7 @@ public class StationService : IStationService
 
     public async Task<List<Station>> GetStationsAsync(int skip, int take, string? searchQuery = null, CancellationToken ct = default)
     {
-        using var db = _stationsFactory.CreateDbContext();
+        using var db = await OpenStationsAsync(ct);
         // Do NOT simplify this to !s.IsFeatured or s.IsFeatured == false. EF Core 8
         // folds both into NOT ("s"."IsFeatured"), which SQLite cannot use as an
         // equality constraint — the plan degrades to a scan plus a temp b-tree sort
@@ -63,7 +75,7 @@ public class StationService : IStationService
 
     public async Task<List<GroupWithCount>> GetGroupsWithCountsAsync(int skip, int take, CancellationToken ct = default)
     {
-        using var db = _stationsFactory.CreateDbContext();
+        using var db = await OpenStationsAsync(ct);
         return await db.Groups.AsNoTracking()
             .Select(g => new GroupWithCount { Id = g.Id, Name = g.Name, StationCount = g.Stations.Count })
             .OrderBy(g => g.Name)
@@ -76,7 +88,7 @@ public class StationService : IStationService
         if (_categoriesCache is not null)
             return _categoriesCache;
 
-        using var db = _stationsFactory.CreateDbContext();
+        using var db = await OpenStationsAsync(ct);
 
         var counts = await db.Stations
             .AsNoTracking()
@@ -112,7 +124,7 @@ public class StationService : IStationService
 
     public async Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default)
     {
-        using var db = _stationsFactory.CreateDbContext();
+        using var db = await OpenStationsAsync(ct);
         bool hasQuery = !string.IsNullOrWhiteSpace(searchQuery);
         // See GetStationsAsync — the variable is what makes this an indexable equality.
         var notFeatured = false;
@@ -126,7 +138,7 @@ public class StationService : IStationService
 
     public async Task<List<Station>> GetFeaturedStationsByGroupAsync(int groupId, CancellationToken ct = default)
     {
-        using var db = _stationsFactory.CreateDbContext();
+        using var db = await OpenStationsAsync(ct);
         var stations = await db.Stations
             .AsNoTracking()
             .Where(s => s.GroupId == groupId && s.IsFeatured)
@@ -145,7 +157,7 @@ public class StationService : IStationService
         var favIds = await userDb.Favourites.AsNoTracking().Select(f => f.StationId).ToListAsync(ct);
         if (favIds.Count == 0) return [];
 
-        using var stationsDb = _stationsFactory.CreateDbContext();
+        using var stationsDb = await OpenStationsAsync(ct);
         var stations = await stationsDb.Stations.AsNoTracking()
             .Where(s => favIds.Contains(s.Id))
             .OrderBy(s => s.Name)
@@ -173,7 +185,7 @@ public class StationService : IStationService
         {
             _ = Task.Run(async () =>
             {
-                using var stDb = _stationsFactory.CreateDbContext();
+                using var stDb = await OpenStationsAsync();
                 var logoUrl = await stDb.Stations.AsNoTracking()
                     .Where(s => s.Id == stationId)
                     .Select(s => s.LogoUrl)
@@ -212,7 +224,7 @@ public class StationService : IStationService
 
     public async Task<int> BulkImportStationsAsync(List<ParsedStation> stations, CancellationToken ct = default)
     {
-        using var db = _stationsFactory.CreateDbContext();
+        using var db = await OpenStationsAsync(ct);
         var existingUrls = (await db.Stations.AsNoTracking().Select(s => s.StreamUrl).ToListAsync(ct)).ToHashSet();
 
         int added = 0;
@@ -248,7 +260,7 @@ public class StationService : IStationService
 
     public async Task SetStationFeaturedAsync(int stationId, bool isFeatured, CancellationToken ct = default)
     {
-        using var db = _stationsFactory.CreateDbContext();
+        using var db = await OpenStationsAsync(ct);
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"UPDATE Stations SET IsFeatured = {(isFeatured ? 1 : 0)} WHERE Id = {stationId}", ct);
 
