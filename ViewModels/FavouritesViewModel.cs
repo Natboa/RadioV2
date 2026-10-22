@@ -41,6 +41,19 @@ public partial class FavouritesViewModel : ObservableObject
 
     private bool _hasLoaded;
 
+    /// <summary>
+    /// Drops the loaded stations when the page is navigated away from. This view
+    /// model is a singleton now, so without this it would hold every loaded Station
+    /// for the life of the process.
+    /// </summary>
+    public void ReleaseContent()
+    {
+        Favourites.Clear();
+        FavouriteCount = 0;
+        IsLoading = true; // keeps IsEmpty false so the empty state does not flash on return
+        _hasLoaded = false;
+    }
+
     [RelayCommand]
     public async Task LoadFavouritesAsync(bool force = false)
     {

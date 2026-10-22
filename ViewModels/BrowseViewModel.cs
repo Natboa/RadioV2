@@ -58,6 +58,19 @@ public partial class BrowseViewModel : ObservableObject
     [ObservableProperty] private ObservableCollection<Station> _recentStations = [];
     [ObservableProperty] private bool _isRecentVisible;
 
+    /// <summary>
+    /// Drops the loaded stations when the page is navigated away from. This view
+    /// model is a singleton now, so without this it would hold every page of search
+    /// results for the life of the process. RecentStations is kept — it is capped at
+    /// eight and is what the page shows first on return.
+    /// </summary>
+    public void ReleaseContent()
+    {
+        Stations.Clear();
+        _skip = 0;
+        HasMoreItems = true;
+    }
+
     partial void OnSearchQueryChanged(string value)
     {
         IsRecentVisible = value.Length < 2 && RecentStations.Count > 0;

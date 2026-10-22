@@ -36,6 +36,8 @@ public partial class BrowsePage : Page
             if (!viewModel.IsRecentVisible)
                 await viewModel.LoadMoreAsync();
         };
+
+        Unloaded += (_, _) => viewModel.ReleaseContent();
     }
 
     private void TrySetupStationsScrollViewer(BrowseViewModel viewModel)

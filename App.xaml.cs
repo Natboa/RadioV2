@@ -104,19 +104,9 @@ public partial class App : Application
                 services.AddSingleton<ISnackbarService, SnackbarService>();
                 services.AddSingleton<UpdateCheckerService>();
 
-                // ViewModels
-                services.AddSingleton<MainWindowViewModel>();
-                services.AddTransient<BrowseViewModel>();
-                services.AddSingleton<DiscoverViewModel>();
-                services.AddTransient<FavouritesViewModel>();
-                services.AddTransient<SettingsViewModel>();
-                services.AddSingleton<MiniPlayerViewModel>();
-
-                // Pages
-                services.AddTransient<BrowsePage>();
-                services.AddSingleton<DiscoverPage>();
-                services.AddTransient<FavouritesPage>();
-                services.AddTransient<SettingsPage>();
+                // ViewModels and Pages — see ServiceRegistration for why Browse and
+                // Favourites are singletons.
+                services.AddRadioV2ViewModels();
 
                 // Main Window
                 services.AddSingleton<MainWindow>();
