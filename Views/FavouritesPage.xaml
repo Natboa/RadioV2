@@ -9,7 +9,7 @@
       d:DesignHeight="700" d:DesignWidth="900"
       Title="Favourites">
 
-    <Grid Margin="24,16">
+    <Grid Margin="12,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -18,26 +18,17 @@
         <!-- Title -->
         <TextBlock Grid.Row="0"
                    Text="Favourites"
-                   FontSize="28"
-                   FontWeight="SemiBold"
-                   Margin="0,0,0,16"
-                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                   Style="{StaticResource PageTitleText}"
+                   Margin="12,0,0,16" />
 
         <!-- Favourites list -->
         <ListBox Grid.Row="1"
                  ItemsSource="{Binding Favourites}"
+                 ItemContainerStyle="{StaticResource StationRowContainer}"
                  Background="Transparent"
                  BorderThickness="0"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  Visibility="{Binding IsEmpty, Converter={StaticResource BoolToInverseVisibilityConverter}}">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Padding" Value="0" />
-                    <Setter Property="Margin" Value="0,0,16,0" />
-                    <Setter Property="Background" Value="Transparent" />
-                </Style>
-            </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <controls:StationListItem HoverOnlyHeart="True" />

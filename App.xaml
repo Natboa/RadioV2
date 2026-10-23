@@ -10,6 +10,9 @@
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
+                <!-- Converters first: Design.xaml resolves one of them with StaticResource. -->
+                <ResourceDictionary Source="Themes/Converters.xaml" />
+                <ResourceDictionary Source="Themes/Design.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <!-- Smooth mouse-wheel scrolling on every ScrollViewer in the app.
                  The helper only activates when ScrollableHeight > 0, so horizontal-only
@@ -17,17 +20,6 @@
             <Style TargetType="{x:Type ScrollViewer}" BasedOn="{StaticResource {x:Type ScrollViewer}}">
                 <Setter Property="helpers:SmoothScrollHelper.IsEnabled" Value="True" />
             </Style>
-
-            <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
-            <converters:BoolToPlayIconConverter x:Key="BoolToPlayIconConverter" />
-            <converters:BoolToHeartIconConverter x:Key="BoolToHeartIconConverter" />
-            <converters:BoolToHeartColorConverter x:Key="BoolToHeartColorConverter" />
-            <converters:BoolToInverseVisibilityConverter x:Key="BoolToInverseVisibilityConverter" />
-            <converters:StringEqualConverter x:Key="StringEqualConverter" />
-            <converters:BoolToSpeakerIconConverter x:Key="BoolToSpeakerIconConverter" />
-            <converters:GroupNameToImageConverter x:Key="GroupNameToImageConverter" />
-            <converters:BoolToStarIconConverter x:Key="BoolToStarIconConverter" />
-            <converters:BoolToFeaturedTooltipConverter x:Key="BoolToFeaturedTooltipConverter" />
 
             <!-- Override NavigationViewContentPresenter template: keep the DynamicScrollViewer
                  but disable vertical scrolling so pages get a constrained height (enabling

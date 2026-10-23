@@ -1,0 +1,21 @@
+<!--
+    Converter instances, in their own dictionary so they are merged before
+    Themes/Design.xaml. Design.xaml's shared card template resolves
+    GroupNameToImageConverter with StaticResource, and a merged dictionary
+    cannot see resources declared later in the dictionary that owns it.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:RadioV2.Converters">
+
+    <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <converters:BoolToPlayIconConverter x:Key="BoolToPlayIconConverter" />
+    <converters:BoolToHeartIconConverter x:Key="BoolToHeartIconConverter" />
+    <converters:BoolToInverseVisibilityConverter x:Key="BoolToInverseVisibilityConverter" />
+    <converters:StringEqualConverter x:Key="StringEqualConverter" />
+    <converters:BoolToSpeakerIconConverter x:Key="BoolToSpeakerIconConverter" />
+    <converters:GroupNameToImageConverter x:Key="GroupNameToImageConverter" />
+    <converters:BoolToStarIconConverter x:Key="BoolToStarIconConverter" />
+    <converters:BoolToFeaturedTooltipConverter x:Key="BoolToFeaturedTooltipConverter" />
+
+</ResourceDictionary>

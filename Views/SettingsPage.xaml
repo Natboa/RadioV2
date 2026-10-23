@@ -17,10 +17,8 @@
         <!-- Title (sticky — outside scroll) -->
         <TextBlock Grid.Row="0"
                    Text="Settings"
-                   FontSize="28"
-                   FontWeight="SemiBold"
-                   Margin="24,16,24,12"
-                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                   Style="{StaticResource PageTitleText}"
+                   Margin="24,16,24,12" />
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="24,0,24,16" MaxWidth="640" HorizontalAlignment="Left">
@@ -29,10 +27,8 @@
             <ui:Card Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Text="Appearance"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,12"
-                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                               Style="{StaticResource GroupHeadingText}"
+                               Margin="0,0,0,12" />
 
                     <DockPanel LastChildFill="False" Margin="0,0,0,12">
                         <TextBlock Text="Theme"
@@ -63,10 +59,8 @@
             <ui:Card Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Text="Favourites"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,4"
-                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                               Style="{StaticResource GroupHeadingText}"
+                               Margin="0,0,0,4" />
                     <TextBlock Text="Import or export your saved stations as an M3U playlist."
                                FontSize="13"
                                TextWrapping="Wrap"
@@ -109,10 +103,8 @@
             <ui:Card Margin="0,0,0,12">
                 <StackPanel>
                     <TextBlock Text="Diagnostics"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,8"
-                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                               Style="{StaticResource GroupHeadingText}"
+                               Margin="0,0,0,8" />
                     <TextBlock Text="RadioV2 keeps seven days of logs. If a station will not play or the app misbehaves, the log says why."
                                FontSize="13"
                                TextWrapping="Wrap"
@@ -133,10 +125,8 @@
             <ui:Card>
                 <StackPanel>
                     <TextBlock Text="About"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,8"
-                               Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                               Style="{StaticResource GroupHeadingText}"
+                               Margin="0,0,0,8" />
                     <TextBlock Text="RadioV2"
                                FontSize="20"
                                FontWeight="Bold"

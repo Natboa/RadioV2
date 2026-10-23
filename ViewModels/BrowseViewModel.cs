@@ -47,6 +47,7 @@ public partial class BrowseViewModel : ObservableObject
     [ObservableProperty] private string _searchQuery = string.Empty;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadingSpinner))]
+    [NotifyPropertyChangedFor(nameof(ShowNoResults))]
     private bool _isLoading;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowLoadingSpinner))]
@@ -54,10 +55,19 @@ public partial class BrowseViewModel : ObservableObject
     [ObservableProperty] private bool _hasMoreItems = true;
 
     public bool ShowLoadingSpinner => IsLoading && IsAtBottom;
+
+    /// <summary>
+    /// A search that returned nothing. Re-evaluated when loading finishes, which
+    /// is the point at which <see cref="Stations"/> is settled for that query.
+    /// </summary>
+    public bool ShowNoResults =>
+        !IsLoading && !IsRecentVisible && SearchQuery.Length >= 2 && Stations.Count == 0;
     [ObservableProperty] private ObservableCollection<string> _historyItems = [];
     [ObservableProperty] private bool _isHistoryVisible;
     [ObservableProperty] private ObservableCollection<Station> _recentStations = [];
-    [ObservableProperty] private bool _isRecentVisible;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowNoResults))]
+    private bool _isRecentVisible;
 
     /// <summary>
     /// Drops the loaded stations when the page is navigated away from. This view

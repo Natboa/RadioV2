@@ -424,8 +424,8 @@ public partial class App : Application
             _host.Services.GetService<ISnackbarService>()?.Show(
                 "Something went wrong",
                 ex.Message,
-                Wpf.Ui.Controls.ControlAppearance.Danger,
-                null,
+                Wpf.Ui.Controls.ControlAppearance.Secondary,
+                new Wpf.Ui.Controls.SymbolIcon(Wpf.Ui.Controls.SymbolRegular.Warning24),
                 TimeSpan.FromSeconds(6));
         }
         catch

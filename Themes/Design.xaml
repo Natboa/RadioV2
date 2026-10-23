@@ -1,0 +1,97 @@
+<!--
+    Design.xaml — shared visual language for the Browse, Favourites and
+    Settings pages.
+
+    Everything here paints from WPF-UI Fluent semantic brushes, which is what
+    keeps Mica and light/dark correct. The one deliberate exception in the app
+    is the accent itself, seeded in ThemeHelper.
+
+    The Discover page deliberately does NOT use anything from this file. A
+    shared group-card template lived here and was reverted on 2026-10-23: the
+    carousel realizes every card in every row at once (a plain ItemsControl
+    over a StackPanel, no virtualization), so any per-card cost added there
+    multiplies across the whole page and showed up as slow loading. Discover
+    keeps its own self-contained templates; leave it that way unless the
+    carousel is virtualized first.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+    <!-- ══ Type scale ═══════════════════════════════════════════════════════
+         Three steps. Before this the app used 28/20/16/15/14/13/12/11 with
+         SemiBold on nearly all of them, so weight carried hierarchy that size
+         should have been carrying.                                           -->
+    <Style x:Key="PageTitleText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="GroupHeadingText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="CaptionText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+    </Style>
+
+    <!-- ══ Station row ══════════════════════════════════════════════════════
+         The primary interaction surface of the Browse and Favourites lists,
+         and until now it had no pointer feedback at all: both pages set
+         Background=Transparent on the container with no triggers, so rows
+         never responded to hover.                                            -->
+    <Style x:Key="StationRowContainer" TargetType="ListBoxItem">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0,1,16,1" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="RowBorder"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="6"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RowBorder" Property="Background"
+                                    Value="{ui:ThemeResource ControlFillColorDefaultBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="RowBorder" Property="Background"
+                                    Value="{ui:ThemeResource ControlFillColorSecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="RowBorder" Property="Background"
+                                    Value="{ui:ThemeResource ControlFillColorSecondaryBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ══ Notifications ════════════════════════════════════════════════════
+         WPF-UI's Danger appearance paints a saturated slab the full width of
+         the window. A station being offline is an ordinary outcome and does
+         not warrant that, so the call sites use Secondary and the meaning is
+         carried by an icon. This restyles the surface into a proper elevated
+         card rather than a coloured bar.                                     -->
+    <Style TargetType="ui:Snackbar">
+        <Setter Property="Background" Value="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{ui:ThemeResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Padding" Value="16,14" />
+    </Style>
+
+</ResourceDictionary>

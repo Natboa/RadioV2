@@ -75,9 +75,18 @@ public partial class MainWindow : FluentWindow
             Dispatcher.BeginInvoke(() =>
             {
                 var message = string.IsNullOrEmpty(stationName)
-                    ? "Stream error. The station may be offline."
-                    : $"Could not play {stationName}. The stream may be offline.";
-                _snackbarService.Show("Playback Error", message, ControlAppearance.Danger, null, TimeSpan.FromSeconds(5));
+                    ? "The stream did not respond. Try another station."
+                    : $"{stationName} did not respond. Try another station.";
+
+                // Secondary, not Danger: a station being offline is an ordinary
+                // outcome, and Danger paints a full-bleed red slab across the
+                // window for it. The icon carries the meaning instead.
+                _snackbarService.Show(
+                    "Station unavailable",
+                    message,
+                    ControlAppearance.Secondary,
+                    new SymbolIcon(SymbolRegular.PlugDisconnected24),
+                    TimeSpan.FromSeconds(5));
             });
         };
 

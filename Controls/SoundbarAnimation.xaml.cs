@@ -29,9 +29,13 @@ public partial class SoundbarAnimation : System.Windows.Controls.UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        // Set bar color at runtime to avoid ThemeResource in XAML
-        var brush = SystemParameters.WindowGlassBrush as System.Windows.Media.Brush
-            ?? new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 120, 215));
+        // The now-playing station name beside these bars is painted with
+        // AccentTextFillColorPrimaryBrush, so the bars have to use the same
+        // brush or the row shows two different "accent" colours side by side.
+        // WindowGlassBrush, which this used before, is the Windows glass
+        // colour and matches neither.
+        var brush = Application.Current?.TryFindResource("AccentTextFillColorPrimaryBrush")
+            as System.Windows.Media.Brush ?? SystemParameters.WindowGlassBrush;
 
         Bar1.Fill = brush;
         Bar2.Fill = brush;

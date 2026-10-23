@@ -39,7 +39,7 @@
                     Margin="8,0">
 
             <Border Width="40" Height="40"
-                    CornerRadius="4"
+                    CornerRadius="6"
                     Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
                     Margin="0,0,10,0">
                 <Image helpers:AsyncImageLoader.Source="{Binding StationLogoUrl}"
@@ -126,7 +126,7 @@
                                    Visibility="{Binding IsFavourite, Converter={StaticResource BoolToInverseVisibilityConverter}}" />
                     <ui:SymbolIcon Symbol="Heart24"
                                    Filled="True"
-                                   Foreground="Red"
+                                   Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}"
                                    Visibility="{Binding IsFavourite, Converter={StaticResource BoolToVisibilityConverter}}" />
                 </Grid>
             </ui:Button>

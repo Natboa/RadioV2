@@ -10,7 +10,7 @@
              d:DesignHeight="60" d:DesignWidth="600"
              Background="Transparent">
 
-    <Grid Margin="8,4" Background="Transparent">
+    <Grid Margin="12,6" Background="Transparent">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
@@ -20,7 +20,7 @@
         <!-- Logo -->
         <Border Grid.Column="0"
                 Width="40" Height="40"
-                CornerRadius="4"
+                CornerRadius="6"
                 Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
                 Margin="0,0,12,0"
                 VerticalAlignment="Center">
@@ -95,11 +95,11 @@
                 <!-- Plain icon (no button chrome) shown when favourited but not hovering -->
                 <ui:SymbolIcon Symbol="Heart24"
                                Filled="True"
-                               Margin="11,5"
-                               Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}">
+                               Margin="11,5">
                     <ui:SymbolIcon.Style>
                         <Style TargetType="ui:SymbolIcon">
                             <Setter Property="Visibility" Value="Hidden" />
+                            <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorPrimaryBrush}" />
                             <Style.Triggers>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
@@ -167,8 +167,16 @@
                     <ui:SymbolIcon x:Name="HeartIcon"
                                    Symbol="Heart24"
                                    Filled="True"
-                                   RenderTransformOrigin="0.5,0.5"
-                                   Foreground="{Binding IsFavorite, Converter={StaticResource BoolToHeartColorConverter}}">
+                                   RenderTransformOrigin="0.5,0.5">
+                        <ui:SymbolIcon.Style>
+                            <Style TargetType="ui:SymbolIcon">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                        <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:SymbolIcon.Style>
                         <ui:SymbolIcon.RenderTransform>
                             <ScaleTransform />
                         </ui:SymbolIcon.RenderTransform>

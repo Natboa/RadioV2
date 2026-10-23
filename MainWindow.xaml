@@ -100,6 +100,7 @@
                     <TextBlock Text="{Binding CurrentTime}"
                                FontSize="80"
                                FontWeight="Light"
+                               Typography.NumeralAlignment="Tabular"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
@@ -130,15 +131,20 @@
 
         <Border Grid.Row="3" Height="72"
                 Background="{ui:ThemeResource ControlFillColorDefaultBrush}"
+                BorderBrush="{ui:ThemeResource ControlStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
                 CornerRadius="8,8,0,0">
             <controls:MiniPlayer x:Name="MiniPlayerControl" />
         </Border>
 
         <!-- Snackbar presenter for playback errors and notifications -->
+        <!-- Right-aligned and capped: a toast, not a banner across the window. -->
         <ui:SnackbarPresenter x:Name="RootSnackbar"
                               Grid.Row="0" Grid.RowSpan="4"
                               VerticalAlignment="Bottom"
-                              Margin="16,0,16,80" />
+                              HorizontalAlignment="Right"
+                              MaxWidth="420"
+                              Margin="0,0,16,84" />
     </Grid>
 
 </ui:FluentWindow>

@@ -18,10 +18,8 @@
         <!-- Sticky header -->
         <StackPanel Grid.Row="0" Margin="24,16,24,0">
             <TextBlock Text="Browse"
-                       FontSize="28"
-                       FontWeight="SemiBold"
-                       Margin="0,0,0,16"
-                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                       Style="{StaticResource PageTitleText}"
+                       Margin="0,0,0,16" />
 
             <ui:TextBox x:Name="SearchBox"
                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
@@ -65,14 +63,13 @@
 
         <!-- Recent stations (shown when IsRecentVisible) -->
         <StackPanel Grid.Row="1"
-                    Margin="24,8,24,0"
+                    Margin="12,8,12,0"
                     Visibility="{Binding IsRecentVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <TextBlock Text="Recent Stations"
-                       FontSize="16"
-                       FontWeight="SemiBold"
-                       Margin="0,0,0,6"
-                       Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
+                       Style="{StaticResource GroupHeadingText}"
+                       Margin="12,0,0,6" />
             <ListBox ItemsSource="{Binding RecentStations}"
+                     ItemContainerStyle="{StaticResource StationRowContainer}"
                      BorderThickness="0"
                      Background="Transparent"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -80,14 +77,6 @@
                      VirtualizingStackPanel.IsVirtualizing="True"
                      VirtualizingStackPanel.VirtualizationMode="Recycling"
                      VirtualizingStackPanel.ScrollUnit="Pixel">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Padding" Value="0" />
-                        <Setter Property="Margin" Value="0,0,16,0" />
-                        <Setter Property="Background" Value="Transparent" />
-                    </Style>
-                </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <controls:StationListItem />
@@ -103,7 +92,7 @@
 
         <!-- Station list + spinner — Height="*" constrains the ListBox so virtualization works -->
         <Grid Grid.Row="1"
-              Margin="24,0,24,0"
+              Margin="12,0,12,0"
               Visibility="{Binding IsRecentVisible, Converter={StaticResource BoolToInverseVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />   <!-- station list — fixed height enables virtualization -->
@@ -111,6 +100,7 @@
             </Grid.RowDefinitions>
 
             <ListBox x:Name="StationListBox"
+                     ItemContainerStyle="{StaticResource StationRowContainer}"
                      Grid.Row="0"
                      ItemsSource="{Binding Stations}"
                      BorderThickness="0"
@@ -120,14 +110,6 @@
                      VirtualizingStackPanel.IsVirtualizing="True"
                      VirtualizingStackPanel.VirtualizationMode="Recycling"
                      VirtualizingStackPanel.ScrollUnit="Pixel">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Padding" Value="0" />
-                        <Setter Property="Margin" Value="0,0,16,0" />
-                        <Setter Property="Background" Value="Transparent" />
-                    </Style>
-                </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <controls:StationListItem />
@@ -139,6 +121,27 @@
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
             </ListBox>
+
+            <!-- Searched, found nothing. Previously this was blank space. -->
+            <StackPanel Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding ShowNoResults, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ui:SymbolIcon Symbol="Search24"
+                               FontSize="40"
+                               HorizontalAlignment="Center"
+                               Foreground="{ui:ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock Style="{StaticResource GroupHeadingText}"
+                           HorizontalAlignment="Center"
+                           Margin="0,14,0,4"
+                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}">
+                    <Run Text="No stations match &#x201C;" /><Run Text="{Binding SearchQuery, Mode=OneWay}" /><Run Text="&#x201D;" />
+                </TextBlock>
+                <TextBlock Style="{StaticResource CaptionText}"
+                           Text="Try a shorter name, or browse by genre in Discover."
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center" />
+            </StackPanel>
 
             <ui:ProgressRing Grid.Row="1"
                              IsIndeterminate="True"
