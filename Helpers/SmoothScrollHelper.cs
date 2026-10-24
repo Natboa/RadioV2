@@ -71,6 +71,12 @@ public static class SmoothScrollHelper
         // Only intercept vertical scrollers that can actually scroll
         if (sv.ScrollableHeight <= 0) return;
 
+        if (!MotionPreferences.Enabled)
+        {
+            StopAnimation(sv);
+            return; // leave native, immediate wheel handling in control
+        }
+
         e.Handled = true;
 
         // ~3 lines × 16px per notch
@@ -91,6 +97,11 @@ public static class SmoothScrollHelper
         EventHandler? handler = null;
         handler = (_, args) =>
         {
+            if (!sv.IsVisible || !MotionPreferences.Enabled || Window.GetWindow(sv) is { IsActive: false })
+            {
+                Detach(sv, state, handler!);
+                return;
+            }
             var rt = ((RenderingEventArgs)args).RenderingTime;
 
             // Deduplicate: WPF sometimes fires Rendering twice per vsync

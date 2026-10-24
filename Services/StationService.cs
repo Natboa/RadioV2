@@ -120,7 +120,7 @@ public class StationService : IStationService
         return result;
     }
 
-    public async Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default)
+    public async Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default, IReadOnlyCollection<string>? unavailableArtworkUrls = null)
     {
         using var db = await OpenStationsAsync(ct);
         bool hasQuery = !string.IsNullOrWhiteSpace(searchQuery);
@@ -129,22 +129,37 @@ public class StationService : IStationService
         var query = db.Stations.AsNoTracking().Where(s => s.GroupId == groupId && (hasQuery || s.IsFeatured == notFeatured));
         if (hasQuery)
             query = query.Where(s => EF.Functions.Like(s.Name, $"%{searchQuery}%"));
-        var stations = await query.OrderByDescending(s => s.LogoUrl != null && s.LogoUrl != "").ThenBy(s => s.Name).Skip(skip).Take(take).ToListAsync(ct);
+        var stations = await OrderGroup(query, unavailableArtworkUrls).Skip(skip).Take(take).ToListAsync(ct);
         await EnrichWithFavouritesAsync(stations, ct);
         return stations;
     }
 
-    public async Task<List<Station>> GetFeaturedStationsByGroupAsync(int groupId, CancellationToken ct = default)
+    public async Task<List<Station>> GetFeaturedStationsByGroupAsync(int groupId, CancellationToken ct = default, IReadOnlyCollection<string>? unavailableArtworkUrls = null)
     {
         using var db = await OpenStationsAsync(ct);
-        var stations = await db.Stations
+        var query = db.Stations
             .AsNoTracking()
-            .Where(s => s.GroupId == groupId && s.IsFeatured)
-            .OrderByDescending(s => s.LogoUrl != null && s.LogoUrl != "")
-            .ThenBy(s => s.Name)
-            .ToListAsync(ct);
+            .Where(s => s.GroupId == groupId && s.IsFeatured);
+        var stations = await OrderGroup(query, unavailableArtworkUrls).ToListAsync(ct);
         await EnrichWithFavouritesAsync(stations, ct);
         return stations;
+    }
+
+    private static IQueryable<Station> OrderGroup(IQueryable<Station> query, IReadOnlyCollection<string>? failures)
+    {
+        var unavailable = failures?.ToArray() ?? [];
+        // Cheap LIKE guard: parse the path only for SVG candidates. All work stays
+        // in SQL on the selected group, before LIMIT/OFFSET; ID breaks name ties.
+        return query.Select(s => new { Station = s, Url = (s.LogoUrl ?? "").Trim() })
+            .Select(x => new { x.Station, x.Url, Path = x.Url.Contains("?") ? x.Url.Substring(0, x.Url.IndexOf("?")) : x.Url })
+            .Select(x => new { x.Station, x.Url, Path = x.Path.Contains("#") ? x.Path.Substring(0, x.Path.IndexOf("#")) : x.Path })
+            .OrderByDescending(x => x.Station.IsFeatured)
+            .ThenByDescending(x => x.Url != "" &&
+                (EF.Functions.Like(x.Url, "http://%") || EF.Functions.Like(x.Url, "https://%") || EF.Functions.Like(x.Url, "file:///%")) &&
+                (EF.Functions.Like(x.Station.LogoUrl!, "%.svg%") ? !EF.Functions.Like(x.Path, "%.svg") : true) &&
+                (unavailable.Length == 0 || !unavailable.Contains(x.Url)))
+            .ThenBy(x => x.Station.Name).ThenBy(x => x.Station.Id)
+            .Select(x => x.Station);
     }
 
     // ── Favourites ────────────────────────────────────────────────────────────

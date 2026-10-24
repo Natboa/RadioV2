@@ -114,12 +114,9 @@
                                                            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
                                         </Border>
                                         <Image x:Name="GroupImage"
-                                               Stretch="UniformToFill"
+                                               Stretch="Uniform"
                                                RenderTransformOrigin="0.5,0.5"
                                                Source="{Binding Name, Converter={StaticResource GroupNameToImageConverter}}">
-                                            <Image.RenderTransform>
-                                                <ScaleTransform x:Name="ImageScale" />
-                                            </Image.RenderTransform>
                                         </Image>
                                         <ui:Button x:Name="PlayButton"
                                                    Appearance="Primary"
@@ -154,12 +151,6 @@
                                 <EventTrigger RoutedEvent="Border.MouseEnter">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
-                                                             Storyboard.TargetProperty="ScaleX"
-                                                             To="1.06" Duration="0:0:0.2" />
-                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
-                                                             Storyboard.TargetProperty="ScaleY"
-                                                             To="1.06" Duration="0:0:0.2" />
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
                                                                            Storyboard.TargetProperty="Visibility">
                                                 <DiscreteObjectKeyFrame KeyTime="0"
@@ -179,12 +170,6 @@
                                 <EventTrigger RoutedEvent="Border.MouseLeave">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
-                                                             Storyboard.TargetProperty="ScaleX"
-                                                             To="1.0" Duration="0:0:0.15" />
-                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
-                                                             Storyboard.TargetProperty="ScaleY"
-                                                             To="1.0" Duration="0:0:0.15" />
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
                                                                            Storyboard.TargetProperty="Visibility">
                                                 <DiscreteObjectKeyFrame KeyTime="0"

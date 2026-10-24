@@ -1,7 +1,7 @@
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media.Animation;
 using RadioV2.ViewModels;
+using RadioV2.Helpers;
 
 namespace RadioV2.Controls;
 
@@ -10,21 +10,16 @@ public partial class MiniPlayer : System.Windows.Controls.UserControl
     public MiniPlayer()
     {
         InitializeComponent();
-        DataContextChanged += OnDataContextChanged;
+        PlayPauseBtn.PreviewMouseLeftButtonDown += (_, _) => AnimatePress();
+        IsVisibleChanged += (_, _) => { if (!IsVisible) ((Storyboard)Resources["PlayPulse"]).Remove(PlayPauseBtn); };
     }
 
-    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    private void AnimatePress()
     {
-        if (e.OldValue is INotifyPropertyChanged old)
-            old.PropertyChanged -= OnVmPropertyChanged;
-        if (e.NewValue is INotifyPropertyChanged vm)
-            vm.PropertyChanged += OnVmPropertyChanged;
-    }
-
-    private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(MiniPlayerViewModel.IsPlaying))
-            Dispatcher.Invoke(() => ((Storyboard)Resources["PlayPulse"]).Begin(PlayPauseBtn, true));
+        if (IsLoaded && IsVisible
+            && MotionPreferences.Enabled && Window.GetWindow(this) is { IsActive: true })
+            Dispatcher.Invoke(() => ((Storyboard)Resources["PlayPulse"]).Begin(PlayPauseBtn,
+                HandoffBehavior.SnapshotAndReplace, true));
     }
 
     private void FavouriteBtn_Click(object sender, RoutedEventArgs e)

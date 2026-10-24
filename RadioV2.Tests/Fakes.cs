@@ -61,6 +61,8 @@ internal sealed class FakeStationService : IStationService
 {
     public List<Station> Favourites { get; } = [];
     public List<int> Toggled { get; } = [];
+    public Func<int, int, string?, IReadOnlyCollection<string>?, Task<List<Station>>>? GroupLoad { get; set; }
+    public Func<int, Task<List<Station>>>? FeaturedLoad { get; set; }
 
     public event EventHandler<FavouriteToggledEventArgs>? FavouriteToggled;
 
@@ -80,8 +82,8 @@ internal sealed class FakeStationService : IStationService
         => throw new NotSupportedException();
     public Task<List<GroupWithCount>> GetGroupsWithCountsAsync(int skip, int take, CancellationToken ct = default)
         => throw new NotSupportedException();
-    public Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default)
-        => throw new NotSupportedException();
+    public Task<List<Station>> GetStationsByGroupAsync(int groupId, int skip, int take, string? searchQuery = null, CancellationToken ct = default, IReadOnlyCollection<string>? unavailableArtworkUrls = null)
+        => GroupLoad?.Invoke(groupId, skip, searchQuery, unavailableArtworkUrls) ?? throw new NotSupportedException();
     public Task<List<CategoryWithGroups>> GetCategoriesWithGroupsAsync(CancellationToken ct = default)
         => throw new NotSupportedException();
     public Task<string?> GetSettingAsync(string key, CancellationToken ct = default)
@@ -90,8 +92,8 @@ internal sealed class FakeStationService : IStationService
         => throw new NotSupportedException();
     public Task<int> BulkImportStationsAsync(List<ParsedStation> stations, CancellationToken ct = default)
         => throw new NotSupportedException();
-    public Task<List<Station>> GetFeaturedStationsByGroupAsync(int groupId, CancellationToken ct = default)
-        => throw new NotSupportedException();
+    public Task<List<Station>> GetFeaturedStationsByGroupAsync(int groupId, CancellationToken ct = default, IReadOnlyCollection<string>? unavailableArtworkUrls = null)
+        => FeaturedLoad?.Invoke(groupId) ?? Task.FromResult(new List<Station>());
     public Task SetStationFeaturedAsync(int stationId, bool isFeatured, CancellationToken ct = default)
         => throw new NotSupportedException();
 }

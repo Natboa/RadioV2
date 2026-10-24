@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:helpers="clr-namespace:RadioV2.Helpers"
+             xmlns:controls="clr-namespace:RadioV2.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -11,13 +12,13 @@
     <UserControl.Resources>
         <Storyboard x:Key="PlayPulse">
             <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                             From="1" To="1.22" Duration="0:0:0.09" AutoReverse="True">
+                             From="1" To="0.96" Duration="0:0:0.07" AutoReverse="True" FillBehavior="Stop">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                             From="1" To="1.22" Duration="0:0:0.09" AutoReverse="True">
+                             From="1" To="0.96" Duration="0:0:0.07" AutoReverse="True" FillBehavior="Stop">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
@@ -38,14 +39,8 @@
                     VerticalAlignment="Center"
                     Margin="8,0">
 
-            <Border Width="40" Height="40"
-                    CornerRadius="6"
-                    Background="{ui:ThemeResource ControlFillColorSecondaryBrush}"
-                    Margin="0,0,10,0">
-                <Image helpers:AsyncImageLoader.Source="{Binding StationLogoUrl}"
-                       Stretch="UniformToFill"
-                       Width="40" Height="40" />
-            </Border>
+            <controls:StationArtwork Width="40" Height="40" Margin="0,0,10,0"
+                                     Source="{Binding StationLogoUrl}" StationName="{Binding StationName}" />
 
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="{Binding StationName}"
@@ -64,7 +59,7 @@
                            Visibility="{Binding HasNowPlaying, Converter={StaticResource BoolToVisibilityConverter}}" />
                 <TextBlock Text="{Binding ErrorMessage}"
                            FontSize="11"
-                           Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                            TextTrimming="CharacterEllipsis"
                            MaxWidth="320"
                            Visibility="{Binding HasErrorMessage, Converter={StaticResource BoolToVisibilityConverter}}" />
@@ -87,7 +82,7 @@
                        Appearance="Primary"
                        Command="{Binding PlayPauseCommand}"
                        Margin="4,0"
-                       ToolTip="Play / Pause"
+                       ToolTip="{Binding PlayPauseLabel}" AutomationProperties.Name="{Binding PlayPauseLabel}"
                        RenderTransformOrigin="0.5,0.5">
                 <ui:Button.RenderTransform>
                     <ScaleTransform />

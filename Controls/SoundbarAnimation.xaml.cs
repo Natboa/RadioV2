@@ -1,12 +1,14 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using RadioV2.Helpers;
 
 namespace RadioV2.Controls;
 
 public partial class SoundbarAnimation : System.Windows.Controls.UserControl
 {
     private Storyboard? _storyboard;
+    private Window? _window;
 
     public static readonly DependencyProperty IsAnimatingProperty =
         DependencyProperty.Register(
@@ -25,6 +27,19 @@ public partial class SoundbarAnimation : System.Windows.Controls.UserControl
     {
         InitializeComponent();
         Loaded += OnLoaded;
+        Unloaded += (_, _) =>
+        {
+            if (_window is not null)
+            {
+                _window.Activated -= OnWindowChanged;
+                _window.Deactivated -= OnWindowChanged;
+                _window.StateChanged -= OnWindowChanged;
+            }
+            _window = null;
+            SystemParameters.StaticPropertyChanged -= OnMotionPreferenceChanged;
+            _storyboard?.Remove(this);
+        };
+        IsVisibleChanged += (_, _) => UpdateAnimation();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -43,20 +58,38 @@ public partial class SoundbarAnimation : System.Windows.Controls.UserControl
         Bar4.Fill = brush;
         Bar5.Fill = brush;
 
-        // Guard: binding may have resolved before the control was loaded
-        if (IsAnimating)
-            StartAnimation();
-        else
-            Visibility = Visibility.Collapsed;
+        _window = Window.GetWindow(this);
+        SystemParameters.StaticPropertyChanged += OnMotionPreferenceChanged;
+        if (_window is not null)
+        {
+            _window.Activated += OnWindowChanged;
+            _window.Deactivated += OnWindowChanged;
+            _window.StateChanged += OnWindowChanged;
+        }
+        UpdateAnimation();
     }
 
     private static void OnIsAnimatingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (SoundbarAnimation)d;
-        if ((bool)e.NewValue)
-            ctrl.StartAnimation();
-        else
-            ctrl.StopAnimation();
+        ctrl.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
+        ctrl.UpdateAnimation();
+    }
+
+    private void OnWindowChanged(object? sender, EventArgs e) => UpdateAnimation();
+    private void OnMotionPreferenceChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SystemParameters.ClientAreaAnimation)) Dispatcher.Invoke(UpdateAnimation);
+    }
+
+    private void UpdateAnimation()
+    {
+        _storyboard?.Remove(this);
+        if (!IsAnimating || !IsLoaded || !IsVisible) return;
+        if (MotionPreferences.Enabled && _window is { IsActive: true, WindowState: not WindowState.Minimized }) StartAnimation();
+        else // retain the playing indicator without perpetual motion
+            foreach (var bar in new[] { Bar1, Bar2, Bar3, Bar4, Bar5 })
+                ((ScaleTransform)bar.RenderTransform).ScaleY = .5;
     }
 
     private void StartAnimation()
@@ -64,19 +97,6 @@ public partial class SoundbarAnimation : System.Windows.Controls.UserControl
         Visibility = Visibility.Visible;
         _storyboard ??= BuildStoryboard();
         _storyboard.Begin(this, true);
-    }
-
-    private void StopAnimation()
-    {
-        _storyboard?.Stop(this);
-        Visibility = Visibility.Collapsed;
-
-        // Reset bars to collapsed state
-        if (Bar1.RenderTransform is ScaleTransform st1) st1.ScaleY = 0.2;
-        if (Bar2.RenderTransform is ScaleTransform st2) st2.ScaleY = 0.2;
-        if (Bar3.RenderTransform is ScaleTransform st3) st3.ScaleY = 0.2;
-        if (Bar4.RenderTransform is ScaleTransform st4) st4.ScaleY = 0.2;
-        if (Bar5.RenderTransform is ScaleTransform st5) st5.ScaleY = 0.2;
     }
 
     private Storyboard BuildStoryboard()

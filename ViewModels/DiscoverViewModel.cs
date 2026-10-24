@@ -15,7 +15,12 @@ public partial class DiscoverViewModel : ObservableObject
     private readonly IStationService _stationService;
     private readonly MiniPlayerViewModel _miniPlayer;
     private int _groupSkip;
-    private bool _isLoadingStations;
+    private int _generation;
+    private int _loadingGeneration = -1;
+    private bool _preparingGroup;
+    private bool _searchPending;
+    private CancellationTokenSource _visitCts = new();
+    private string[] _artworkSnapshot = [];
     private CancellationTokenSource _searchCts = new();
 
     // Tracks how many items at the start of AllStationItems belong to the featured section
@@ -119,7 +124,11 @@ public partial class DiscoverViewModel : ObservableObject
     {
         if (!IsGroupView || SelectedGroup is null) return;
         _searchCts.Cancel();
-        _searchCts = new CancellationTokenSource();
+        _searchCts.Dispose();
+        _searchCts = CancellationTokenSource.CreateLinkedTokenSource(_visitCts.Token);
+        _generation++;
+        _preparingGroup = false;
+        _searchPending = true;
         _ = DebounceGroupSearchAsync(_searchCts.Token);
     }
 
@@ -128,6 +137,7 @@ public partial class DiscoverViewModel : ObservableObject
         try
         {
             await Task.Delay(300, ct);
+            ct.ThrowIfCancellationRequested();
             GroupStations.Clear();
             _groupSkip = 0;
             HasMoreItems = true;
@@ -149,6 +159,7 @@ public partial class DiscoverViewModel : ObservableObject
                 _featuredSectionSize = 0;
             }
 
+            _searchPending = false;
             await LoadMoreGroupStationsAsync(ct);
         }
         catch (OperationCanceledException) { }
@@ -157,6 +168,16 @@ public partial class DiscoverViewModel : ObservableObject
     [RelayCommand]
     public async Task SelectGroupAsync(GroupWithCount group)
     {
+        _visitCts.Cancel();
+        _visitCts.Dispose();
+        _visitCts = new CancellationTokenSource();
+        _searchCts.Cancel();
+        _searchCts.Dispose();
+        _searchCts = new CancellationTokenSource();
+        var ct = _visitCts.Token;
+        var generation = ++_generation;
+        _artworkSnapshot = StationArtworkCache.Shared.Snapshot();
+        IsGroupView = false; // resetting the query must not schedule a search
         SelectedGroup = group;
         GroupStations.Clear();
         FeaturedStations.Clear();
@@ -166,44 +187,67 @@ public partial class DiscoverViewModel : ObservableObject
         GroupSearchQuery = string.Empty;
         _groupSkip = 0;
         HasMoreItems = true;
+        _searchPending = false;
+        _preparingGroup = true;
+        IsLoading = true;
         IsGroupView = true;
 
-        // Load featured first (fast, small query) so the header is in place before stations arrive.
-        var featured = await Task.Run(() => _stationService.GetFeaturedStationsByGroupAsync(group.Id));
-        if (featured.Count > 0)
+        try
         {
-            AllStationItems.Add(new FeaturedHeaderItem());
-            foreach (var s in featured)
+            // Load featured first (fast, small query) so the header is in place before stations arrive.
+            var snapshot = _artworkSnapshot;
+            var featured = await Task.Run(() => _stationService.GetFeaturedStationsByGroupAsync(group.Id, ct, snapshot), ct);
+            if (ct.IsCancellationRequested || !IsGroupView) return;
+            foreach (var station in featured) FeaturedStations.Add(station);
+            if (featured.Count > 0 && !_searchPending && GroupSearchQuery.Length < 2)
             {
-                AllStationItems.Add(new StationGroupViewItem(s));
-                FeaturedStations.Add(s);
+                AllStationItems.Insert(0, new FeaturedHeaderItem());
+                int index = 1;
+                foreach (var s in featured)
+                {
+                    AllStationItems.Insert(index++, new StationGroupViewItem(s));
+                }
+                AllStationItems.Insert(index, new SectionSeparatorItem());
+                _featuredSectionSize = featured.Count + 2; // header + stations + separator
             }
-            AllStationItems.Add(new SectionSeparatorItem());
-            _featuredSectionSize = featured.Count + 2; // header + stations + separator
-        }
 
-        await LoadMoreGroupStationsAsync();
+            _preparingGroup = false;
+            if (generation != _generation) return;
+            await LoadMoreGroupStationsAsync(ct);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            if (generation == _generation) { _preparingGroup = false; IsLoading = false; }
+        }
     }
 
     [RelayCommand]
     public async Task LoadMoreGroupStationsAsync(CancellationToken ct = default)
     {
-        if (_isLoadingStations || !HasMoreItems || SelectedGroup is null) return;
-        _isLoadingStations = true;
+        if (_preparingGroup || _searchPending || _loadingGeneration == _generation || !IsGroupView || !HasMoreItems || SelectedGroup is null) return;
+        var generation = _generation;
+        _loadingGeneration = generation;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _visitCts.Token, _searchCts.Token);
+        ct = linked.Token;
+        var groupId = SelectedGroup.Id;
+        var snapshot = _artworkSnapshot;
         IsLoading = true;
         try
         {
             var query = GroupSearchQuery.Length >= 2 ? GroupSearchQuery : null;
             var isFirstBatch = _groupSkip == 0;
-            var batch = await Task.Run(() => _stationService.GetStationsByGroupAsync(SelectedGroup.Id, _groupSkip, 30, query, ct), ct);
+            var skip = _groupSkip;
+            var batch = await Task.Run(() => _stationService.GetStationsByGroupAsync(groupId, skip, 30, query, ct, snapshot), ct);
+            if (generation != _generation || ct.IsCancellationRequested) return;
 
             var targetCollection = isFirstBatch ? new ObservableCollection<Station>() : GroupStations;
-            var dispatcher = Application.Current.Dispatcher;
+            var dispatcher = Application.Current?.Dispatcher;
             if (isFirstBatch)
             {
                 GroupStations = targetCollection;
                 // Let the ItemsSource binding fire before we start adding items.
-                await dispatcher.InvokeAsync(() => { }, DispatcherPriority.DataBind);
+                if (dispatcher is not null) await dispatcher.InvokeAsync(() => { }, DispatcherPriority.DataBind);
             }
 
             // Add in ~8 ms chunks, yielding at Loaded priority so render/animation frames
@@ -211,11 +255,12 @@ public partial class DiscoverViewModel : ObservableObject
             var sw = Stopwatch.StartNew();
             foreach (var s in batch)
             {
+                if (generation != _generation || ct.IsCancellationRequested) return;
                 targetCollection.Add(s);
                 AllStationItems.Add(new StationGroupViewItem(s));
                 if (sw.ElapsedMilliseconds >= 8)
                 {
-                    await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
+                    if (dispatcher is not null) await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
                     sw.Restart();
                 }
             }
@@ -225,14 +270,20 @@ public partial class DiscoverViewModel : ObservableObject
         catch (OperationCanceledException) { }
         finally
         {
-            _isLoadingStations = false;
-            IsLoading = false;
+            if (_loadingGeneration == generation) _loadingGeneration = -1;
+            if (generation == _generation) IsLoading = false;
         }
     }
 
     [RelayCommand]
     private void BackToGroups()
     {
+        _visitCts.Cancel();
+        _searchCts.Cancel();
+        _generation++;
+        _searchPending = false;
+        _preparingGroup = false;
+        IsLoading = false;
         IsGroupView = false;
         SelectedGroup = null;
         GroupStations.Clear();

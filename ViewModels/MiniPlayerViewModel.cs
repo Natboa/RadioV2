@@ -97,7 +97,7 @@ public partial class MiniPlayerViewModel : ObservableObject
                 NowPlayingArtist = null;
                 NowPlayingTitle = null;
                 if (CurrentStation is not null) CurrentStation.IsNowPlaying = false;
-                ErrorMessage = $"{CurrentStation?.Name ?? "Station"} is offline or unavailable";
+                ErrorMessage = e == "Audio engine unavailable" ? "Audio engine unavailable" : "Station unavailable right now";
             });
 
         _playerService.MetadataChanged += OnMetadataChanged;
@@ -134,6 +134,7 @@ public partial class MiniPlayerViewModel : ObservableObject
     private string? _nowPlayingTitle;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PlayPauseLabel))]
     private bool _isPlaying;
 
     [ObservableProperty]
@@ -143,10 +144,11 @@ public partial class MiniPlayerViewModel : ObservableObject
     private bool _isBuffering;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasErrorMessage))]
+    [NotifyPropertyChangedFor(nameof(HasErrorMessage), nameof(PlayPauseLabel))]
     private string? _errorMessage;
 
     public bool HasErrorMessage => ErrorMessage is not null;
+    public string PlayPauseLabel => HasErrorMessage ? "Retry station" : IsPlaying ? "Pause" : "Play";
 
     [ObservableProperty]
     private bool _isMuted;
@@ -306,6 +308,7 @@ public partial class MiniPlayerViewModel : ObservableObject
     /// </summary>
     private Task StartPlayback(Station station)
     {
+        ErrorMessage = null;
         Interlocked.Exchange(ref _autoReconnecting, 0);
         _shouldReconnect = true;
         _playerService.Volume = IsMuted ? 0 : Volume;

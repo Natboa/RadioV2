@@ -9,6 +9,9 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
+using System.Windows.Automation.Peers;
+using RadioV2.Models;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 
@@ -34,6 +37,9 @@ public partial class MainWindow : FluentWindow
     private readonly UpdateCheckerService _updateChecker;
     private readonly MiniPlayerViewModel _miniPlayer;
     private string? _latestVersion;
+    private readonly DispatcherTimer _noticeTimer = new() { Interval = TimeSpan.FromSeconds(8) };
+    private Station? _noticeStation;
+    private readonly TransientMessageGate _noticeGate = new();
 
     public MainWindow(MainWindowViewModel viewModel, IServiceProvider serviceProvider, ISnackbarService snackbarService, UpdateCheckerService updateChecker, NetworkMonitor networkMonitor)
     {
@@ -50,6 +56,11 @@ public partial class MainWindow : FluentWindow
 
         _miniPlayer = serviceProvider.GetRequiredService<MiniPlayerViewModel>();
         MiniPlayerControl.DataContext = _miniPlayer;
+        _noticeTimer.Tick += (_, _) =>
+        {
+            if (!PlaybackNotice.IsMouseOver && !PlaybackNotice.IsKeyboardFocusWithin) HidePlaybackNotice();
+        };
+        _miniPlayer.StationStarted += (_, _) => { HidePlaybackNotice(); _noticeGate.Reset(); };
 
         // Media keys
         _mediaKeyHook.PlayPauseCommand = _miniPlayer.PlayPauseCommand;
@@ -71,27 +82,55 @@ public partial class MainWindow : FluentWindow
         var playerService = serviceProvider.GetRequiredService<IRadioPlayerService>();
         playerService.PlaybackError += (s, msg) =>
         {
-            var stationName = _miniPlayer.StationName;
+            var station = _miniPlayer.CurrentStation;
             Dispatcher.BeginInvoke(() =>
             {
-                var message = string.IsNullOrEmpty(stationName)
-                    ? "The stream did not respond. Try another station."
-                    : $"{stationName} did not respond. Try another station.";
-
-                // Secondary, not Danger: a station being offline is an ordinary
-                // outcome, and Danger paints a full-bleed red slab across the
-                // window for it. The icon carries the meaning instead.
-                _snackbarService.Show(
-                    "Station unavailable",
-                    message,
-                    ControlAppearance.Secondary,
-                    new SymbolIcon(SymbolRegular.PlugDisconnected24),
-                    TimeSpan.FromSeconds(5));
+                if (msg == "Audio engine unavailable")
+                {
+                    HidePlaybackNotice();
+                    _snackbarService.Show("Audio engine unavailable", "Restart RadioV2 to try loading the audio engine again.",
+                        ControlAppearance.Danger, new SymbolIcon(SymbolRegular.ErrorCircle24), TimeSpan.FromSeconds(8));
+                    return;
+                }
+                if (station is null || !ReferenceEquals(station, _miniPlayer.CurrentStation)
+                    || !_noticeGate.ShouldShow(station.Id)) return;
+                _noticeStation = station;
+                NoticeMessage.Text = $"{station.Name} is unavailable right now. Try again or choose another station.";
+                PlaybackNotice.Visibility = Visibility.Visible;
+                if (MotionPreferences.Enabled && IsActive)
+                    PlaybackNotice.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(120)) { FillBehavior = FillBehavior.Stop });
+                _noticeTimer.Stop();
+                _noticeTimer.Start();
+                UIElementAutomationPeer.CreatePeerForElement(NoticeMessage)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
             });
         };
+        playerService.PlaybackStarted += (_, _) => Dispatcher.BeginInvoke(HidePlaybackNotice);
 
         SourceInitialized += (_, _) => RestoreWindowPlacement();
         Loaded += OnWindowLoaded;
+    }
+
+    private void HidePlaybackNotice()
+    {
+        _noticeTimer.Stop();
+        PlaybackNotice.BeginAnimation(OpacityProperty, null);
+        PlaybackNotice.Visibility = Visibility.Collapsed;
+        _noticeStation = null;
+    }
+
+    private void OnRetryStation(object sender, RoutedEventArgs e)
+    {
+        var station = _noticeStation;
+        HidePlaybackNotice();
+        _noticeGate.Reset();
+        if (station is not null && ReferenceEquals(station, _miniPlayer.CurrentStation))
+            _miniPlayer.PlayPauseCommand.Execute(null);
+    }
+
+    private void OnDismissNotice(object sender, RoutedEventArgs e) => HidePlaybackNotice();
+    private void OnNoticeKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Escape) { HidePlaybackNotice(); e.Handled = true; }
     }
 
     private void RestoreWindowPlacement()
@@ -227,7 +266,7 @@ public partial class MainWindow : FluentWindow
 
         if (!isOpen && ClockPanel.Visibility == Visibility.Visible)
         {
-            var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(100));
+            var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(MotionPreferences.Enabled ? 100 : 0));
             fadeOut.Completed += (_, _) =>
             {
                 if (!RootNavigation.IsPaneOpen)
@@ -269,6 +308,7 @@ public partial class MainWindow : FluentWindow
 
     protected override void OnClosing(CancelEventArgs e)
     {
+        _noticeTimer.Stop();
         SaveWindowPlacement();
         _mediaKeyHook.Dispose();
         _trayIcon.Dispose();
@@ -315,9 +355,9 @@ public partial class MainWindow : FluentWindow
     {
         if (!isOnline)
             _snackbarService.Show("No Connection", "No internet connection — playback unavailable.",
-                ControlAppearance.Caution, null, TimeSpan.Zero);
+                ControlAppearance.Secondary, null, TimeSpan.FromSeconds(8));
         else
             _snackbarService.Show("Connection Restored", "Internet connection is back.",
-                ControlAppearance.Success, null, TimeSpan.FromSeconds(3));
+                ControlAppearance.Secondary, null, TimeSpan.FromSeconds(3));
     }
 }

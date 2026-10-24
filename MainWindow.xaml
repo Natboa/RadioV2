@@ -145,6 +145,34 @@
                               HorizontalAlignment="Right"
                               MaxWidth="420"
                               Margin="0,0,16,84" />
+
+        <Border x:Name="PlaybackNotice" Grid.Row="0" Grid.RowSpan="4"
+                Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                MaxWidth="420" Margin="16,0,16,84" Padding="14,12" CornerRadius="8"
+                BorderThickness="1" BorderBrush="{ui:ThemeResource CardStrokeColorDefaultBrush}"
+                Background="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}"
+                PreviewKeyDown="OnNoticeKeyDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:SymbolIcon Symbol="Info24" FontSize="18" Margin="0,2,10,0" VerticalAlignment="Top" />
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="Station unavailable" FontWeight="SemiBold" FontSize="13" />
+                    <TextBlock x:Name="NoticeMessage" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                               LineHeight="18" MaxHeight="54" FontSize="13" Margin="0,4,0,10"
+                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
+                               AutomationProperties.LiveSetting="Polite"
+                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                    <ui:Button x:Name="RetryStationButton" Content="Retry" Appearance="Secondary" HorizontalAlignment="Left"
+                               Click="OnRetryStation" AutomationProperties.Name="Retry station" />
+                </StackPanel>
+                <ui:Button Grid.Column="2" Appearance="Transparent" VerticalAlignment="Top" Margin="8,0,0,0"
+                           Click="OnDismissNotice" ToolTip="Dismiss" AutomationProperties.Name="Dismiss notification">
+                    <ui:SymbolIcon Symbol="Dismiss16" FontSize="14" />
+                </ui:Button>
+            </Grid>
+        </Border>
     </Grid>
 
 </ui:FluentWindow>

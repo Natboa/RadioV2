@@ -55,9 +55,28 @@ public static class AsyncImageLoader
 
     public static string? GetSource(DependencyObject obj) => (string?)obj.GetValue(SourceProperty);
 
-    private static async void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static readonly DependencyProperty IsHookedProperty = DependencyProperty.RegisterAttached(
+        "IsHooked", typeof(bool), typeof(AsyncImageLoader), new PropertyMetadata(false));
+
+    private static void OnSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not Image image) return;
+        if (!(bool)image.GetValue(IsHookedProperty))
+        {
+            image.SetValue(IsHookedProperty, true);
+            image.Loaded += OnImageLoaded;
+            image.Unloaded += OnImageUnloaded;
+        }
+        Cancel(image);
+        image.Source = null;
+        if (image.IsLoaded) LoadIntoImage(image);
+    }
+
+    private static void OnImageLoaded(object sender, RoutedEventArgs e) => LoadIntoImage((Image)sender);
+    private static void OnImageUnloaded(object sender, RoutedEventArgs e) => Cancel((Image)sender);
+
+    private static void Cancel(Image image)
+    {
 
         // Cancel whatever this Image was already fetching. Virtualisation recycles
         // containers as the user scrolls, so this is what stops an abandoned row's
@@ -65,13 +84,16 @@ public static class AsyncImageLoader
         if (_inFlight.TryGetValue(image, out var previous))
         {
             previous.Cancel();
-            previous.Dispose();
             _inFlight.Remove(image);
         }
+    }
 
+    private static async void LoadIntoImage(Image image)
+    {
+        Cancel(image);
         image.Source = null;
 
-        if (e.NewValue is not string url || string.IsNullOrWhiteSpace(url)) return;
+        if (GetSource(image) is not string url || string.IsNullOrWhiteSpace(url)) return;
 
         var cts = new CancellationTokenSource();
         _inFlight.Add(image, cts);
@@ -103,8 +125,10 @@ public static class AsyncImageLoader
 
     // ── Loading ───────────────────────────────────────────────────────────────
 
-    private static async Task<BitmapImage?> LoadAsync(string url, CancellationToken ct)
+    internal static async Task<BitmapImage?> LoadAsync(string url, CancellationToken ct)
     {
+        url = url.Trim();
+        if (!StationArtworkCache.Supports(url) || StationArtworkCache.Shared.IsUnavailable(url)) return null;
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return null;
 
         // Already a local file (a favourite whose logo was cached previously).
@@ -116,7 +140,9 @@ public static class AsyncImageLoader
                 return null;
             }
 
-            return await Task.Run(() => DecodeLocalFile(localPath), ct);
+            var local = await Task.Run(() => DecodeLocalFile(localPath), ct);
+            if (local is null && File.Exists(localPath)) StationArtworkCache.Shared.RecordDecodeFailure(url);
+            return local;
         }
 
         // Station artwork URLs come from the database, and M3U import lets anyone put
@@ -129,20 +155,22 @@ public static class AsyncImageLoader
 
         var cachePath = CachePathFor(url);
         if (File.Exists(cachePath))
-            return await Task.Run(() => Decode(File.ReadAllBytes(cachePath)), ct);
+            return await ReadCachedAsync(cachePath, url, ct);
 
         await _gate.WaitAsync(ct);
         try
         {
             // Another row may have fetched the same URL while we queued.
             if (File.Exists(cachePath))
-                return await Task.Run(() => Decode(File.ReadAllBytes(cachePath)), ct);
+                return await ReadCachedAsync(cachePath, url, ct);
 
             var bytes = await DownloadAsync(url, ct);
             if (bytes is null) return null;
 
-            await WriteCacheAsync(cachePath, bytes, ct);
-            return await Task.Run(() => Decode(bytes), ct);
+            var bitmap = await Task.Run(() => Decode(bytes), ct);
+            if (bitmap is null) StationArtworkCache.Shared.RecordDecodeFailure(url);
+            else await WriteCacheAsync(cachePath, bytes, ct);
+            return bitmap;
         }
         finally
         {
@@ -150,11 +178,31 @@ public static class AsyncImageLoader
         }
     }
 
+    private static Task<BitmapImage?> ReadCachedAsync(string path, string url, CancellationToken ct) => Task.Run(() =>
+    {
+        var bitmap = Decode(File.ReadAllBytes(path));
+        if (bitmap is null)
+        {
+            // Do not let an old corrupt/unsupported file poison the disk cache forever.
+            try { File.Delete(path); } catch (IOException) { }
+            StationArtworkCache.Shared.RecordDecodeFailure(url);
+        }
+        return bitmap;
+    }, ct);
+
     private static async Task<byte[]?> DownloadAsync(string url, CancellationToken ct)
     {
         using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-        if (!response.IsSuccessStatusCode) return null;
-        if (response.Content.Headers.ContentLength > MaxBytes) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            StationArtworkCache.Shared.RecordHttpFailure(url, response.StatusCode);
+            return null;
+        }
+        if (response.Content.Headers.ContentLength > MaxBytes)
+        {
+            StationArtworkCache.Shared.RecordDecodeFailure(url);
+            return null;
+        }
 
         using var stream = await response.Content.ReadAsStreamAsync(ct);
         using var buffer = new MemoryStream();
@@ -164,7 +212,11 @@ public static class AsyncImageLoader
         while ((read = await stream.ReadAsync(chunk, ct)) > 0)
         {
             buffer.Write(chunk, 0, read);
-            if (buffer.Length > MaxBytes) return null;
+            if (buffer.Length > MaxBytes)
+            {
+                StationArtworkCache.Shared.RecordDecodeFailure(url);
+                return null;
+            }
         }
 
         return buffer.ToArray();

@@ -96,7 +96,7 @@
                                        <RowDefinition Height="Auto" />
                                    </Grid.RowDefinitions>
 
-                                   <!-- Image area with zoom clip -->
+                                   <!-- Square artwork remains fully visible, including on hover. -->
                                    <Border Grid.Row="0"
                                            ClipToBounds="True">
                                        <Grid>
@@ -112,12 +112,9 @@
 
                                            <!-- Group image -->
                                            <Image x:Name="GroupImage"
-                                                  Stretch="UniformToFill"
+                                                  Stretch="Uniform"
                                                   RenderTransformOrigin="0.5,0.5"
                                                   Source="{Binding Name, Converter={StaticResource GroupNameToImage}}">
-                                               <Image.RenderTransform>
-                                                   <ScaleTransform x:Name="ImageScale" />
-                                               </Image.RenderTransform>
                                            </Image>
 
                                            <!-- Dark-mode dim overlay — reduces brightness of country/region flag images only -->
@@ -176,12 +173,6 @@
                                    <EventTrigger RoutedEvent="Border.MouseEnter">
                                        <BeginStoryboard>
                                            <Storyboard>
-                                               <DoubleAnimation Storyboard.TargetName="ImageScale"
-                                                                Storyboard.TargetProperty="ScaleX"
-                                                                To="1.06" Duration="0:0:0.2" />
-                                               <DoubleAnimation Storyboard.TargetName="ImageScale"
-                                                                Storyboard.TargetProperty="ScaleY"
-                                                                To="1.06" Duration="0:0:0.2" />
                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
                                                                               Storyboard.TargetProperty="Visibility">
                                                    <DiscreteObjectKeyFrame KeyTime="0"
@@ -201,12 +192,6 @@
                                    <EventTrigger RoutedEvent="Border.MouseLeave">
                                        <BeginStoryboard>
                                            <Storyboard>
-                                               <DoubleAnimation Storyboard.TargetName="ImageScale"
-                                                                Storyboard.TargetProperty="ScaleX"
-                                                                To="1.0" Duration="0:0:0.15" />
-                                               <DoubleAnimation Storyboard.TargetName="ImageScale"
-                                                                Storyboard.TargetProperty="ScaleY"
-                                                                To="1.0" Duration="0:0:0.15" />
                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
                                                                               Storyboard.TargetProperty="Visibility">
                                                    <DiscreteObjectKeyFrame KeyTime="0"

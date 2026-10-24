@@ -4,6 +4,7 @@ using System.Windows.Media.Animation;
 using UserControl = System.Windows.Controls.UserControl;
 using ScrollChangedEventArgs = System.Windows.Controls.ScrollChangedEventArgs;
 using Wpf.Ui.Appearance;
+using RadioV2.Helpers;
 
 namespace RadioV2.Controls;
 
@@ -32,7 +33,8 @@ public partial class DiscoverCarouselRow : UserControl
             IsDarkMode = ApplicationThemeManager.GetAppTheme() == ApplicationTheme.Dark;
             ApplicationThemeManager.Changed += OnThemeChanged;
         };
-        Unloaded += (_, _) => ApplicationThemeManager.Changed -= OnThemeChanged;
+        Unloaded += (_, _) => { ApplicationThemeManager.Changed -= OnThemeChanged; StopScroll(); };
+        IsVisibleChanged += (_, _) => { if (!IsVisible) StopScroll(); };
 
         MouseEnter += (_, _) => { _rowHovered = true;  UpdateButtonStates(); };
         MouseLeave += (_, _) => { _rowHovered = false; UpdateButtonStates(); };
@@ -107,6 +109,12 @@ public partial class DiscoverCarouselRow : UserControl
         if (Math.Abs(button.Opacity - target) < 0.01 && button.IsHitTestVisible == show) return;
 
         button.IsHitTestVisible = show;
+        if (!MotionPreferences.Enabled)
+        {
+            button.BeginAnimation(OpacityProperty, null);
+            button.Opacity = target;
+            return;
+        }
         var anim = new DoubleAnimation(target, TimeSpan.FromMilliseconds(180))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
@@ -118,23 +126,26 @@ public partial class DiscoverCarouselRow : UserControl
 
     private void AnimateScrollTo(double target)
     {
-        if (_renderHandler != null)
+        StopScroll();
+        if (!MotionPreferences.Enabled)
         {
-            CompositionTarget.Rendering -= _renderHandler;
-            _renderHandler = null;
+            CarouselScroll.ScrollToHorizontalOffset(target);
+            return;
         }
 
         double start = CarouselScroll.HorizontalOffset;
         double distance = target - start;
         if (Math.Abs(distance) < 0.5) return;
 
-        const double duration = 850.0;
+        const double duration = 240.0;
         TimeSpan startTime = TimeSpan.Zero;
         TimeSpan lastRenderTime = TimeSpan.MinValue;
 
         EventHandler? handler = null;
         handler = (s, e) =>
         {
+            if (!IsVisible || !MotionPreferences.Enabled || Window.GetWindow(this) is { IsActive: false })
+            { StopScroll(); return; }
             var renderTime = ((RenderingEventArgs)e).RenderingTime;
             if (renderTime == lastRenderTime) return;
             lastRenderTime = renderTime;
@@ -157,5 +168,12 @@ public partial class DiscoverCarouselRow : UserControl
 
         _renderHandler = handler;
         CompositionTarget.Rendering += handler;
+    }
+
+    private void StopScroll()
+    {
+        if (_renderHandler is null) return;
+        CompositionTarget.Rendering -= _renderHandler;
+        _renderHandler = null;
     }
 }
