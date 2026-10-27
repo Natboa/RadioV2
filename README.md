@@ -16,13 +16,9 @@
   </a>
 </p>
 
-<table align="center">
-  <tr>
-    <td><img src="Assets/screenshots/screenshot1.png" alt="Screenshot 1" width="280"/></td>
-    <td><img src="Assets/screenshots/screenshot2.png" alt="Screenshot 2" width="280"/></td>
-    <td><img src="Assets/screenshots/screenshot3.png" alt="Screenshot 3" width="280"/></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="Assets/screenshots/radio-banner.png" alt="RadioV2 for Windows: Discover genres, Discover countries, and Favourites displayed on three black laptops against a purple studio background." width="100%"/>
+</p>
 
 ## Overview
 
