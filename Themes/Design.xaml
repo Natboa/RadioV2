@@ -84,14 +84,16 @@
          the window. A station being offline is an ordinary outcome and does
          not warrant that, so the call sites use Secondary and the meaning is
          carried by an icon. This restyles the surface into a proper elevated
-         card rather than a coloured bar.                                     -->
-    <Style TargetType="ui:Snackbar">
-        <Setter Property="Background" Value="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}" />
+         card rather than a coloured bar. Overlay surfaces must be opaque;
+         the translucent card brush lets station rows bleed through.          -->
+    <Style TargetType="ui:Snackbar" BasedOn="{StaticResource {x:Type ui:Snackbar}}">
+        <Setter Property="Background" Value="{ui:ThemeResource SolidBackgroundFillColorSecondaryBrush}" />
         <Setter Property="BorderBrush" Value="{ui:ThemeResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorPrimaryBrush}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Padding" Value="16,14" />
+        <Setter Property="Margin" Value="0,0,0,8" />
     </Style>
 
 </ResourceDictionary>
