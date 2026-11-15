@@ -201,11 +201,6 @@ public partial class App : Application
                 Phase("session restored");
 
                 // Pre-warm DiscoverViewModel (must run after schema init).
-                //
-                // Group art is deliberately NOT pre-warmed. Eagerly decoding all 123
-                // images cost ~79 MB and a large slice of startup for art the user may
-                // never scroll to; GroupNameToImageConverter loads each one on demand
-                // as its carousel row is realised.
                 await Current.Dispatcher.InvokeAsync(() =>
                     _ = _host.Services.GetRequiredService<DiscoverViewModel>().LoadCategoriesAsync());
 
@@ -215,6 +210,16 @@ public partial class App : Application
                     svc.GetStationsByGroupAsync(0, 0, 1),
                     svc.GetFeaturedStationsByGroupAsync(0));
                 Phase("pre-warm done");
+
+                // Group art is decoded here, after everything above, rather than on
+                // demand. On demand meant decoding on the UI thread as cards were
+                // built: every card at once on the first Discover click (before the
+                // rows were virtualized, about a second), and a hitch per row while
+                // scrolling. Decoding at 320 px keeps this to ~50 MB, which browsing
+                // Discover would have cost anyway.
+                var categories = await svc.GetCategoriesWithGroupsAsync();
+                var withArt = GroupImageHelper.Prewarm(categories.SelectMany(c => c.Groups).Select(g => g.Name));
+                Phase($"group art decoded ({withArt} images)");
 
                 // Every station's artwork is cached now, not just favourites', so the
                 // directory needs a ceiling.

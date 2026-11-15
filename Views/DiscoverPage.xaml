@@ -48,29 +48,51 @@
         </Border>
 
         <!-- ── Carousel view (categories → groups) ───────────────────────── -->
-        <ScrollViewer x:Name="CarouselScrollViewer"
-                      Grid.Row="1"
-                      Visibility="{Binding IsCarouselVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Padding="24,16,24,0">
-            <StackPanel>
-                <ItemsControl ItemsSource="{Binding CategoryRows}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <controls:DiscoverCarouselRow />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+        <!--
+            Virtualized: only the category rows on screen are built. Every row realises
+            all of its cards (the card strips are plain StackPanels), so building all of
+            them up front made the first Discover open take over a second right after
+            launch. Standard mode, not Recycling — a recycled row would keep the
+            previous category's horizontal scroll position.
+        -->
+        <Grid Grid.Row="1"
+              Visibility="{Binding IsCarouselVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <ItemsControl x:Name="CarouselRows"
+                          ItemsSource="{Binding CategoryRows}"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Standard"
+                          VirtualizingPanel.ScrollUnit="Pixel">
+                <ItemsControl.Template>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <ScrollViewer x:Name="CarouselScrollViewer"
+                                      CanContentScroll="True"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Padding="24,16,24,0">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ItemsControl.Template>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <controls:DiscoverCarouselRow />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
-                <ui:ProgressRing IsIndeterminate="True"
-                                 Width="32" Height="32"
-                                 Margin="0,8,0,24"
-                                 HorizontalAlignment="Center"
-                                 Visibility="{Binding ShowLoadingSpinner,
-                                     Converter={StaticResource BoolToVisibilityConverter}}" />
-            </StackPanel>
-        </ScrollViewer>
+            <ui:ProgressRing IsIndeterminate="True"
+                             Width="32" Height="32"
+                             Margin="0,24,0,0"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Top"
+                             Visibility="{Binding ShowLoadingSpinner,
+                                 Converter={StaticResource BoolToVisibilityConverter}}" />
+        </Grid>
 
         <!-- ── Search results view (flat group cards matching query) ────────── -->
         <ScrollViewer Grid.Row="1"
@@ -117,6 +139,9 @@
                                                Stretch="Uniform"
                                                RenderTransformOrigin="0.5,0.5"
                                                Source="{Binding Name, Converter={StaticResource GroupNameToImageConverter}}">
+                                            <Image.RenderTransform>
+                                                <ScaleTransform x:Name="ImageScale" />
+                                            </Image.RenderTransform>
                                         </Image>
                                         <ui:Button x:Name="PlayButton"
                                                    Appearance="Primary"
@@ -151,6 +176,12 @@
                                 <EventTrigger RoutedEvent="Border.MouseEnter">
                                     <BeginStoryboard>
                                         <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.06" Duration="0:0:0.2" />
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.06" Duration="0:0:0.2" />
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
                                                                            Storyboard.TargetProperty="Visibility">
                                                 <DiscreteObjectKeyFrame KeyTime="0"
@@ -170,6 +201,12 @@
                                 <EventTrigger RoutedEvent="Border.MouseLeave">
                                     <BeginStoryboard>
                                         <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.0" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetName="ImageScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.0" Duration="0:0:0.15" />
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PlayButton"
                                                                            Storyboard.TargetProperty="Visibility">
                                                 <DiscreteObjectKeyFrame KeyTime="0"

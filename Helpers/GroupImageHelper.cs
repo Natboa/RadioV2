@@ -30,6 +30,22 @@ public static class GroupImageHelper
     public static BitmapImage? GetImage(string groupName)
         => _cache.GetOrAdd(groupName, LoadImageByName);
 
+    /// <summary>
+    /// Decodes the given groups' art into the cache on the calling thread. Run it off
+    /// the UI thread: otherwise <see cref="GetImage"/> decodes on the UI thread as each
+    /// Discover card is built, and a carousel row builds all of its cards at once.
+    /// Returns how many groups have art.
+    /// </summary>
+    public static int Prewarm(IEnumerable<string> groupNames)
+    {
+        int found = 0;
+        Parallel.ForEach(
+            groupNames.Distinct(),
+            new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2) },
+            name => { if (GetImage(name) is not null) Interlocked.Increment(ref found); });
+        return found;
+    }
+
     private static BitmapImage? LoadImageByName(string name)
     {
         foreach (string ext in Extensions)
